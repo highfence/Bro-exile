@@ -1,0 +1,375 @@
+:root {
+  color-scheme: dark;
+  --bg: #111412;
+  --ink: #f5efe3;
+  --muted: #a99e8b;
+  --panel: rgba(28, 31, 27, 0.84);
+  --panel-strong: rgba(38, 41, 35, 0.96);
+  --line: rgba(245, 239, 227, 0.16);
+  --ore: #e6b85c;
+  --ember: #f0643b;
+  --acid: #93c96d;
+  --aqua: #6cc3c0;
+  --shadow: rgba(0, 0, 0, 0.38);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(240, 100, 59, 0.12), transparent 28rem),
+    radial-gradient(circle at 82% 76%, rgba(108, 195, 192, 0.12), transparent 26rem),
+    linear-gradient(145deg, #0d100e, #181a16 55%, #0f1210);
+  color: var(--ink);
+  font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+}
+
+button {
+  border: 0;
+  font: inherit;
+}
+
+.shell {
+  display: grid;
+  min-height: 100%;
+  padding: clamp(10px, 2vw, 22px);
+  place-items: center;
+}
+
+.game-frame {
+  position: relative;
+  width: min(100%, 1400px);
+  aspect-ratio: 16 / 9;
+  max-height: calc(100vh - 20px);
+  overflow: hidden;
+  border: 1px solid rgba(245, 239, 227, 0.2);
+  border-radius: 8px;
+  background: #151813;
+  box-shadow: 0 30px 80px var(--shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: auto;
+}
+
+.hud {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.hud-top {
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  align-items: center;
+}
+
+.hud-bottom {
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.brand,
+.meter-block,
+.stat-grid,
+.weapon-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+.brand {
+  display: flex;
+  min-width: 220px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.mark {
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--ore);
+  border-radius: 50%;
+  box-shadow: inset 0 -6px 0 rgba(240, 100, 59, 0.5);
+}
+
+.brand strong,
+.brand small {
+  display: block;
+  white-space: nowrap;
+}
+
+.brand strong {
+  font-size: 15px;
+}
+
+.brand small {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+.meter-block {
+  display: grid;
+  width: min(22vw, 210px);
+  min-width: 120px;
+  gap: 5px;
+  padding: 9px 10px;
+}
+
+.meter-block span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.meter {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(245, 239, 227, 0.12);
+}
+
+.meter i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #d84436, #f49a4f);
+  transition: width 120ms linear;
+}
+
+.meter.xp i {
+  background: linear-gradient(90deg, #61b8bf, #93c96d);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(70px, 1fr));
+  gap: 1px;
+  margin-left: auto;
+  overflow: hidden;
+}
+
+.stat-grid span {
+  display: grid;
+  gap: 2px;
+  min-width: 78px;
+  padding: 9px 12px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.stat-grid b {
+  color: var(--ink);
+  font-size: 17px;
+}
+
+.weapon-strip {
+  display: flex;
+  max-width: min(60vw, 620px);
+  gap: 8px;
+}
+
+.weapon-card {
+  display: grid;
+  min-width: 120px;
+  gap: 3px;
+  padding: 9px 10px;
+}
+
+.weapon-card b {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.weapon-card span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(8, 9, 8, 0.58);
+  backdrop-filter: blur(5px);
+}
+
+.overlay.is-open {
+  display: flex;
+}
+
+.panel {
+  width: min(94vw, 520px);
+  border: 1px solid rgba(245, 239, 227, 0.22);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.46);
+}
+
+.title-panel {
+  padding: clamp(24px, 5vw, 42px);
+}
+
+.wide-panel {
+  width: min(96vw, 900px);
+  padding: clamp(20px, 4vw, 34px);
+}
+
+.eyebrow {
+  margin: 0 0 9px;
+  color: var(--ore);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 12px;
+  font-size: clamp(42px, 8vw, 92px);
+  line-height: 0.86;
+}
+
+h2 {
+  margin-bottom: 18px;
+  font-size: clamp(28px, 5vw, 48px);
+  line-height: 0.95;
+}
+
+p {
+  color: #d8ceb9;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.primary {
+  min-height: 44px;
+  margin-top: 16px;
+  padding: 0 22px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--ore), #f0783c);
+  color: #17120a;
+  cursor: pointer;
+  font-weight: 900;
+  box-shadow: 0 12px 26px rgba(240, 100, 59, 0.26);
+}
+
+.primary:hover,
+.choice-card:hover {
+  filter: brightness(1.08);
+}
+
+.choice-card:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.55);
+  opacity: 0.48;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.choice-card {
+  min-height: 178px;
+  padding: 16px;
+  border: 1px solid rgba(245, 239, 227, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
+    rgba(18, 20, 17, 0.94);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.choice-card strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.choice-card p {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.choice-card small {
+  color: var(--ore);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+@media (max-width: 780px) {
+  .shell {
+    padding: 0;
+  }
+
+  .game-frame {
+    height: 100vh;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .brand small,
+  .hud-top {
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    min-width: 150px;
+  }
+
+  .stat-grid {
+    margin-left: 0;
+  }
+
+  .weapon-strip {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}

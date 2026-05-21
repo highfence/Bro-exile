@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Orebound Arena</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="game-frame" aria-label="Orebound Arena game">
+        <canvas id="game" width="1280" height="720"></canvas>
+
+        <div class="hud hud-top">
+          <div class="brand">
+            <span class="mark"></span>
+            <div>
+              <strong>Orebound Arena</strong>
+              <small>Claim 07</small>
+            </div>
+          </div>
+          <div class="meter-block">
+            <span>HP</span>
+            <div class="meter"><i id="hpMeter"></i></div>
+          </div>
+          <div class="meter-block">
+            <span>XP</span>
+            <div class="meter xp"><i id="xpMeter"></i></div>
+          </div>
+          <div class="stat-grid">
+            <span>Wave <b id="waveText">1</b></span>
+            <span>Ore <b id="oreText">0</b></span>
+            <span>Time <b id="timeText">00:00</b></span>
+          </div>
+        </div>
+
+        <div class="hud hud-bottom">
+          <div class="weapon-strip" id="weaponStrip"></div>
+        </div>
+
+        <div class="overlay is-open" id="startOverlay">
+          <div class="panel title-panel">
+            <p class="eyebrow">sealed claim</p>
+            <h1>Orebound Arena</h1>
+            <p>
+              A lone prospector drops into a sealed claim where the walls are
+              quiet, the ore is loud, and every wave leaves just enough time to
+              become stranger than the thing chasing you.
+            </p>
+            <button class="primary" id="startButton">Start run</button>
+          </div>
+        </div>
+
+        <div class="overlay" id="choiceOverlay">
+          <div class="panel wide-panel">
+            <p class="eyebrow" id="choiceEyebrow">level up</p>
+            <h2 id="choiceTitle">Choose a reward</h2>
+            <div class="cards" id="choiceCards"></div>
+          </div>
+        </div>
+
+        <div class="overlay" id="gameOverOverlay">
+          <div class="panel title-panel">
+            <p class="eyebrow">run complete</p>
+            <h2 id="gameOverTitle">You were overrun</h2>
+            <p id="gameOverStats"></p>
+            <button class="primary" id="restartButton">Run again</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="src/game.js"></script>
+  </body>
+</html>
