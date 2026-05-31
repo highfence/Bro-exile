@@ -1,5 +1,8 @@
 extends Node2D
 
+const GameUIScript = preload("res://scripts/ui/game_ui.gd")
+const OreUIThemeScript = preload("res://scripts/ui/ore_ui_theme.gd")
+
 const WORLD_SIZE := Vector2(1280, 720)
 const WORLD_MARGIN := 34.0
 const MODE_START := "start"
@@ -18,8 +21,6 @@ const SMOKE_PLAYTEST_DURATION := 18.0
 const SMOKE_PLAYTEST_CAPTURE_PATH := "/private/tmp/orebound-godot-playtest.png"
 const CHOICE_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-choice-ui.png"
 const SHOP_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-shop-ui.png"
-const HANGUL_BASE := 0xAC00
-const HANGUL_END := 0xD7A3
 
 var mode := MODE_START
 var elapsed := 0.0
@@ -54,134 +55,14 @@ var pickups: Array = []
 var sparks: Array = []
 var floating_text: Array = []
 
-var hud_layer: CanvasLayer
-var hp_bar: ProgressBar
-var xp_bar: ProgressBar
-var wave_label: Label
-var ore_label: Label
-var time_label: Label
-var weapon_box: HBoxContainer
-var overlay: Control
-var overlay_box: VBoxContainer
-var pixel_ui: Control
+var game_ui: CanvasLayer
 var ui_font: Font
-var ui_eyebrow := ""
-var ui_title := ""
-var ui_body := ""
-var ui_options: Array = []
-var ui_choice_method := ""
+var active_choice_options: Array = []
+var active_choice_method := ""
 var smoke_playtest := false
 var smoke_elapsed := 0.0
 var smoke_choices_taken := 0
 var smoke_finishing := false
-
-const PIXEL_FONT := {
-	"A": ["010", "101", "111", "101", "101"],
-	"B": ["110", "101", "110", "101", "110"],
-	"C": ["011", "100", "100", "100", "011"],
-	"D": ["110", "101", "101", "101", "110"],
-	"E": ["111", "100", "110", "100", "111"],
-	"F": ["111", "100", "110", "100", "100"],
-	"G": ["011", "100", "101", "101", "011"],
-	"H": ["101", "101", "111", "101", "101"],
-	"I": ["111", "010", "010", "010", "111"],
-	"J": ["001", "001", "001", "101", "010"],
-	"K": ["101", "101", "110", "101", "101"],
-	"L": ["100", "100", "100", "100", "111"],
-	"M": ["101", "111", "111", "101", "101"],
-	"N": ["101", "111", "111", "111", "101"],
-	"O": ["010", "101", "101", "101", "010"],
-	"P": ["110", "101", "110", "100", "100"],
-	"Q": ["010", "101", "101", "111", "011"],
-	"R": ["110", "101", "110", "101", "101"],
-	"S": ["011", "100", "010", "001", "110"],
-	"T": ["111", "010", "010", "010", "010"],
-	"U": ["101", "101", "101", "101", "111"],
-	"V": ["101", "101", "101", "101", "010"],
-	"W": ["101", "101", "111", "111", "101"],
-	"X": ["101", "101", "010", "101", "101"],
-	"Y": ["101", "101", "010", "010", "010"],
-	"Z": ["111", "001", "010", "100", "111"],
-	"0": ["111", "101", "101", "101", "111"],
-	"1": ["010", "110", "010", "010", "111"],
-	"2": ["110", "001", "010", "100", "111"],
-	"3": ["110", "001", "010", "001", "110"],
-	"4": ["101", "101", "111", "001", "001"],
-	"5": ["111", "100", "110", "001", "110"],
-	"6": ["011", "100", "110", "101", "010"],
-	"7": ["111", "001", "010", "010", "010"],
-	"8": ["010", "101", "010", "101", "010"],
-	"9": ["010", "101", "011", "001", "110"],
-	".": ["000", "000", "000", "000", "010"],
-	",": ["000", "000", "000", "010", "100"],
-	":": ["000", "010", "000", "010", "000"],
-	"-": ["000", "000", "111", "000", "000"],
-	"+": ["000", "010", "111", "010", "000"],
-	"/": ["001", "001", "010", "100", "100"],
-	"%": ["101", "001", "010", "100", "101"],
-	"'": ["010", "010", "000", "000", "000"],
-	" ": ["000", "000", "000", "000", "000"],
-}
-
-const HANGUL_CHO := ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"]
-const HANGUL_JONG := ["", "ㄱ", "ㄲ", "ㄳ", "ㄴ", "ㄵ", "ㄶ", "ㄷ", "ㄹ", "ㄺ", "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅁ", "ㅂ", "ㅄ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"]
-const HANGUL_VERTICAL_JUNG := [0, 1, 2, 3, 4, 5, 6, 7, 20]
-const HANGUL_COMBO_JUNG := [9, 10, 11, 14, 15, 16, 19]
-
-const HANGUL_CHO_FONT := {
-	"ㄱ": ["1111", "0001", "0001", "0001"],
-	"ㄲ": ["1111", "0101", "0101", "0101"],
-	"ㄴ": ["1000", "1000", "1000", "1111"],
-	"ㄷ": ["1111", "1000", "1000", "1111"],
-	"ㄸ": ["1111", "1010", "1010", "1111"],
-	"ㄹ": ["1111", "0001", "1111", "1000", "1111"],
-	"ㅁ": ["1111", "1001", "1001", "1111"],
-	"ㅂ": ["1001", "1001", "1111", "1001", "1111"],
-	"ㅃ": ["1011", "1011", "1111", "1011", "1111"],
-	"ㅅ": ["0110", "1001", "1001", "0000"],
-	"ㅆ": ["1010", "1111", "1010", "0000"],
-	"ㅇ": ["0110", "1001", "1001", "0110"],
-	"ㅈ": ["1111", "0110", "1001", "1001"],
-	"ㅉ": ["1111", "1010", "1111", "1010"],
-	"ㅊ": ["0010", "1111", "0110", "1001", "1001"],
-	"ㅋ": ["1111", "0001", "1111", "0001"],
-	"ㅌ": ["1111", "1000", "1111", "1000", "1111"],
-	"ㅍ": ["1111", "1001", "1111", "1001", "1111"],
-	"ㅎ": ["1111", "0000", "0110", "1001", "0110"],
-}
-
-const HANGUL_JONG_FONT := {
-	"ㄱ": ["1111", "0001"],
-	"ㄲ": ["1111", "0101"],
-	"ㄴ": ["1000", "1111"],
-	"ㄷ": ["1111", "1111"],
-	"ㄹ": ["1111", "1011"],
-	"ㅁ": ["1111", "1111"],
-	"ㅂ": ["1001", "1111"],
-	"ㅅ": ["0110", "1001"],
-	"ㅆ": ["1010", "1111"],
-	"ㅇ": ["0110", "0110"],
-	"ㅈ": ["1111", "0110"],
-	"ㅊ": ["1111", "1010"],
-	"ㅋ": ["1111", "0101"],
-	"ㅌ": ["1111", "1011"],
-	"ㅍ": ["1010", "1111"],
-	"ㅎ": ["1111", "0110"],
-}
-
-const HANGUL_JONG_SPLIT := {
-	"ㄳ": ["ㄱ", "ㅅ"],
-	"ㄵ": ["ㄴ", "ㅈ"],
-	"ㄶ": ["ㄴ", "ㅎ"],
-	"ㄺ": ["ㄹ", "ㄱ"],
-	"ㄻ": ["ㄹ", "ㅁ"],
-	"ㄼ": ["ㄹ", "ㅂ"],
-	"ㄽ": ["ㄹ", "ㅅ"],
-	"ㄾ": ["ㄹ", "ㅌ"],
-	"ㄿ": ["ㄹ", "ㅍ"],
-	"ㅀ": ["ㄹ", "ㅎ"],
-	"ㅄ": ["ㅂ", "ㅅ"],
-}
 
 var stat_rewards := [
 	{"id": "hp", "name": "강철 폐", "desc": "+18 최대 체력, 체력을 조금 회복합니다.", "tag": "생존"},
@@ -230,7 +111,7 @@ func _ready() -> void:
 		seed(12345)
 	else:
 		randomize()
-	ui_font = _load_ui_font()
+	ui_font = OreUIThemeScript.load_font()
 	_build_ui()
 	_reset_run(false)
 	_show_start_overlay()
@@ -291,6 +172,8 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause") and mode == MODE_PLAY:
 		paused = not paused
+		if game_ui != null:
+			game_ui.set_paused(paused)
 	if event.is_action_pressed("dash") and mode == MODE_PLAY and dash_cooldown <= 0.0:
 		player["dash_time"] = 0.16
 		dash_cooldown = 1.7
@@ -315,6 +198,8 @@ func _reset_run(start_playing: bool) -> void:
 	dash_cooldown = 0.0
 	screen_shake = 0.0
 	paused = false
+	if game_ui != null:
+		game_ui.set_paused(false)
 	next_enemy_id = 1
 	reroll_cost = _shop_reroll_cost()
 	round_ore_earned = 0
@@ -422,19 +307,19 @@ func _smoke_direction() -> Vector2:
 
 
 func _choose_smoke_option() -> void:
-	if ui_options.is_empty() or ui_choice_method.is_empty():
+	if active_choice_options.is_empty() or active_choice_method.is_empty():
 		return
 
 	var selected: Dictionary = {}
-	for option in ui_options:
+	for option in active_choice_options:
 		var cost := int(option.get("cost", 0))
 		if ore >= cost and not _choice_option_disabled(option):
 			selected = option
 			break
 
 	if selected.is_empty():
-		for i in range(ui_options.size() - 1, -1, -1):
-			var option: Dictionary = ui_options[i]
+		for i in range(active_choice_options.size() - 1, -1, -1):
+			var option: Dictionary = active_choice_options[i]
 			if not _choice_option_disabled(option):
 				selected = option
 				break
@@ -442,17 +327,16 @@ func _choose_smoke_option() -> void:
 		return
 
 	smoke_choices_taken += 1
-	Callable(self, ui_choice_method).call(selected)
+	Callable(self, active_choice_method).call(selected)
 
 
 func _finish_smoke_playtest(result: String) -> void:
 	if smoke_finishing:
 		return
 	smoke_finishing = true
-	if DisplayServer.get_name() != "headless":
-		await RenderingServer.frame_post_draw
-		var image := get_viewport().get_texture().get_image()
-		image.save_png(SMOKE_PLAYTEST_CAPTURE_PATH)
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(SMOKE_PLAYTEST_CAPTURE_PATH)
 	print("SMOKE_PLAYTEST result=%s mode=%s wave=%d level=%d hp=%.1f ore=%d enemies=%d pickups=%d choices=%d elapsed=%.2f capture=%s" % [
 		result,
 		mode,
@@ -1054,7 +938,6 @@ func _draw() -> void:
 	_draw_floating_text()
 	if paused:
 		draw_rect(Rect2(Vector2.ZERO, WORLD_SIZE), Color(0, 0, 0, 0.34), true)
-		_px_text(self, "일시 정지", WORLD_SIZE * 0.5 + Vector2(-82, -18), 4, Color("#f5efe3"))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
@@ -1132,199 +1015,50 @@ func _draw_floating_text() -> void:
 
 
 func _build_ui() -> void:
-	hud_layer = CanvasLayer.new()
-	hud_layer.layer = 10
-	add_child(hud_layer)
-
-	var top_panel := PanelContainer.new()
-	top_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top_panel.offset_left = 12
-	top_panel.offset_top = 12
-	top_panel.offset_right = -12
-	top_panel.offset_bottom = 62
-	top_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.11, 0.12, 0.10, 0.86)))
-	hud_layer.add_child(top_panel)
-
-	var top_margin := MarginContainer.new()
-	top_margin.add_theme_constant_override("margin_left", 12)
-	top_margin.add_theme_constant_override("margin_right", 12)
-	top_margin.add_theme_constant_override("margin_top", 7)
-	top_margin.add_theme_constant_override("margin_bottom", 7)
-	top_panel.add_child(top_margin)
-
-	var top := HBoxContainer.new()
-	top.add_theme_constant_override("separation", 12)
-	top_margin.add_child(top)
-
-	var brand := Label.new()
-	brand.text = ""
-	brand.custom_minimum_size = Vector2(180, 36)
-	_style_label(brand, 18, Color("#f5efe3"))
-	top.add_child(brand)
-
-	hp_bar = ProgressBar.new()
-	hp_bar.custom_minimum_size = Vector2(210, 24)
-	hp_bar.show_percentage = false
-	_style_bar(hp_bar, Color("#d84436"), Color("#f49a4f"))
-	top.add_child(hp_bar)
-
-	xp_bar = ProgressBar.new()
-	xp_bar.custom_minimum_size = Vector2(210, 24)
-	xp_bar.show_percentage = false
-	_style_bar(xp_bar, Color("#61b8bf"), Color("#93c96d"))
-	top.add_child(xp_bar)
-
-	wave_label = Label.new()
-	ore_label = Label.new()
-	time_label = Label.new()
-	_style_label(wave_label, 16, Color("#f5efe3"))
-	_style_label(ore_label, 16, Color("#e6b85c"))
-	_style_label(time_label, 16, Color("#d8ceb9"))
-	top.add_child(wave_label)
-	top.add_child(ore_label)
-	top.add_child(time_label)
-
-	var weapon_panel := PanelContainer.new()
-	weapon_panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	weapon_panel.offset_left = 12
-	weapon_panel.offset_top = -74
-	weapon_panel.offset_right = -12
-	weapon_panel.offset_bottom = -12
-	weapon_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.11, 0.12, 0.10, 0.82)))
-	hud_layer.add_child(weapon_panel)
-
-	var weapon_margin := MarginContainer.new()
-	weapon_margin.add_theme_constant_override("margin_left", 10)
-	weapon_margin.add_theme_constant_override("margin_right", 10)
-	weapon_margin.add_theme_constant_override("margin_top", 7)
-	weapon_margin.add_theme_constant_override("margin_bottom", 7)
-	weapon_panel.add_child(weapon_margin)
-
-	weapon_box = HBoxContainer.new()
-	weapon_box.add_theme_constant_override("separation", 8)
-	weapon_margin.add_child(weapon_box)
-
-	overlay = Control.new()
-	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.visible = false
-	hud_layer.add_child(overlay)
-
-	var shade := ColorRect.new()
-	shade.color = Color(0.03, 0.035, 0.03, 0.72)
-	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(shade)
-
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(center)
-
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(700, 520)
-	panel.add_theme_stylebox_override("panel", _panel_style(Color(0.15, 0.16, 0.13, 0.98)))
-	center.add_child(panel)
-
-	var panel_margin := MarginContainer.new()
-	panel_margin.add_theme_constant_override("margin_left", 28)
-	panel_margin.add_theme_constant_override("margin_right", 28)
-	panel_margin.add_theme_constant_override("margin_top", 24)
-	panel_margin.add_theme_constant_override("margin_bottom", 24)
-	panel.add_child(panel_margin)
-
-	overlay_box = VBoxContainer.new()
-	overlay_box.add_theme_constant_override("separation", 12)
-	panel_margin.add_child(overlay_box)
-
-	pixel_ui = Control.new()
-	pixel_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
-	pixel_ui.set_script(load("res://scripts/pixel_ui.gd"))
-	pixel_ui.set("game", self)
-	hud_layer.add_child(pixel_ui)
+	game_ui = GameUIScript.new()
+	add_child(game_ui)
+	game_ui.setup(ui_font)
+	game_ui.start_requested.connect(_start_run)
+	game_ui.option_selected.connect(_on_ui_option_selected)
 
 
 func _show_start_overlay() -> void:
-	ui_eyebrow = "봉인된 채굴지"
-	ui_title = "광맥 투기장"
-	ui_body = "20라운드를 버티며 광석을 모으고, 막간 상점에서 무기 6슬롯과 패시브 아이템을 완성하세요."
-	ui_options = []
-	ui_choice_method = ""
-	_clear_overlay_box()
-	var eyebrow := _make_label("", 14)
-	var title := _make_label("", 42)
-	var body := _make_label("", 16)
-	body.custom_minimum_size = Vector2(540, 76)
-	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var button := Button.new()
-	button.text = ""
-	button.custom_minimum_size = Vector2(540, 46)
-	_style_button(button)
-	button.pressed.connect(_start_run)
-	overlay_box.add_child(eyebrow)
-	overlay_box.add_child(title)
-	overlay_box.add_child(body)
-	overlay_box.add_child(button)
-	overlay.visible = true
+	active_choice_options = []
+	active_choice_method = ""
+	game_ui.show_start(
+		"봉인된 채굴지",
+		"광맥 투기장",
+		"20라운드를 버티며 광석을 모으고, 막간 상점에서 무기 6슬롯과 패시브 아이템을 완성하세요.",
+		"탐사 시작"
+	)
 
 
 func _show_choice_overlay(eyebrow_text: String, title_text: String, options: Array, method_name: String) -> void:
-	ui_eyebrow = eyebrow_text
-	ui_title = title_text
-	ui_body = ""
-	ui_options = options
-	ui_choice_method = method_name
-	_clear_overlay_box()
-	overlay_box.add_child(_make_label("", 14))
-	overlay_box.add_child(_make_label("", 32))
-	for option in options:
-		var button := Button.new()
-		var cost_text := ""
-		if option.has("cost"):
-			cost_text = " - 광석 %d" % int(option["cost"])
-			button.disabled = _choice_option_disabled(option)
-		elif option.has("tag"):
-			cost_text = " - %s" % option["tag"]
-		button.text = ""
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.custom_minimum_size = Vector2(620, 56 if options.size() > 4 else 68)
-		_style_button(button)
-		button.pressed.connect(Callable(self, method_name).bind(option))
-		overlay_box.add_child(button)
-	overlay.visible = true
+	active_choice_options = options
+	active_choice_method = method_name
+	game_ui.show_choice(eyebrow_text, title_text, _decorate_choice_options(options))
 
 
 func _show_game_over_overlay() -> void:
-	ui_eyebrow = "탐사 종료"
-	ui_title = "압도당했습니다"
-	ui_body = "라운드 %d/%d 레벨 %d 광석 %d 생존 시간 %s" % [wave, MAX_ROUNDS, level, ore, _format_time(elapsed)]
-	ui_options = []
-	ui_choice_method = ""
-	_clear_overlay_box()
-	overlay_box.add_child(_make_label("", 14))
-	overlay_box.add_child(_make_label("", 36))
-	overlay_box.add_child(_make_label("", 16))
-	var button := Button.new()
-	button.text = ""
-	_style_button(button)
-	button.pressed.connect(_start_run)
-	overlay_box.add_child(button)
-	overlay.visible = true
+	active_choice_options = []
+	active_choice_method = ""
+	game_ui.show_end(
+		"탐사 종료",
+		"압도당했습니다",
+		"라운드 %d/%d 레벨 %d 광석 %d 생존 시간 %s" % [wave, MAX_ROUNDS, level, ore, _format_time(elapsed)],
+		"다시 도전"
+	)
 
 
 func _show_victory_overlay() -> void:
-	ui_eyebrow = "탐사 완료"
-	ui_title = "20라운드 생존"
-	ui_body = "레벨 %d 광석 %d 무기 %d개 아이템 %d개로 기본 루프를 완주했습니다." % [level, ore, weapons.size(), items.size()]
-	ui_options = []
-	ui_choice_method = ""
-	_clear_overlay_box()
-	overlay_box.add_child(_make_label("", 14))
-	overlay_box.add_child(_make_label("", 36))
-	overlay_box.add_child(_make_label("", 16))
-	var button := Button.new()
-	button.text = ""
-	_style_button(button)
-	button.pressed.connect(_start_run)
-	overlay_box.add_child(button)
-	overlay.visible = true
+	active_choice_options = []
+	active_choice_method = ""
+	game_ui.show_end(
+		"탐사 완료",
+		"20라운드 생존",
+		"레벨 %d 광석 %d 무기 %d개 아이템 %d개로 기본 루프를 완주했습니다." % [level, ore, weapons.size(), items.size()],
+		"다시 시작"
+	)
 
 
 func _start_run() -> void:
@@ -1333,47 +1067,24 @@ func _start_run() -> void:
 
 
 func _hide_overlay() -> void:
-	overlay.visible = false
-
-
-func _clear_overlay_box() -> void:
-	for child in overlay_box.get_children():
-		overlay_box.remove_child(child)
-		child.queue_free()
-
-
-func _make_label(text: String, font_size: int) -> Label:
-	var label := Label.new()
-	label.text = text
-	_style_label(label, font_size, Color("#f5efe3"))
-	label.custom_minimum_size = Vector2(540, max(24, font_size + 12))
-	return label
+	game_ui.hide_overlay()
 
 
 func _render_weapons() -> void:
-	for child in weapon_box.get_children():
-		child.queue_free()
-	var summary := Label.new()
-	summary.text = "무기 %d/%d  아이템 %d" % [weapons.size(), MAX_WEAPON_SLOTS, items.size()]
-	summary.custom_minimum_size = Vector2(150, 30)
-	_style_label(summary, 13, Color("#e6b85c"))
-	weapon_box.add_child(summary)
-	for weapon in weapons:
-		var label := Label.new()
-		label.text = "%s %d단계 / 피해 %d" % [weapon["name"], weapon["level"], int(round(weapon["damage"] * damage_multiplier))]
-		label.custom_minimum_size = Vector2(170, 30)
-		_style_label(label, 13, Color("#f5efe3"))
-		weapon_box.add_child(label)
+	game_ui.render_weapons(weapons, damage_multiplier)
 
 
 func _update_hud() -> void:
-	hp_bar.max_value = player.get("max_hp", 100.0)
-	hp_bar.value = clamp(player.get("hp", 0.0), 0.0, hp_bar.max_value)
-	xp_bar.max_value = xp_to_next
-	xp_bar.value = clamp(xp, 0.0, xp_to_next)
-	wave_label.text = "라운드 %d/%d" % [wave, MAX_ROUNDS]
-	ore_label.text = "광석 %d" % ore
-	time_label.text = _format_time(max(0.0, wave_timer))
+	game_ui.update_hud({
+		"hp": player.get("hp", 0.0),
+		"max_hp": player.get("max_hp", 100.0),
+		"xp": xp,
+		"xp_to_next": xp_to_next,
+		"level": level,
+		"wave": wave,
+		"ore": ore,
+		"time": _format_time(max(0.0, wave_timer)),
+	})
 
 
 func _format_time(seconds: float) -> String:
@@ -1382,300 +1093,30 @@ func _format_time(seconds: float) -> String:
 	return "%02d:%02d" % [mins, secs]
 
 
-func _load_ui_font() -> Font:
-	var candidates := [
-		"/System/Library/Fonts/HelveticaNeue.ttc",
-		"/System/Library/Fonts/SFNSMono.ttf",
-		"/System/Library/Fonts/AppleSDGothicNeo.ttc",
-		"/System/Library/Fonts/Geneva.ttf",
-	]
-	for path in candidates:
-		if FileAccess.file_exists(path):
-			var font := FontFile.new()
-			if font.load_dynamic_font(path) == OK:
-				return font
-	return SystemFont.new()
+func _decorate_choice_options(options: Array) -> Array:
+	var decorated := []
+	for option in options:
+		var copy: Dictionary = option.duplicate(true)
+		copy["disabled"] = _choice_option_disabled(option)
+		copy["meta_text"] = _choice_meta_text(option, bool(copy["disabled"]))
+		decorated.append(copy)
+	return decorated
 
 
-func _style_label(label: Label, font_size: int, color: Color) -> void:
-	label.add_theme_font_override("font", ui_font)
-	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", color)
-	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.65))
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
+func _choice_meta_text(option: Dictionary, disabled: bool) -> String:
+	if disabled and str(option.get("kind", "")) == "weapon":
+		return "무기 슬롯 또는 강화 한도 초과"
+	if option.has("cost"):
+		var cost := int(option["cost"])
+		if cost <= 0:
+			return "무료"
+		return "광석 %d" % cost
+	if option.has("tag"):
+		return str(option["tag"])
+	return ""
 
 
-func _style_bar(bar: ProgressBar, left: Color, right: Color) -> void:
-	var background := StyleBoxFlat.new()
-	background.bg_color = Color(0.03, 0.035, 0.03, 0.72)
-	background.corner_radius_top_left = 5
-	background.corner_radius_top_right = 5
-	background.corner_radius_bottom_left = 5
-	background.corner_radius_bottom_right = 5
-
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = left.lerp(right, 0.5)
-	fill.corner_radius_top_left = 5
-	fill.corner_radius_top_right = 5
-	fill.corner_radius_bottom_left = 5
-	fill.corner_radius_bottom_right = 5
-
-	bar.add_theme_stylebox_override("background", background)
-	bar.add_theme_stylebox_override("fill", fill)
-
-
-func _style_button(button: Button) -> void:
-	button.add_theme_font_override("font", ui_font)
-	button.add_theme_font_size_override("font_size", 16)
-	button.add_theme_color_override("font_color", Color("#17120a"))
-	button.add_theme_color_override("font_hover_color", Color("#17120a"))
-	button.add_theme_color_override("font_pressed_color", Color("#17120a"))
-	button.add_theme_color_override("font_disabled_color", Color(0.96, 0.91, 0.82, 0.42))
-	button.add_theme_stylebox_override("normal", _button_style(Color("#e6b85c")))
-	button.add_theme_stylebox_override("hover", _button_style(Color("#f0c76f")))
-	button.add_theme_stylebox_override("pressed", _button_style(Color("#f0643b")))
-	button.add_theme_stylebox_override("disabled", _button_style(Color(0.23, 0.23, 0.2, 0.78)))
-
-
-func _panel_style(color: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.border_color = Color(0.96, 0.91, 0.82, 0.26)
-	style.set_border_width_all(2)
-	style.corner_radius_top_left = 0
-	style.corner_radius_top_right = 0
-	style.corner_radius_bottom_left = 0
-	style.corner_radius_bottom_right = 0
-	return style
-
-
-func _button_style(color: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.border_color = Color("#17120a")
-	style.set_border_width_all(2)
-	style.corner_radius_top_left = 0
-	style.corner_radius_top_right = 0
-	style.corner_radius_bottom_left = 0
-	style.corner_radius_bottom_right = 0
-	style.content_margin_left = 16
-	style.content_margin_right = 16
-	style.content_margin_top = 10
-	style.content_margin_bottom = 10
-	return style
-
-
-func draw_pixel_ui(canvas: CanvasItem) -> void:
-	_px_text(canvas, "광맥 투기장", Vector2(28, 24), 2, Color("#f5efe3"))
-	_px_text(canvas, "체력", Vector2(224, 24), 2, Color("#f5efe3"))
-	_px_text(canvas, "경험", Vector2(446, 24), 2, Color("#f5efe3"))
-	_px_text(canvas, "라운드 %d/%d" % [wave, MAX_ROUNDS], Vector2(680, 24), 2, Color("#f5efe3"))
-	_px_text(canvas, "광석 %d" % ore, Vector2(840, 24), 2, Color("#e6b85c"))
-	_px_text(canvas, _format_time(max(0.0, wave_timer)), Vector2(960, 25), 3, Color("#d8ceb9"))
-	_px_text(canvas, "무기 %d/%d 아이템 %d" % [weapons.size(), MAX_WEAPON_SLOTS, items.size()], Vector2(1080, 24), 2, Color("#d8ceb9"))
-
-	var x := 28.0
-	_px_text(canvas, "무기", Vector2(x, 674), 2, Color("#e6b85c"))
-	x += 58.0
-	for weapon in weapons:
-		_px_text(canvas, "%s %d단계" % [weapon["name"], weapon["level"]], Vector2(x, 674), 2, Color("#f5efe3"))
-		x += 170.0
-
-	if not overlay.visible:
+func _on_ui_option_selected(option: Dictionary) -> void:
+	if active_choice_method.is_empty():
 		return
-
-	var panel_pos := Vector2(318, 105)
-	_px_text(canvas, ui_eyebrow, panel_pos + Vector2(0, 0), 2, Color("#e6b85c"))
-	_px_text(canvas, ui_title, panel_pos + Vector2(0, 40), 4, Color("#f5efe3"))
-
-	if ui_options.is_empty():
-		_px_wrap(canvas, ui_body, panel_pos + Vector2(0, 116), 2, Color("#d8ceb9"), 520)
-		var button_text := "다시 도전" if mode == MODE_GAME_OVER or mode == MODE_VICTORY else "탐사 시작"
-		_px_text(canvas, button_text, panel_pos + Vector2(32, 211), 3, Color("#17120a"))
-	else:
-		var y := 120.0
-		var step := 68.0 if ui_options.size() > 4 else 80.0
-		for option in ui_options:
-			var color := Color("#17120a")
-			if _choice_option_disabled(option):
-				color = Color(0.96, 0.91, 0.82, 0.45)
-			var cost_text := ""
-			if option.has("cost"):
-				var cost := int(option["cost"])
-				cost_text = " 무료" if cost <= 0 else " 광석 %d" % cost
-			elif option.has("tag"):
-				cost_text = " " + str(option["tag"])
-			_px_text(canvas, str(option["name"]) + cost_text, panel_pos + Vector2(16, y), 2, color)
-			_px_wrap(canvas, str(option["desc"]), panel_pos + Vector2(16, y + 25), 2, color, 560)
-			y += step
-
-
-func _px_wrap(canvas: CanvasItem, text: String, pos: Vector2, scale: int, color: Color, max_width: int) -> void:
-	var words := text.split(" ")
-	var line := ""
-	var y := pos.y
-	for word in words:
-		var test := word if line.is_empty() else line + " " + word
-		if _px_width(test, scale) > max_width and not line.is_empty():
-			_px_text(canvas, line, Vector2(pos.x, y), scale, color)
-			line = word
-			y += scale * 8
-		else:
-			line = test
-	if not line.is_empty():
-		_px_text(canvas, line, Vector2(pos.x, y), scale, color)
-
-
-func _px_text(canvas: CanvasItem, text: String, pos: Vector2, scale: int, color: Color) -> void:
-	var cursor := pos
-	var content := text.to_upper()
-	for i in range(content.length()):
-		var ch := content.substr(i, 1)
-		if ch == " ":
-			cursor.x += scale * 4
-			continue
-		var code := content.unicode_at(i)
-		if code >= HANGUL_BASE and code <= HANGUL_END:
-			_px_hangul(canvas, code, cursor, scale, color)
-			cursor.x += scale * 9
-			continue
-		var pattern: Array = PIXEL_FONT.get(ch, PIXEL_FONT[" "])
-		_px_pattern(canvas, pattern, cursor, scale, color)
-		cursor.x += scale * 4
-
-
-func _px_width(text: String, scale: int) -> int:
-	var width := 0
-	var content := text.to_upper()
-	for i in range(content.length()):
-		var ch := content.substr(i, 1)
-		var code := content.unicode_at(i)
-		if ch == " ":
-			width += scale * 4
-		elif code >= HANGUL_BASE and code <= HANGUL_END:
-			width += scale * 9
-		else:
-			width += scale * 4
-	return width
-
-
-func _px_hangul(canvas: CanvasItem, code: int, pos: Vector2, scale: int, color: Color) -> void:
-	var offset := code - HANGUL_BASE
-	var cho := int(offset / 588)
-	var jung := int((offset % 588) / 28)
-	var jong := int(offset % 28)
-	var choseong: String = HANGUL_CHO[cho]
-	var final_jamo: String = HANGUL_JONG[jong]
-	var vertical := HANGUL_VERTICAL_JUNG.has(jung) or HANGUL_COMBO_JUNG.has(jung)
-	var cho_pos := pos + (Vector2(0, 0) if vertical else Vector2(scale * 2, 0))
-	_px_pattern(canvas, HANGUL_CHO_FONT.get(choseong, HANGUL_CHO_FONT["ㅇ"]), cho_pos, scale, color)
-	_px_vowel(canvas, jung, pos, scale, color)
-	if final_jamo != "":
-		_px_final(canvas, final_jamo, pos, scale, color)
-
-
-func _px_vowel(canvas: CanvasItem, jung: int, pos: Vector2, scale: int, color: Color) -> void:
-	match jung:
-		0:
-			_px_line_v(canvas, pos, 5, 0, 4, scale, color)
-			_px_dot(canvas, pos, 6, 2, scale, color)
-		1:
-			_px_line_v(canvas, pos, 4, 0, 4, scale, color)
-			_px_line_v(canvas, pos, 6, 0, 4, scale, color)
-			_px_dot(canvas, pos, 5, 2, scale, color)
-		2:
-			_px_line_v(canvas, pos, 5, 0, 4, scale, color)
-			_px_dot(canvas, pos, 6, 1, scale, color)
-			_px_dot(canvas, pos, 6, 3, scale, color)
-		3:
-			_px_line_v(canvas, pos, 4, 0, 4, scale, color)
-			_px_line_v(canvas, pos, 6, 0, 4, scale, color)
-			_px_dot(canvas, pos, 5, 1, scale, color)
-			_px_dot(canvas, pos, 5, 3, scale, color)
-		4:
-			_px_line_v(canvas, pos, 6, 0, 4, scale, color)
-			_px_dot(canvas, pos, 5, 2, scale, color)
-		5:
-			_px_line_v(canvas, pos, 5, 0, 4, scale, color)
-			_px_line_v(canvas, pos, 7, 0, 4, scale, color)
-			_px_dot(canvas, pos, 4, 2, scale, color)
-		6:
-			_px_line_v(canvas, pos, 6, 0, 4, scale, color)
-			_px_dot(canvas, pos, 5, 1, scale, color)
-			_px_dot(canvas, pos, 5, 3, scale, color)
-		7:
-			_px_line_v(canvas, pos, 5, 0, 4, scale, color)
-			_px_line_v(canvas, pos, 7, 0, 4, scale, color)
-			_px_dot(canvas, pos, 4, 1, scale, color)
-			_px_dot(canvas, pos, 4, 3, scale, color)
-		8:
-			_px_line_h(canvas, pos, 1, 6, 4, scale, color)
-			_px_line_v(canvas, pos, 3, 2, 3, scale, color)
-		9:
-			_px_vowel(canvas, 8, pos, scale, color)
-			_px_vowel(canvas, 0, pos, scale, color)
-		10:
-			_px_vowel(canvas, 8, pos, scale, color)
-			_px_vowel(canvas, 1, pos, scale, color)
-		11:
-			_px_vowel(canvas, 8, pos, scale, color)
-			_px_vowel(canvas, 20, pos, scale, color)
-		12:
-			_px_line_h(canvas, pos, 1, 6, 4, scale, color)
-			_px_line_v(canvas, pos, 2, 2, 3, scale, color)
-			_px_line_v(canvas, pos, 4, 2, 3, scale, color)
-		13:
-			_px_line_h(canvas, pos, 1, 6, 4, scale, color)
-			_px_line_v(canvas, pos, 3, 5, 6, scale, color)
-		14:
-			_px_vowel(canvas, 13, pos, scale, color)
-			_px_vowel(canvas, 4, pos, scale, color)
-		15:
-			_px_vowel(canvas, 13, pos, scale, color)
-			_px_vowel(canvas, 5, pos, scale, color)
-		16:
-			_px_vowel(canvas, 13, pos, scale, color)
-			_px_vowel(canvas, 20, pos, scale, color)
-		17:
-			_px_line_h(canvas, pos, 1, 6, 4, scale, color)
-			_px_line_v(canvas, pos, 2, 5, 6, scale, color)
-			_px_line_v(canvas, pos, 4, 5, 6, scale, color)
-		18:
-			_px_line_h(canvas, pos, 1, 6, 4, scale, color)
-		19:
-			_px_vowel(canvas, 18, pos, scale, color)
-			_px_vowel(canvas, 20, pos, scale, color)
-		20:
-			_px_line_v(canvas, pos, 6, 0, 4, scale, color)
-
-
-func _px_final(canvas: CanvasItem, jamo: String, pos: Vector2, scale: int, color: Color) -> void:
-	if HANGUL_JONG_SPLIT.has(jamo):
-		var pair: Array = HANGUL_JONG_SPLIT[jamo]
-		_px_pattern(canvas, HANGUL_JONG_FONT.get(pair[0], HANGUL_JONG_FONT["ㅇ"]), pos + Vector2(0, scale * 6), scale, color)
-		_px_pattern(canvas, HANGUL_JONG_FONT.get(pair[1], HANGUL_JONG_FONT["ㅇ"]), pos + Vector2(scale * 4, scale * 6), scale, color)
-	else:
-		_px_pattern(canvas, HANGUL_JONG_FONT.get(jamo, HANGUL_JONG_FONT["ㅇ"]), pos + Vector2(scale * 2, scale * 6), scale, color)
-
-
-func _px_pattern(canvas: CanvasItem, pattern: Array, pos: Vector2, scale: int, color: Color) -> void:
-	for row in range(pattern.size()):
-		var bits := str(pattern[row])
-		for col in range(bits.length()):
-			if bits.substr(col, 1) == "1":
-				_px_dot(canvas, pos, col, row, scale, color)
-
-
-func _px_line_h(canvas: CanvasItem, pos: Vector2, from_x: int, to_x: int, y: int, scale: int, color: Color) -> void:
-	for x in range(from_x, to_x + 1):
-		_px_dot(canvas, pos, x, y, scale, color)
-
-
-func _px_line_v(canvas: CanvasItem, pos: Vector2, x: int, from_y: int, to_y: int, scale: int, color: Color) -> void:
-	for y in range(from_y, to_y + 1):
-		_px_dot(canvas, pos, x, y, scale, color)
-
-
-func _px_dot(canvas: CanvasItem, pos: Vector2, x: int, y: int, scale: int, color: Color) -> void:
-	canvas.draw_rect(Rect2(pos + Vector2(x * scale, y * scale), Vector2(scale, scale)), color, true)
+	Callable(self, active_choice_method).call(option)
