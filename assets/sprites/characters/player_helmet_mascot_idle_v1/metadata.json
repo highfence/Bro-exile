@@ -1,0 +1,67 @@
+{
+  "source": "assets/sprites/characters/player_helmet_mascot_v1/player_idle.png",
+  "clean_idle": "player_idle_clean.png",
+  "sheet": "player_idle_sheet_6x1_256.png",
+  "cell_size": [
+    256,
+    256
+  ],
+  "hframes": 6,
+  "vframes": 1,
+  "fps": 6,
+  "animation": "idle",
+  "frames": [
+    {
+      "index": 0,
+      "file": "player_idle_00.png",
+      "scale_x": 1.0,
+      "scale_y": 1.0,
+      "offset_y": 0,
+      "lamp_pulse": 0.35
+    },
+    {
+      "index": 1,
+      "file": "player_idle_01.png",
+      "scale_x": 1.004,
+      "scale_y": 0.996,
+      "offset_y": 1,
+      "lamp_pulse": 0.55
+    },
+    {
+      "index": 2,
+      "file": "player_idle_02.png",
+      "scale_x": 1.007,
+      "scale_y": 0.992,
+      "offset_y": 1,
+      "lamp_pulse": 0.7
+    },
+    {
+      "index": 3,
+      "file": "player_idle_03.png",
+      "scale_x": 1.004,
+      "scale_y": 0.996,
+      "offset_y": 1,
+      "lamp_pulse": 0.55
+    },
+    {
+      "index": 4,
+      "file": "player_idle_04.png",
+      "scale_x": 1.0,
+      "scale_y": 1.0,
+      "offset_y": 0,
+      "lamp_pulse": 0.35
+    },
+    {
+      "index": 5,
+      "file": "player_idle_05.png",
+      "scale_x": 0.998,
+      "scale_y": 1.003,
+      "offset_y": -1,
+      "lamp_pulse": 0.45
+    }
+  ],
+  "notes": [
+    "Removed accidental turquoise sheen from the face/body side while preserving the right-side backpack crystal.",
+    "Idle motion is a prototype: subtle breathing scale, one-pixel grounded bob, and mild lamp pulse."
+  ]
+}

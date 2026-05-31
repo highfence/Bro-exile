@@ -1,0 +1,162 @@
+{
+  "parts_dir": "parts_same_canvas_v2",
+  "layer_order": [
+    "headlamp",
+    "helmet",
+    "face",
+    "ore_crystal",
+    "backpack",
+    "left_glove",
+    "right_glove",
+    "left_boot",
+    "right_boot",
+    "belt",
+    "body",
+    "misc_unassigned"
+  ],
+  "layers": [
+    {
+      "name": "headlamp",
+      "file": "parts_same_canvas_v2/headlamp.png",
+      "pixels": 70656,
+      "bbox": [
+        273,
+        196,
+        630,
+        520
+      ]
+    },
+    {
+      "name": "helmet",
+      "file": "parts_same_canvas_v2/helmet.png",
+      "pixels": 108651,
+      "bbox": [
+        288,
+        142,
+        964,
+        550
+      ]
+    },
+    {
+      "name": "face",
+      "file": "parts_same_canvas_v2/face.png",
+      "pixels": 65372,
+      "bbox": [
+        311,
+        518,
+        680,
+        705
+      ]
+    },
+    {
+      "name": "ore_crystal",
+      "file": "parts_same_canvas_v2/ore_crystal.png",
+      "pixels": 4308,
+      "bbox": [
+        922,
+        557,
+        1015,
+        643
+      ]
+    },
+    {
+      "name": "backpack",
+      "file": "parts_same_canvas_v2/backpack.png",
+      "pixels": 43495,
+      "bbox": [
+        821,
+        540,
+        1036,
+        915
+      ]
+    },
+    {
+      "name": "left_glove",
+      "file": "parts_same_canvas_v2/left_glove.png",
+      "pixels": 14773,
+      "bbox": [
+        224,
+        663,
+        400,
+        850
+      ]
+    },
+    {
+      "name": "right_glove",
+      "file": "parts_same_canvas_v2/right_glove.png",
+      "pixels": 12046,
+      "bbox": [
+        676,
+        682,
+        840,
+        886
+      ]
+    },
+    {
+      "name": "left_boot",
+      "file": "parts_same_canvas_v2/left_boot.png",
+      "pixels": 18272,
+      "bbox": [
+        344,
+        841,
+        518,
+        1009
+      ]
+    },
+    {
+      "name": "right_boot",
+      "file": "parts_same_canvas_v2/right_boot.png",
+      "pixels": 21848,
+      "bbox": [
+        671,
+        901,
+        863,
+        1032
+      ]
+    },
+    {
+      "name": "belt",
+      "file": "parts_same_canvas_v2/belt.png",
+      "pixels": 20628,
+      "bbox": [
+        356,
+        706,
+        692,
+        845
+      ]
+    },
+    {
+      "name": "body",
+      "file": "parts_same_canvas_v2/body.png",
+      "pixels": 90643,
+      "bbox": [
+        245,
+        446,
+        860,
+        875
+      ]
+    },
+    {
+      "name": "misc_unassigned",
+      "file": "parts_same_canvas_v2/misc_unassigned.png",
+      "pixels": 48828,
+      "bbox": [
+        221,
+        137,
+        1040,
+        1036
+      ]
+    }
+  ],
+  "recomposed": "player_layered_trial_v1_recomposed_v2.png",
+  "previews": {
+    "parts": "player_layered_trial_v1_parts_preview_v2.png",
+    "recompose_review": "player_layered_trial_v1_recompose_review_v2.png",
+    "preview_64": "player_layered_trial_v1_64_preview_v2.png"
+  },
+  "verification": {
+    "mean_abs_diff_rgba": 0.0004,
+    "alpha_mismatch_pixels": 86,
+    "note": "v2 uses foreground-first color/spatial masks so layers are more semantically separated than v1; still a trial automatic split."
+  }
+}

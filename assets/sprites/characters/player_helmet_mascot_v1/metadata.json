@@ -1,0 +1,158 @@
+{
+  "source_chromakey": "player_helmet_mascot_v1_source_chromakey.png",
+  "source_transparent": "player_helmet_mascot_v1_transparent_sheet.png",
+  "sheet": "player_helmet_mascot_v1_sheet_6x1_256.png",
+  "cell_size": [
+    256,
+    256
+  ],
+  "hframes": 6,
+  "vframes": 1,
+  "animations": {
+    "idle": [
+      "player_idle"
+    ],
+    "walk": [
+      "player_walk_a",
+      "player_walk_b"
+    ],
+    "hurt": [
+      "player_hurt"
+    ],
+    "attack": [
+      "player_attack_recoil"
+    ],
+    "ready": [
+      "player_ready"
+    ]
+  },
+  "frames": [
+    {
+      "name": "player_idle",
+      "pose": "idle",
+      "source_box": [
+        36,
+        196,
+        353,
+        536
+      ],
+      "cell": {
+        "x": 24,
+        "y": 10,
+        "w": 207,
+        "h": 222
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      },
+      "file": "player_idle.png"
+    },
+    {
+      "name": "player_walk_a",
+      "pose": "walk_a",
+      "source_box": [
+        388,
+        197,
+        711,
+        535
+      ],
+      "cell": {
+        "x": 22,
+        "y": 10,
+        "w": 212,
+        "h": 222
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      },
+      "file": "player_walk_a.png"
+    },
+    {
+      "name": "player_walk_b",
+      "pose": "walk_b",
+      "source_box": [
+        757,
+        205,
+        1063,
+        539
+      ],
+      "cell": {
+        "x": 26,
+        "y": 10,
+        "w": 203,
+        "h": 222
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      },
+      "file": "player_walk_b.png"
+    },
+    {
+      "name": "player_hurt",
+      "pose": "hurt",
+      "source_box": [
+        1099,
+        187,
+        1468,
+        552
+      ],
+      "cell": {
+        "x": 17,
+        "y": 12,
+        "w": 222,
+        "h": 220
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      },
+      "file": "player_hurt.png"
+    },
+    {
+      "name": "player_attack_recoil",
+      "pose": "attack_recoil",
+      "source_box": [
+        1428,
+        218,
+        1797,
+        546
+      ],
+      "cell": {
+        "x": 17,
+        "y": 35,
+        "w": 222,
+        "h": 197
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      },
+      "file": "player_attack_recoil.png"
+    },
+    {
+      "name": "player_ready",
+      "pose": "ready",
+      "source_box": [
+        1811,
+        198,
+        2150,
+        538
+      ],
+      "cell": {
+        "x": 17,
+        "y": 10,
+        "w": 221,
+        "h": 222
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      },
+      "file": "player_ready.png"
+    }
+  ],
+  "note": "Concept draft generated from style guide; verify at 48-64px in the Godot arena before treating as final art."
+}

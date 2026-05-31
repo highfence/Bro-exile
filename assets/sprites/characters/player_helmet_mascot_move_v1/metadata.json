@@ -1,0 +1,105 @@
+{
+  "sources": {
+    "idle": "assets/sprites/characters/player_helmet_mascot_idle_v1/player_idle_clean.png",
+    "walk_a": "assets/sprites/characters/player_helmet_mascot_v1/player_walk_a.png",
+    "walk_b": "assets/sprites/characters/player_helmet_mascot_v1/player_walk_b.png"
+  },
+  "cleaned_sources": {
+    "idle": "source_idle_clean.png",
+    "walk_a": "source_walk_a_clean.png",
+    "walk_b": "source_walk_b_clean.png"
+  },
+  "removed_cyan_pixels": {
+    "idle": 4,
+    "walk_a": 0,
+    "walk_b": 0
+  },
+  "sheet": "player_move_sheet_8x1_256.png",
+  "cell_size": [
+    256,
+    256
+  ],
+  "hframes": 8,
+  "vframes": 1,
+  "fps": 10,
+  "animation": "move",
+  "frames": [
+    {
+      "index": 0,
+      "file": "player_move_00.png",
+      "source_pose": "walk_a",
+      "scale_x": 1.0,
+      "scale_y": 1.0,
+      "offset_x": 0,
+      "offset_y": 0
+    },
+    {
+      "index": 1,
+      "file": "player_move_01.png",
+      "source_pose": "idle",
+      "scale_x": 1.006,
+      "scale_y": 0.994,
+      "offset_x": 0,
+      "offset_y": 1
+    },
+    {
+      "index": 2,
+      "file": "player_move_02.png",
+      "source_pose": "walk_b",
+      "scale_x": 1.0,
+      "scale_y": 1.0,
+      "offset_x": 0,
+      "offset_y": 0
+    },
+    {
+      "index": 3,
+      "file": "player_move_03.png",
+      "source_pose": "idle",
+      "scale_x": 0.998,
+      "scale_y": 1.004,
+      "offset_x": 0,
+      "offset_y": -1
+    },
+    {
+      "index": 4,
+      "file": "player_move_04.png",
+      "source_pose": "walk_b",
+      "scale_x": 1.0,
+      "scale_y": 1.0,
+      "offset_x": 0,
+      "offset_y": 0
+    },
+    {
+      "index": 5,
+      "file": "player_move_05.png",
+      "source_pose": "idle",
+      "scale_x": 1.006,
+      "scale_y": 0.994,
+      "offset_x": 0,
+      "offset_y": 1
+    },
+    {
+      "index": 6,
+      "file": "player_move_06.png",
+      "source_pose": "walk_a",
+      "scale_x": 1.0,
+      "scale_y": 1.0,
+      "offset_x": 0,
+      "offset_y": 0
+    },
+    {
+      "index": 7,
+      "file": "player_move_07.png",
+      "source_pose": "idle",
+      "scale_x": 0.998,
+      "scale_y": 1.004,
+      "offset_x": 0,
+      "offset_y": -1
+    }
+  ],
+  "notes": [
+    "Prototype movement loop assembled from the approved clean idle plus matching generated walk poses.",
+    "Accidental cyan face/body sheen removed while preserving the backpack crystal accent.",
+    "Use for test integration before commissioning final directional locomotion frames."
+  ]
+}

@@ -1,0 +1,190 @@
+{
+  "source": "assets/concepts/miner-and-zombie-sprite-sample-sheet.png",
+  "cell_size": [
+    256,
+    256
+  ],
+  "anchor_bottom_y": 238,
+  "sheets": {
+    "miner": "miner_sheet_4x1_256.png",
+    "zombie": "zombie_sheet_2x1_256.png",
+    "combined": "miner_zombie_combined_sheet_4x2_256.png"
+  },
+  "animations": {
+    "miner_idle": [
+      "miner_idle"
+    ],
+    "miner_walk": [
+      "miner_walk_1",
+      "miner_walk_2"
+    ],
+    "miner_attack": [
+      "miner_attack_pickaxe"
+    ],
+    "zombie_idle": [
+      "zombie_idle"
+    ],
+    "zombie_shuffle": [
+      "zombie_idle",
+      "zombie_shuffle"
+    ]
+  },
+  "frames": [
+    {
+      "name": "miner_idle",
+      "group": "miner",
+      "box": [
+        71,
+        113,
+        380,
+        444
+      ],
+      "pad": 58,
+      "source_cutout_size": [
+        326,
+        348
+      ],
+      "cell": {
+        "x": 27,
+        "y": 23,
+        "w": 202,
+        "h": 215
+      },
+      "pivot": {
+        "x": 128,
+        "y": 238
+      },
+      "file": "assets/sprites/characters/miner_zombie_v1/miner_idle.png"
+    },
+    {
+      "name": "miner_walk_1",
+      "group": "miner",
+      "box": [
+        468,
+        122,
+        774,
+        442
+      ],
+      "pad": 58,
+      "source_cutout_size": [
+        323,
+        337
+      ],
+      "cell": {
+        "x": 28,
+        "y": 29,
+        "w": 200,
+        "h": 209
+      },
+      "pivot": {
+        "x": 128,
+        "y": 238
+      },
+      "file": "assets/sprites/characters/miner_zombie_v1/miner_walk_1.png"
+    },
+    {
+      "name": "miner_walk_2",
+      "group": "miner",
+      "box": [
+        827,
+        122,
+        1125,
+        452
+      ],
+      "pad": 58,
+      "source_cutout_size": [
+        315,
+        347
+      ],
+      "cell": {
+        "x": 30,
+        "y": 23,
+        "w": 195,
+        "h": 215
+      },
+      "pivot": {
+        "x": 128,
+        "y": 238
+      },
+      "file": "assets/sprites/characters/miner_zombie_v1/miner_walk_2.png"
+    },
+    {
+      "name": "miner_attack_pickaxe",
+      "group": "miner",
+      "box": [
+        1181,
+        143,
+        1530,
+        443
+      ],
+      "pad": 28,
+      "source_cutout_size": [
+        362,
+        317
+      ],
+      "cell": {
+        "x": 16,
+        "y": 42,
+        "w": 224,
+        "h": 196
+      },
+      "pivot": {
+        "x": 128,
+        "y": 238
+      },
+      "file": "assets/sprites/characters/miner_zombie_v1/miner_attack_pickaxe.png"
+    },
+    {
+      "name": "zombie_idle",
+      "group": "zombie",
+      "box": [
+        259,
+        559,
+        627,
+        905
+      ],
+      "pad": 58,
+      "source_cutout_size": [
+        385,
+        363
+      ],
+      "cell": {
+        "x": 16,
+        "y": 27,
+        "w": 224,
+        "h": 211
+      },
+      "pivot": {
+        "x": 128,
+        "y": 238
+      },
+      "file": "assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
+    },
+    {
+      "name": "zombie_shuffle",
+      "group": "zombie",
+      "box": [
+        812,
+        563,
+        1167,
+        907
+      ],
+      "pad": 58,
+      "source_cutout_size": [
+        372,
+        361
+      ],
+      "cell": {
+        "x": 20,
+        "y": 28,
+        "w": 216,
+        "h": 210
+      },
+      "pivot": {
+        "x": 128,
+        "y": 238
+      },
+      "file": "assets/sprites/characters/miner_zombie_v1/zombie_shuffle.png"
+    }
+  ]
+}

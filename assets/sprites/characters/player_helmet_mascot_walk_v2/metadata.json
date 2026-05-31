@@ -1,0 +1,194 @@
+{
+  "source_chromakey": "player_walk_v2_source_chromakey.png",
+  "source_transparent": "player_walk_v2_transparent_source.png",
+  "sheet": "player_walk_v2_sheet_8x1_256.png",
+  "cell_size": [
+    256,
+    256
+  ],
+  "hframes": 8,
+  "vframes": 1,
+  "fps": 10,
+  "animation": "walk",
+  "scale": 0.7724137931034483,
+  "frames": [
+    {
+      "index": 0,
+      "file": "player_walk_v2_00.png",
+      "source_box": [
+        40,
+        206,
+        272,
+        488
+      ],
+      "cell": {
+        "x": 38,
+        "y": 14,
+        "w": 179,
+        "h": 218
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      }
+    },
+    {
+      "index": 1,
+      "file": "player_walk_v2_01.png",
+      "source_box": [
+        304,
+        207,
+        541,
+        496
+      ],
+      "cell": {
+        "x": 36,
+        "y": 9,
+        "w": 183,
+        "h": 223
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      }
+    },
+    {
+      "index": 2,
+      "file": "player_walk_v2_02.png",
+      "source_box": [
+        567,
+        188,
+        807,
+        475
+      ],
+      "cell": {
+        "x": 35,
+        "y": 10,
+        "w": 185,
+        "h": 222
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      }
+    },
+    {
+      "index": 3,
+      "file": "player_walk_v2_03.png",
+      "source_box": [
+        840,
+        207,
+        1085,
+        496
+      ],
+      "cell": {
+        "x": 33,
+        "y": 9,
+        "w": 189,
+        "h": 223
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      }
+    },
+    {
+      "index": 4,
+      "file": "player_walk_v2_04.png",
+      "source_box": [
+        1109,
+        207,
+        1352,
+        488
+      ],
+      "cell": {
+        "x": 34,
+        "y": 15,
+        "w": 188,
+        "h": 217
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      }
+    },
+    {
+      "index": 5,
+      "file": "player_walk_v2_05.png",
+      "source_box": [
+        1372,
+        207,
+        1608,
+        494
+      ],
+      "cell": {
+        "x": 37,
+        "y": 10,
+        "w": 182,
+        "h": 222
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      }
+    },
+    {
+      "index": 6,
+      "file": "player_walk_v2_06.png",
+      "source_box": [
+        1629,
+        207,
+        1884,
+        488
+      ],
+      "cell": {
+        "x": 29,
+        "y": 15,
+        "w": 197,
+        "h": 217
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      }
+    },
+    {
+      "index": 7,
+      "file": "player_walk_v2_07.png",
+      "source_box": [
+        1900,
+        207,
+        2140,
+        497
+      ],
+      "cell": {
+        "x": 35,
+        "y": 8,
+        "w": 185,
+        "h": 224
+      },
+      "pivot": {
+        "x": 128,
+        "y": 232
+      }
+    }
+  ],
+  "verification": {
+    "exact_duplicate_pairs": [],
+    "adjacent_mean_abs_diff": [
+      16.6831,
+      10.1364,
+      13.3402,
+      13.7961,
+      13.6737,
+      16.2265,
+      17.5185,
+      16.529
+    ]
+  },
+  "notes": [
+    "Regenerated as a true 8-frame walk cycle instead of alternating idle frames.",
+    "Designed to follow the approved clean idle character style and avoid cyan face sheen.",
+    "Use hframes=8, vframes=1, fps=10 for Godot testing."
+  ]
+}

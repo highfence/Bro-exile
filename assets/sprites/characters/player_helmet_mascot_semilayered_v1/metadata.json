@@ -1,0 +1,143 @@
+{
+  "source_chromakey": "player_semilayered_v1_source_chromakey.png",
+  "source_transparent": "player_semilayered_v1_source_transparent.png",
+  "parts_dir": "parts",
+  "parts": [
+    {
+      "name": "assembled_preview",
+      "file": "parts/assembled_preview.png",
+      "source_bbox": [
+        69,
+        106,
+        498,
+        590
+      ],
+      "cell": {
+        "x": 29,
+        "y": 18,
+        "w": 197,
+        "h": 224
+      },
+      "suggested_pivot": {
+        "x": 128,
+        "y": 238
+      },
+      "source_component_area": 125120
+    },
+    {
+      "name": "core_body",
+      "file": "parts/core_body.png",
+      "source_bbox": [
+        575,
+        144,
+        974,
+        572
+      ],
+      "cell": {
+        "x": 24,
+        "y": 18,
+        "w": 208,
+        "h": 224
+      },
+      "suggested_pivot": {
+        "x": 128,
+        "y": 238
+      },
+      "source_component_area": 107824
+    },
+    {
+      "name": "left_arm",
+      "file": "parts/left_arm.png",
+      "source_bbox": [
+        1033,
+        295,
+        1206,
+        542
+      ],
+      "cell": {
+        "x": 55,
+        "y": 18,
+        "w": 145,
+        "h": 219
+      },
+      "suggested_pivot": {
+        "x": 128,
+        "y": 128
+      },
+      "source_component_area": 20269
+    },
+    {
+      "name": "right_arm",
+      "file": "parts/right_arm.png",
+      "source_bbox": [
+        1372,
+        295,
+        1536,
+        542
+      ],
+      "cell": {
+        "x": 60,
+        "y": 18,
+        "w": 136,
+        "h": 219
+      },
+      "suggested_pivot": {
+        "x": 128,
+        "y": 128
+      },
+      "source_component_area": 20174
+    },
+    {
+      "name": "left_boot",
+      "file": "parts/left_boot.png",
+      "source_bbox": [
+        1597,
+        334,
+        1789,
+        556
+      ],
+      "cell": {
+        "x": 46,
+        "y": 28,
+        "w": 164,
+        "h": 194
+      },
+      "suggested_pivot": {
+        "x": 128,
+        "y": 128
+      },
+      "source_component_area": 20904
+    },
+    {
+      "name": "right_boot",
+      "file": "parts/right_boot.png",
+      "source_bbox": [
+        1910,
+        334,
+        2102,
+        556
+      ],
+      "cell": {
+        "x": 46,
+        "y": 28,
+        "w": 164,
+        "h": 194
+      },
+      "suggested_pivot": {
+        "x": 128,
+        "y": 128
+      },
+      "source_component_area": 20910
+    }
+  ],
+  "previews": {
+    "parts": "player_semilayered_v1_parts_preview.png",
+    "rough_composition": "player_semilayered_v1_rough_composition_preview.png",
+    "rough_composition_64": "player_semilayered_v1_rough_composition_64.png"
+  },
+  "notes": [
+    "Semi-layered prototype: core body includes torso, face, helmet, lamp, belt, backpack, and ore crystal; limbs are separate sprites.",
+    "Generated source already separates parts, so slicing is much cleaner than automatic decomposition from an assembled character.",
+    "Rough composition preview is only a code-driven rig concept, not final pivot tuning."
+  ]
+}

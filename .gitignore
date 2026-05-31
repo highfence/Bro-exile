@@ -1,5 +1,7 @@
 .godot/
 .idea/
+.DS_Store
+assets/reference/
 *.tmp
 *.translation
 export_presets.cfg

@@ -1,0 +1,168 @@
+{
+  "source_chromakey": "player_layered_trial_v1_source_chromakey.png",
+  "assembled": "player_layered_trial_v1_assembled.png",
+  "parts_dir": "parts_same_canvas",
+  "canvas_size": [
+    1254,
+    1254
+  ],
+  "layer_order": [
+    "body",
+    "backpack",
+    "belt",
+    "left_boot",
+    "right_boot",
+    "left_glove",
+    "right_glove",
+    "helmet",
+    "headlamp",
+    "face",
+    "ore_crystal",
+    "misc_outline"
+  ],
+  "layers": [
+    {
+      "name": "body",
+      "file": "parts_same_canvas/body.png",
+      "pixels": 312289,
+      "bbox": [
+        223,
+        436,
+        1032,
+        957
+      ]
+    },
+    {
+      "name": "backpack",
+      "file": "parts_same_canvas/backpack.png",
+      "pixels": 525,
+      "bbox": [
+        875,
+        537,
+        1007,
+        713
+      ]
+    },
+    {
+      "name": "belt",
+      "file": "parts_same_canvas/belt.png",
+      "pixels": 5425,
+      "bbox": [
+        248,
+        725,
+        874,
+        813
+      ]
+    },
+    {
+      "name": "left_boot",
+      "file": "parts_same_canvas/left_boot.png",
+      "pixels": 8109,
+      "bbox": [
+        351,
+        897,
+        508,
+        1002
+      ]
+    },
+    {
+      "name": "right_boot",
+      "file": "parts_same_canvas/right_boot.png",
+      "pixels": 10585,
+      "bbox": [
+        678,
+        921,
+        855,
+        1025
+      ]
+    },
+    {
+      "name": "left_glove",
+      "file": "parts_same_canvas/left_glove.png",
+      "pixels": 1054,
+      "bbox": [
+        237,
+        667,
+        316,
+        779
+      ]
+    },
+    {
+      "name": "right_glove",
+      "file": "parts_same_canvas/right_glove.png",
+      "pixels": 2236,
+      "bbox": [
+        789,
+        679,
+        875,
+        722
+      ]
+    },
+    {
+      "name": "helmet",
+      "file": "parts_same_canvas/helmet.png",
+      "pixels": 98683,
+      "bbox": [
+        291,
+        156,
+        951,
+        535
+      ]
+    },
+    {
+      "name": "headlamp",
+      "file": "parts_same_canvas/headlamp.png",
+      "pixels": 58787,
+      "bbox": [
+        294,
+        137,
+        731,
+        496
+      ]
+    },
+    {
+      "name": "face",
+      "file": "parts_same_canvas/face.png",
+      "pixels": 492,
+      "bbox": [
+        423,
+        575,
+        635,
+        768
+      ]
+    },
+    {
+      "name": "ore_crystal",
+      "file": "parts_same_canvas/ore_crystal.png",
+      "pixels": 1612,
+      "bbox": [
+        935,
+        571,
+        1001,
+        634
+      ]
+    },
+    {
+      "name": "misc_outline",
+      "file": "parts_same_canvas/misc_outline.png",
+      "pixels": 19723,
+      "bbox": [
+        221,
+        153,
+        1040,
+        1036
+      ]
+    }
+  ],
+  "recomposed": "player_layered_trial_v1_recomposed.png",
+  "previews": {
+    "parts": "player_layered_trial_v1_parts_preview.png",
+    "recompose_review": "player_layered_trial_v1_recompose_review.png",
+    "preview_64": "player_layered_trial_v1_64_preview.png"
+  },
+  "verification": {
+    "mean_abs_diff_rgba": 0.0004,
+    "alpha_mismatch_pixels": 86,
+    "note": "Layer split is automatic color/spatial segmentation for pipeline exploration; final production masks should be hand-authored or generated with stricter layer prompts."
+  }
+}

@@ -1,0 +1,189 @@
+{
+  "source_chromakey": "player_semilayered_gloves_v1_source_chromakey.png",
+  "source_transparent": "player_semilayered_gloves_v1_source_transparent.png",
+  "parts_sheet": "player_semilayered_gloves_v1_parts_sheet_6x1_256.png",
+  "parts_dir": "parts",
+  "component_detection": {
+    "alpha_threshold": 16,
+    "detected_components": 6,
+    "scale_mode": "global_scale_from_assembled_preview",
+    "global_scale": 0.5423728813559322,
+    "target_assembled_max_px": 224
+  },
+  "parts": [
+    {
+      "name": "assembled_preview",
+      "file": "parts/assembled_preview.png",
+      "source_bbox": [
+        106,
+        161,
+        496,
+        574
+      ],
+      "source_bbox_padded": [
+        88,
+        143,
+        514,
+        592
+      ],
+      "cell": {
+        "x": 12,
+        "y": 6,
+        "w": 231,
+        "h": 244
+      },
+      "source_component_area": 112523,
+      "suggested_pivot": {
+        "x": 128,
+        "y": 128
+      }
+    },
+    {
+      "name": "core_body",
+      "file": "parts/core_body.png",
+      "source_bbox": [
+        621,
+        171,
+        983,
+        544
+      ],
+      "source_bbox_padded": [
+        603,
+        153,
+        1001,
+        562
+      ],
+      "cell": {
+        "x": 20,
+        "y": 17,
+        "w": 216,
+        "h": 222
+      },
+      "source_component_area": 101724,
+      "suggested_pivot": {
+        "x": 128,
+        "y": 128
+      }
+    },
+    {
+      "name": "left_glove",
+      "file": "parts/left_glove.png",
+      "source_bbox": [
+        1094,
+        342,
+        1226,
+        508
+      ],
+      "source_bbox_padded": [
+        1076,
+        324,
+        1244,
+        526
+      ],
+      "cell": {
+        "x": 82,
+        "y": 73,
+        "w": 91,
+        "h": 110
+      },
+      "source_component_area": 16982,
+      "suggested_pivot": {
+        "x": 128,
+        "y": 128
+      }
+    },
+    {
+      "name": "right_glove",
+      "file": "parts/right_glove.png",
+      "source_bbox": [
+        1361,
+        345,
+        1494,
+        510
+      ],
+      "source_bbox_padded": [
+        1343,
+        327,
+        1512,
+        528
+      ],
+      "cell": {
+        "x": 82,
+        "y": 73,
+        "w": 92,
+        "h": 109
+      },
+      "source_component_area": 16942,
+      "suggested_pivot": {
+        "x": 128,
+        "y": 128
+      }
+    },
+    {
+      "name": "left_boot",
+      "file": "parts/left_boot.png",
+      "source_bbox": [
+        1616,
+        384,
+        1768,
+        521
+      ],
+      "source_bbox_padded": [
+        1598,
+        366,
+        1786,
+        539
+      ],
+      "cell": {
+        "x": 77,
+        "y": 81,
+        "w": 102,
+        "h": 94
+      },
+      "source_component_area": 16313,
+      "suggested_pivot": {
+        "x": 128,
+        "y": 128
+      }
+    },
+    {
+      "name": "right_boot",
+      "file": "parts/right_boot.png",
+      "source_bbox": [
+        1897,
+        380,
+        2046,
+        521
+      ],
+      "source_bbox_padded": [
+        1879,
+        362,
+        2064,
+        539
+      ],
+      "cell": {
+        "x": 78,
+        "y": 80,
+        "w": 100,
+        "h": 96
+      },
+      "source_component_area": 16406,
+      "suggested_pivot": {
+        "x": 128,
+        "y": 128
+      }
+    }
+  ],
+  "previews": {
+    "parts": "player_semilayered_gloves_v1_parts_preview.png",
+    "rough_composition": "player_semilayered_gloves_v1_rough_composition_preview.png",
+    "rough_composition_64": "player_semilayered_gloves_v1_rough_composition_64.png"
+  },
+  "notes": [
+    "Semi-layered prototype v1 using a core body plus separate gloves and boots only.",
+    "Core body keeps torso, face, helmet, headlamp, belt, backpack, and ore crystal; it intentionally excludes arms, legs, gloves, and boots.",
+    "Parts preserve relative source scale in 256x256 cells for easier code-driven animation; runtime pivot tuning is still expected.",
+    "Generated with built-in imagegen on a chroma-key background, then locally post-processed to alpha."
+  ],
+  "generation_prompt_summary": "Create an original cute toy-like miner mascot semi-layered sprite source sheet on chroma-key green: assembled preview, core body with helmet/headlamp/belt/backpack/ore but no arms or legs, then separate left glove, right glove, left boot, right boot; thick black outline, soft painterly game-sprite shading, no text, no shadow."
+}
