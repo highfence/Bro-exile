@@ -1,0 +1,6 @@
+.godot/
+.idea/
+*.tmp
+*.translation
+export_presets.cfg
+.worktrees
