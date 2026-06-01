@@ -10,14 +10,15 @@ const MODE_PLAY := "play"
 const MODE_CHOICE := "choice"
 const MODE_GAME_OVER := "game_over"
 const MODE_VICTORY := "victory"
-const MAX_ROUNDS := 20
+const MAX_ROUNDS := 5
 const MAX_WEAPON_SLOTS := 6
 const MAX_WEAPON_LEVEL := 4
 const SHOP_OPTION_COUNT := 4
-const BASE_ROUND_DURATION := 24.0
-const MAX_ROUND_DURATION := 62.0
-const SMOKE_ROUND_DURATION := 8.0
-const SMOKE_PLAYTEST_DURATION := 18.0
+const P1_ROUND_DURATION := 42.0
+const P1_BOSS_ROUND_DURATION := 120.0
+const P1_REWARDS_ENABLED := false
+const SMOKE_ROUND_DURATION := 5.0
+const SMOKE_PLAYTEST_DURATION := 70.0
 const SMOKE_PLAYTEST_CAPTURE_PATH := "/private/tmp/orebound-godot-playtest.png"
 const CHOICE_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-choice-ui.png"
 const SHOP_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-shop-ui.png"
@@ -51,9 +52,11 @@ var items: Array = []
 var shop_stock: Array = []
 var enemies: Array = []
 var bullets: Array = []
+var enemy_projectiles: Array = []
 var pickups: Array = []
 var sparks: Array = []
 var floating_text: Array = []
+var boss_spawned := false
 
 var game_ui: CanvasLayer
 var ui_font: Font
@@ -96,7 +99,7 @@ var shop_catalog := [
 ]
 
 var weapon_catalog := {
-	"spitter": {"name": "광석 분사기", "fire_type": "bullet", "cooldown": 0.72, "damage": 14.0, "range": 470.0, "speed": 640.0, "color": Color("#e6b85c"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0},
+	"spitter": {"name": "광석 분사기", "fire_type": "bullet", "cooldown": 0.62, "damage": 18.0, "range": 470.0, "speed": 640.0, "color": Color("#e6b85c"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0},
 	"flintlock": {"name": "쌍발 화승총", "fire_type": "bullet", "cooldown": 0.54, "damage": 9.0, "range": 390.0, "speed": 760.0, "color": Color("#f0643b"), "pierce": 0, "projectiles": 2, "spread": 0.20, "splash": 0.0},
 	"drill": {"name": "파편 드릴", "fire_type": "bullet", "cooldown": 1.28, "damage": 34.0, "range": 560.0, "speed": 500.0, "color": Color("#93c96d"), "pierce": 3, "projectiles": 1, "spread": 0.0, "splash": 0.0},
 	"coil": {"name": "전류 코일", "fire_type": "arc", "cooldown": 1.08, "damage": 16.0, "range": 180.0, "speed": 0.0, "color": Color("#6cc3c0"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0},
@@ -220,9 +223,11 @@ func _reset_run(start_playing: bool) -> void:
 	shop_stock.clear()
 	enemies.clear()
 	bullets.clear()
+	enemy_projectiles.clear()
 	pickups.clear()
 	sparks.clear()
 	floating_text.clear()
+	boss_spawned = false
 	_add_weapon("spitter")
 	_render_weapons()
 
@@ -230,7 +235,9 @@ func _reset_run(start_playing: bool) -> void:
 func _round_duration(round_index: int) -> float:
 	if smoke_playtest:
 		return SMOKE_ROUND_DURATION
-	return min(MAX_ROUND_DURATION, BASE_ROUND_DURATION + round_index * 2.0)
+	if round_index >= MAX_ROUNDS:
+		return P1_BOSS_ROUND_DURATION
+	return P1_ROUND_DURATION
 
 
 func _shop_reroll_cost() -> int:
@@ -252,12 +259,13 @@ func _update_game(delta: float) -> void:
 	_spawn_enemies()
 	_update_weapons(delta)
 	_update_bullets(delta)
+	_update_enemy_projectiles(delta)
 	_update_enemies(delta)
 	_update_pickups(delta)
 	_update_sparks(delta)
 	_update_floating_text(delta)
 
-	if wave_timer <= 0.0:
+	if wave < MAX_ROUNDS and wave_timer <= 0.0:
 		_finish_round()
 		return
 
@@ -284,6 +292,12 @@ func _start_smoke_playtest() -> void:
 	smoke_choices_taken = 0
 	smoke_finishing = false
 	_start_run()
+	player["max_hp"] = 260.0
+	player["hp"] = 260.0
+	player["armor"] = 4.0
+	player["speed"] = 315.0
+	damage_multiplier = 2.25
+	cooldown_multiplier = 0.55
 
 
 func _update_smoke_playtest(delta: float) -> void:
@@ -298,7 +312,7 @@ func _update_smoke_playtest(delta: float) -> void:
 	elif mode == MODE_VICTORY:
 		_finish_smoke_playtest.call_deferred("VICTORY")
 	elif smoke_elapsed >= SMOKE_PLAYTEST_DURATION:
-		_finish_smoke_playtest.call_deferred("OK")
+		_finish_smoke_playtest.call_deferred("TIMEOUT")
 
 
 func _smoke_direction() -> Vector2:
@@ -334,9 +348,12 @@ func _finish_smoke_playtest(result: String) -> void:
 	if smoke_finishing:
 		return
 	smoke_finishing = true
-	await RenderingServer.frame_post_draw
-	var image := get_viewport().get_texture().get_image()
-	image.save_png(SMOKE_PLAYTEST_CAPTURE_PATH)
+	var capture_path := "skipped-headless"
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		var image := get_viewport().get_texture().get_image()
+		image.save_png(SMOKE_PLAYTEST_CAPTURE_PATH)
+		capture_path = SMOKE_PLAYTEST_CAPTURE_PATH
 	print("SMOKE_PLAYTEST result=%s mode=%s wave=%d level=%d hp=%.1f ore=%d enemies=%d pickups=%d choices=%d elapsed=%.2f capture=%s" % [
 		result,
 		mode,
@@ -348,87 +365,181 @@ func _finish_smoke_playtest(result: String) -> void:
 		pickups.size(),
 		smoke_choices_taken,
 		elapsed,
-		SMOKE_PLAYTEST_CAPTURE_PATH,
+		capture_path,
 	])
-	get_tree().quit(1 if result == "GAME_OVER" else 0)
+	get_tree().quit(1 if result == "GAME_OVER" or result == "TIMEOUT" else 0)
 
 
 func _spawn_enemies() -> void:
-	if wave_timer <= 0.0 or spawn_timer > 0.0:
+	if (wave < MAX_ROUNDS and wave_timer <= 0.0) or spawn_timer > 0.0:
 		return
-	var wave_pressure = min(0.28, wave * 0.018)
-	spawn_timer = max(0.22, 1.05 - wave_pressure - elapsed * 0.0014)
-	var pack_size := 1 + int(floor(wave / 3.0))
-	if randf() < wave * 0.06:
-		pack_size += 1
+
+	if wave >= MAX_ROUNDS and not boss_spawned:
+		enemies.append(_make_enemy("boss"))
+		boss_spawned = true
+		spawn_timer = 1.8
+		return
+
+	if enemies.size() >= _enemy_cap():
+		spawn_timer = 0.35
+		return
+
+	var kind := _pick_enemy_kind()
+	var pack_size := _enemy_pack_size(kind)
+	_spawn_enemy_pack(kind, pack_size)
+	spawn_timer = _enemy_spawn_interval(kind)
+
+
+func _spawn_enemy_pack(kind: String, pack_size: int) -> void:
+	var anchor := _spawn_position()
 	for i in range(pack_size):
-		enemies.append(_make_enemy())
+		if enemies.size() >= _enemy_cap():
+			return
+		var enemy := _make_enemy(kind)
+		enemy["pos"] = anchor + Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))
+		enemies.append(enemy)
 
 
-func _make_enemy() -> Dictionary:
+func _enemy_cap() -> int:
+	match wave:
+		1:
+			return 14
+		2:
+			return 18
+		3:
+			return 24
+		4:
+			return 26
+		_:
+			return 12
+
+
+func _pick_enemy_kind() -> String:
+	var roll := randf()
+	match wave:
+		1:
+			return "zombie"
+		2:
+			return "fast_zombie" if roll < 0.72 else "zombie"
+		3:
+			if roll < 0.64:
+				return "spider"
+			return "fast_zombie" if roll < 0.86 else "zombie"
+		4:
+			if roll < 0.46:
+				return "thrower"
+			if roll < 0.70:
+				return "spider"
+			return "fast_zombie" if roll < 0.88 else "zombie"
+		_:
+			if roll < 0.30:
+				return "thrower"
+			if roll < 0.56:
+				return "spider"
+			if roll < 0.78:
+				return "fast_zombie"
+			return "zombie"
+
+
+func _enemy_pack_size(kind: String) -> int:
+	if kind == "spider":
+		return randi_range(4, 5) if wave < MAX_ROUNDS else randi_range(3, 4)
+	if wave >= MAX_ROUNDS and kind != "thrower":
+		return 2 if randf() < 0.35 else 1
+	return 1
+
+
+func _enemy_spawn_interval(kind: String) -> float:
+	var interval := 1.0
+	match wave:
+		1:
+			interval = 1.05
+		2:
+			interval = 0.84
+		3:
+			interval = 1.12 if kind == "spider" else 0.92
+		4:
+			interval = 1.18 if kind == "thrower" else 0.96
+		_:
+			interval = 1.36
+	if smoke_playtest:
+		interval *= 0.62
+	return max(0.32, interval)
+
+
+func _spawn_position() -> Vector2:
 	var side := randi_range(0, 3)
-	var pos := Vector2.ZERO
 	if side == 0:
-		pos = Vector2(-30.0, randf() * WORLD_SIZE.y)
-	elif side == 1:
-		pos = Vector2(WORLD_SIZE.x + 30.0, randf() * WORLD_SIZE.y)
-	elif side == 2:
-		pos = Vector2(randf() * WORLD_SIZE.x, -30.0)
-	else:
-		pos = Vector2(randf() * WORLD_SIZE.x, WORLD_SIZE.y + 30.0)
+		return Vector2(-30.0, randf() * WORLD_SIZE.y)
+	if side == 1:
+		return Vector2(WORLD_SIZE.x + 30.0, randf() * WORLD_SIZE.y)
+	if side == 2:
+		return Vector2(randf() * WORLD_SIZE.x, -30.0)
+	return Vector2(randf() * WORLD_SIZE.x, WORLD_SIZE.y + 30.0)
 
-	var elite: bool = randf() < min(0.22, max(0, wave - 4) * 0.018)
-	if wave == MAX_ROUNDS:
-		elite = elite or randf() < 0.22
-	var bruiser: bool = (not elite) and randf() < min(0.28, wave * 0.035)
-	var skitter: bool = (not bruiser) and randf() < 0.32
-	var base_hp: float = 18.0 + wave * 5.2 + elapsed * 0.04
-	var hp: float = base_hp
+
+func _make_enemy(kind: String) -> Dictionary:
+	var hp := 24.0
 	var radius: float = 16.0
-	var speed: float = 105.0 + wave * 4.0
-	var damage: float = 12.0
+	var speed := 108.0
+	var damage: float = 9.0
 	var color := Color("#b95b4b")
-	var dropped_ore := 1
-	var dropped_xp := 4
+	var armor := 0.0
+	var dropped_ore := 0
+	var dropped_xp := 0
+	var desired_range := 0.0
+	var attack_cooldown := 0.0
 
-	if elite:
-		hp = base_hp * 4.2
-		radius = 29.0
-		speed = 64.0 + wave * 2.6
-		damage = 26.0
-		color = Color("#6f4f86")
-		dropped_ore = 9
-		dropped_xp = 14
-	elif bruiser:
-		hp = base_hp * 2.4
-		radius = 23.0
-		speed = 72.0 + wave * 3.0
-		damage = 20.0
-		color = Color("#8d5746")
-		dropped_ore = 4
-		dropped_xp = 7
-	elif skitter:
-		hp = base_hp * 0.7
-		radius = 12.0
-		speed = 152.0 + wave * 5.0
-		damage = 8.0
-		color = Color("#93c96d")
-		dropped_xp = 2
+	match kind:
+		"fast_zombie":
+			hp = 20.0
+			radius = 14.0
+			speed = 166.0
+			damage = 7.0
+			color = Color("#d68149")
+		"spider":
+			hp = 8.0
+			radius = 9.0
+			speed = 142.0
+			damage = 4.0
+			color = Color("#6f9f61")
+		"thrower":
+			hp = 36.0
+			radius = 18.0
+			speed = 76.0
+			damage = 6.0
+			color = Color("#7e8a76")
+			desired_range = 360.0
+			attack_cooldown = 2.15
+		"boss":
+			hp = 380.0
+			radius = 42.0
+			speed = 54.0
+			damage = 16.0
+			armor = 3.0
+			color = Color("#6f4f86")
+		_:
+			kind = "zombie"
 
 	var enemy_id := next_enemy_id
 	next_enemy_id += 1
 
 	return {
 		"id": enemy_id,
-		"pos": pos,
+		"type": kind,
+		"pos": _spawn_position(),
 		"radius": radius,
 		"hp": hp,
 		"max_hp": hp,
 		"speed": speed,
 		"damage": damage,
+		"armor": armor,
 		"color": color,
 		"ore": dropped_ore,
 		"xp": dropped_xp,
+		"desired_range": desired_range,
+		"attack_timer": randf_range(0.25, max(0.35, attack_cooldown)),
+		"attack_cooldown": attack_cooldown,
 	}
 
 
@@ -565,6 +676,27 @@ func _update_bullets(delta: float) -> void:
 			bullets.remove_at(i)
 
 
+func _update_enemy_projectiles(delta: float) -> void:
+	for i in range(enemy_projectiles.size() - 1, -1, -1):
+		var projectile = enemy_projectiles[i]
+		projectile["pos"] += projectile["velocity"] * delta
+		projectile["life"] -= delta
+
+		if projectile["pos"].distance_squared_to(player["pos"]) <= pow(projectile["radius"] + player["radius"], 2.0):
+			if player["hurt_cooldown"] <= 0.0:
+				var damage = max(1.0, projectile["damage"] - player["armor"])
+				player["hp"] -= damage
+				player["hurt_cooldown"] = 0.45
+				screen_shake = 0.8
+				_add_floating_text("-%d" % int(round(damage)), player["pos"] + Vector2(0, -28), Color("#f0643b"))
+			_add_spark(projectile["pos"], projectile["color"], 8)
+			enemy_projectiles.remove_at(i)
+			continue
+
+		if projectile["life"] <= 0.0 or not Rect2(Vector2(-80, -80), WORLD_SIZE + Vector2(160, 160)).has_point(projectile["pos"]):
+			enemy_projectiles.remove_at(i)
+
+
 func _explode_bullet(bullet: Dictionary, pos: Vector2) -> void:
 	var splash := float(bullet.get("splash", 0.0))
 	if splash <= 0.0:
@@ -590,9 +722,9 @@ func _explode_bullet(bullet: Dictionary, pos: Vector2) -> void:
 func _update_enemies(delta: float) -> void:
 	for i in range(enemies.size() - 1, -1, -1):
 		var enemy = enemies[i]
-		var direction: Vector2 = (player["pos"] - enemy["pos"]).normalized()
-		enemy["pos"] += direction * enemy["speed"] * delta
+		_update_enemy_behavior(enemy, delta)
 
+		var direction: Vector2 = (player["pos"] - enemy["pos"]).normalized()
 		var touch_distance: float = player["radius"] + enemy["radius"]
 		if enemy["pos"].distance_squared_to(player["pos"]) <= touch_distance * touch_distance:
 			if player["hurt_cooldown"] <= 0.0:
@@ -604,18 +736,67 @@ func _update_enemies(delta: float) -> void:
 			enemy["pos"] += -direction * 70.0 * delta
 
 		if enemy["hp"] <= 0.0:
+			var defeated_type := str(enemy.get("type", "zombie"))
 			_drop_pickups(enemy)
 			_add_spark(enemy["pos"], enemy["color"], 14)
 			enemies.remove_at(i)
+			if defeated_type == "boss":
+				_victory()
+				return
+
+
+func _update_enemy_behavior(enemy: Dictionary, delta: float) -> void:
+	var type := str(enemy.get("type", "zombie"))
+	var to_player: Vector2 = player["pos"] - enemy["pos"]
+	var distance: float = max(1.0, to_player.length())
+	var direction: Vector2 = to_player / distance
+
+	if type == "thrower":
+		var desired_range := float(enemy.get("desired_range", 360.0))
+		if distance > desired_range * 1.08:
+			enemy["pos"] += direction * enemy["speed"] * delta
+		elif distance < desired_range * 0.62:
+			enemy["pos"] -= direction * enemy["speed"] * 0.78 * delta
+		else:
+			var strafe: Vector2 = direction.rotated(PI * 0.5)
+			enemy["pos"] += strafe * sin(elapsed * 2.4 + float(enemy["id"])) * enemy["speed"] * 0.24 * delta
+
+		enemy["attack_timer"] -= delta
+		if enemy["attack_timer"] <= 0.0 and distance < 560.0:
+			_throw_enemy_rock(enemy, direction)
+			enemy["attack_timer"] = float(enemy.get("attack_cooldown", 1.75))
+	else:
+		enemy["pos"] += direction * enemy["speed"] * delta
+
+	var pos: Vector2 = enemy["pos"]
+	pos.x = clamp(pos.x, -60.0, WORLD_SIZE.x + 60.0)
+	pos.y = clamp(pos.y, -60.0, WORLD_SIZE.y + 60.0)
+	enemy["pos"] = pos
+
+
+func _throw_enemy_rock(enemy: Dictionary, direction: Vector2) -> void:
+	var origin: Vector2 = enemy["pos"]
+	enemy_projectiles.append({
+		"pos": origin + direction * (float(enemy["radius"]) + 8.0),
+		"velocity": direction * 285.0,
+		"radius": 7.0,
+		"damage": 7.0,
+		"life": 3.0,
+		"color": Color("#c7b08a"),
+	})
+	_add_spark(origin, Color("#c7b08a"), 5)
 
 
 func _hurt_enemy(enemy: Dictionary, damage: float, hit_pos: Vector2) -> void:
-	enemy["hp"] -= damage
-	_add_floating_text(str(int(round(damage))), hit_pos + Vector2(0, -8), Color("#f5efe3"))
+	var final_damage = max(1.0, damage - float(enemy.get("armor", 0.0)))
+	enemy["hp"] -= final_damage
+	_add_floating_text(str(int(round(final_damage))), hit_pos + Vector2(0, -8), Color("#f5efe3"))
 	_add_spark(hit_pos, Color("#f5efe3"), 4)
 
 
 func _drop_pickups(enemy: Dictionary) -> void:
+	if not P1_REWARDS_ENABLED:
+		return
 	pickups.append({"pos": enemy["pos"], "radius": 8.0, "type": "xp", "value": enemy["xp"], "color": Color("#6cc3c0")})
 	var ore_count := int(ceil(enemy["ore"] * ore_multiplier))
 	for i in range(ore_count):
@@ -647,6 +828,8 @@ func _update_pickups(delta: float) -> void:
 
 
 func _add_xp(amount: float) -> void:
+	if not P1_REWARDS_ENABLED:
+		return
 	xp += amount
 	if xp >= xp_to_next:
 		xp -= xp_to_next
@@ -769,15 +952,15 @@ func _finish_round() -> void:
 		return
 	rounds_cleared += 1
 	_collect_leftover_ore()
-	enemies.clear()
-	bullets.clear()
+	_clear_combat_state()
+	_fully_heal_player()
 	spawn_timer = 0.0
 	screen_shake = 0.0
 
 	if wave >= MAX_ROUNDS:
 		_victory()
 	else:
-		_open_shop()
+		_open_round_break()
 
 
 func _collect_leftover_ore() -> void:
@@ -786,6 +969,54 @@ func _collect_leftover_ore() -> void:
 			ore += item["value"]
 			round_ore_earned += item["value"]
 	pickups.clear()
+
+
+func _clear_combat_state() -> void:
+	enemies.clear()
+	bullets.clear()
+	enemy_projectiles.clear()
+	pickups.clear()
+
+
+func _fully_heal_player() -> void:
+	player["hp"] = player["max_hp"]
+	player["hurt_cooldown"] = 0.0
+
+
+func _open_round_break() -> void:
+	mode = MODE_CHOICE
+	var next_wave := wave + 1
+	_show_choice_overlay(
+		"라운드 %d 완료" % wave,
+		"체력 완전 회복",
+		[{
+			"id": "next_round",
+			"kind": "command",
+			"name": "라운드 %d 시작" % next_wave,
+			"desc": _round_brief(next_wave),
+			"cost": 0,
+		}],
+		"_choose_round_break_option"
+	)
+
+
+func _choose_round_break_option(option: Dictionary) -> void:
+	if str(option.get("id", "")) == "next_round":
+		_start_next_round()
+
+
+func _round_brief(round_index: int) -> String:
+	match round_index:
+		2:
+			return "색이 다른 빠른 좀비가 합류합니다. 거리를 더 자주 다시 잡아야 합니다."
+		3:
+			return "체력은 낮지만 4-5마리씩 몰려오는 거미떼가 합류합니다."
+		4:
+			return "원거리에서 돌을 던지는 좀비가 합류합니다. 투사체와 우선 처치 대상을 읽어야 합니다."
+		5:
+			return "방어력이 높은 보스 좀비가 등장합니다. 보스를 처치하면 P1 테스트가 끝납니다."
+		_:
+			return "다음 라운드를 시작합니다."
 
 
 func _open_shop() -> void:
@@ -892,9 +1123,9 @@ func _start_next_round() -> void:
 	wave_timer = _round_duration(wave)
 	spawn_timer = 0.0
 	round_ore_earned = 0
-	enemies.clear()
-	bullets.clear()
-	pickups.clear()
+	boss_spawned = false
+	_clear_combat_state()
+	_fully_heal_player()
 	_hide_overlay()
 	mode = MODE_PLAY
 	_render_weapons()
@@ -932,6 +1163,7 @@ func _draw() -> void:
 	_draw_ground()
 	_draw_pickups()
 	_draw_bullets()
+	_draw_enemy_projectiles()
 	_draw_enemies()
 	_draw_player()
 	_draw_sparks()
@@ -969,8 +1201,28 @@ func _draw_enemies() -> void:
 	for enemy in enemies:
 		var pos: Vector2 = enemy["pos"]
 		var radius: float = enemy["radius"]
-		draw_circle(pos, radius, enemy["color"])
-		draw_circle(pos + Vector2(-radius * 0.25, -radius * 0.2), radius * 0.35, Color(0, 0, 0, 0.28))
+		var type := str(enemy.get("type", "zombie"))
+		if type == "spider":
+			for leg in range(4):
+				var angle := -0.95 + float(leg) * 0.64
+				var left := Vector2.LEFT.rotated(angle)
+				var right := Vector2.RIGHT.rotated(-angle)
+				draw_line(pos, pos + left * radius * 1.75, Color("#30422e"), 2.0)
+				draw_line(pos, pos + right * radius * 1.75, Color("#30422e"), 2.0)
+			draw_circle(pos, radius, enemy["color"])
+			draw_circle(pos + Vector2(radius * 0.25, -radius * 0.25), radius * 0.36, Color("#d8ceb9"))
+		elif type == "thrower":
+			draw_circle(pos, radius, enemy["color"])
+			draw_circle(pos + Vector2(radius * 0.48, -radius * 0.46), radius * 0.34, Color("#c7b08a"))
+			draw_circle(pos + Vector2(-radius * 0.22, -radius * 0.14), radius * 0.24, Color(0, 0, 0, 0.30))
+		elif type == "boss":
+			draw_circle(pos, radius + 5.0, Color("#3f324b"))
+			draw_circle(pos, radius, enemy["color"])
+			draw_arc(pos, radius + 8.0, 0.0, TAU, 72, Color("#c7b08a"), 4.0)
+			draw_circle(pos + Vector2(-radius * 0.18, -radius * 0.16), radius * 0.26, Color("#221a28"))
+		else:
+			draw_circle(pos, radius, enemy["color"])
+			draw_circle(pos + Vector2(-radius * 0.25, -radius * 0.2), radius * 0.35, Color(0, 0, 0, 0.28))
 		var hp_ratio = clamp(enemy["hp"] / enemy["max_hp"], 0.0, 1.0)
 		draw_rect(Rect2(pos + Vector2(-radius, -radius - 9), Vector2(radius * 2, 4)), Color("#111412"), true)
 		draw_rect(Rect2(pos + Vector2(-radius, -radius - 9), Vector2(radius * 2 * hp_ratio, 4)), Color("#e6b85c"), true)
@@ -979,6 +1231,12 @@ func _draw_enemies() -> void:
 func _draw_bullets() -> void:
 	for bullet in bullets:
 		draw_circle(bullet["pos"], bullet["radius"], bullet["color"])
+
+
+func _draw_enemy_projectiles() -> void:
+	for projectile in enemy_projectiles:
+		draw_circle(projectile["pos"], projectile["radius"], projectile["color"])
+		draw_arc(projectile["pos"], projectile["radius"] + 3.0, 0.0, TAU, 12, Color(0, 0, 0, 0.28), 2.0)
 
 
 func _draw_pickups() -> void:
@@ -1027,8 +1285,8 @@ func _show_start_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_start(
 		"봉인된 채굴지",
-		"광맥 투기장",
-		"20라운드를 버티며 광석을 모으고, 막간 상점에서 무기 6슬롯과 패시브 아이템을 완성하세요.",
+		"P1 광맥 투기장",
+		"5라운드 동안 새 적 패턴을 버티고, 마지막 보스 좀비를 쓰러뜨리면 테스트가 끝납니다.",
 		"탐사 시작"
 	)
 
@@ -1055,8 +1313,8 @@ func _show_victory_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_end(
 		"탐사 완료",
-		"20라운드 생존",
-		"레벨 %d 광석 %d 무기 %d개 아이템 %d개로 기본 루프를 완주했습니다." % [level, ore, weapons.size(), items.size()],
+		"P1 보스 처치",
+		"5라운드 전투 루프를 완주했습니다. 기본 좀비, 빠른 좀비, 거미떼, 투척 좀비, 보스 좀비 패턴을 모두 통과했습니다.",
 		"다시 시작"
 	)
 
@@ -1082,6 +1340,7 @@ func _update_hud() -> void:
 		"xp_to_next": xp_to_next,
 		"level": level,
 		"wave": wave,
+		"max_wave": MAX_ROUNDS,
 		"ore": ore,
 		"time": _format_time(max(0.0, wave_timer)),
 	})

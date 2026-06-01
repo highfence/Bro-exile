@@ -36,9 +36,9 @@ P1에서는 라운드 사이 플레이어 체력을 완전히 회복한다. 지�
 | --- | --- | --- |
 | 1 | [플레이테스트 렌즈 세우기](001-ready-p1-playtest-lens.md) | P1을 “재미있나?”가 아니라 “플레이 가능한가?”로 판단한다. |
 | 2 | [전투 가독성 스냅샷](003-ready-p1-combat-readability-snapshot.md) | 새 적 패턴을 넣기 전에 현재 화면이 읽히는지 확인한다. |
-| 3 | [P1 5라운드 플레이어블 루프](004-ready-p1-p1-five-round-playable-loop.md) | P1의 실제 끝점을 만든다. |
-| 4 | [적 아키타입과 웨이브 패턴](005-ready-p1-enemy-archetypes-and-wave-patterns.md) | 라운드마다 다른 요구를 만든다. |
-| 5 | [보스 좀비와 테스트 종료](007-ready-p1-boss-zombie-and-test-ending.md) | 라운드 5를 명확한 결산으로 만든다. |
+| 3 | [P1 5라운드 플레이어블 루프](004-complete-p1-p1-five-round-playable-loop.md) | P1의 실제 끝점을 만들었다. |
+| 4 | [적 아키타입과 웨이브 패턴](005-complete-p1-enemy-archetypes-and-wave-patterns.md) | 라운드마다 다른 요구를 만들었다. |
+| 5 | [보스 좀비와 테스트 종료](007-complete-p1-boss-zombie-and-test-ending.md) | 라운드 5를 명확한 결산으로 만들었다. |
 
 ## 한눈에 보기
 
@@ -47,10 +47,10 @@ P1에서는 라운드 사이 플레이어 체력을 완전히 회복한다. 지�
 | 001 | P1 | ready | 검증 | [플레이테스트 렌즈 세우기](001-ready-p1-playtest-lens.md) | P1 판단 기준이 생긴다. |
 | 002 | P1 | ready | 기획 | [핵심 루프 기준표](002-ready-p1-core-loop-scorecard.md) | 5라운드 루프의 keep/adjust/cut 기준이 생긴다. |
 | 003 | P1 | ready | 전투 | [전투 가독성 스냅샷](003-ready-p1-combat-readability-snapshot.md) | 새 패턴을 넣기 전 화면 기준점이 생긴다. |
-| 004 | P1 | ready | P1 | [P1 5라운드 플레이어블 루프](004-ready-p1-p1-five-round-playable-loop.md) | 라운드 5까지 플레이 가능한 뼈대가 생긴다. |
-| 005 | P1 | ready | 전투 | [적 아키타입과 웨이브 패턴](005-ready-p1-enemy-archetypes-and-wave-patterns.md) | 각 라운드의 새 전투 요구가 생긴다. |
+| 004 | P1 | complete | P1 | [P1 5라운드 플레이어블 루프](004-complete-p1-p1-five-round-playable-loop.md) | 라운드 5까지 플레이 가능한 뼈대가 생겼다. |
+| 005 | P1 | complete | 전투 | [적 아키타입과 웨이브 패턴](005-complete-p1-enemy-archetypes-and-wave-patterns.md) | 각 라운드의 새 전투 요구가 생겼다. |
 | 006 | P2 | ready | 아트 | [광산 정체성 에셋 패스](006-ready-p2-mining-identity-asset-pass.md) | 게임의 얼굴이 화면에 생긴다. |
-| 007 | P1 | ready | P1 | [보스 좀비와 테스트 종료](007-ready-p1-boss-zombie-and-test-ending.md) | P1 플레이테스트의 명확한 끝점이 생긴다. |
+| 007 | P1 | complete | P1 | [보스 좀비와 테스트 종료](007-complete-p1-boss-zombie-and-test-ending.md) | P1 플레이테스트의 명확한 끝점이 생겼다. |
 | 008 | P2 | ready | 검증 | [런 리포트](008-ready-p2-run-report.md) | 플레이테스트 후 판단 자료가 남는다. |
 | 009 | P2 | pending | 위험/보상 | [계약 카드 첫 프로토타입](009-pending-p2-contract-card-first-prototype.md) | P1 이후 위험 선택의 재미를 검증한다. |
 | 010 | P2 | pending | 전투 | [시체 폭발 팩 클리어](010-pending-p2-corpse-explosion-pack-clear.md) | 강해졌다는 순간을 전투에서 만든다. |
@@ -60,7 +60,7 @@ P1에서는 라운드 사이 플레이어 체력을 완전히 회복한다. 지�
 
 | 체인 | 지금 확인할 질문 | 관련 퀘스트 |
 | --- | --- | --- |
-| P1 | 5라운드까지 플레이 가능한가? | 004, 007 |
+| P1 | 5라운드까지 플레이 가능한가? | 004, 007 완료 |
 | 검증 | 플레이테스트 후 다음 액션을 정할 수 있는가? | 001, 002, 008 |
 | 전투 | 새 적 패턴이 서로 다른 행동을 요구하는가? | 003, 005 |
 | 아트 | 작은 화면에서 플레이어/적/픽업이 즉시 구분되는가? | 006 |

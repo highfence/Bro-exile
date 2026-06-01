@@ -1,6 +1,6 @@
 # Orebound Arena
 
-20라운드 아레나 생존 루프를 빠르게 플레이 테스트하기 위한 Godot 프로토타입입니다. Brotato식 기본 구조를 출발점으로 삼되, 자산과 명칭은 독자적으로 유지합니다.
+P1 5라운드 아레나 전투 루프를 빠르게 플레이 테스트하기 위한 Godot 프로토타입입니다. Brotato식 기본 구조를 출발점으로 삼되, 자산과 명칭은 독자적으로 유지합니다.
 
 ## 실행
 
@@ -10,6 +10,12 @@ Godot 4.3 이상에서 이 폴더를 열고 실행합니다. 메인 씬은 `res:
 
 ```bash
 /Users/highfence/Dev/Sweep/engine/godot/bin/godot.macos.editor.arm64 --path /Users/highfence/Documents/Bro-exile
+```
+
+P1 worktree에서 실행할 때는 아래 경로를 사용합니다.
+
+```bash
+/Users/highfence/Dev/Sweep/engine/godot/bin/godot.macos.editor.arm64 --path /Users/highfence/Documents/Bro-exile/.worktrees/codex/p1-playable-loop
 ```
 
 ### 브라우저 프로토타입
@@ -23,11 +29,13 @@ Godot 4.3 이상에서 이 폴더를 열고 실행합니다. 메인 씬은 `res:
 
 ## 현재 루프
 
-- 20라운드 제한 시간 생존. 시간이 끝나면 즉시 막간 상점으로 넘어가고 20라운드 종료 시 승리합니다.
-- 무기는 자동으로 가까운 적을 조준하며, 최대 6슬롯까지 보유하고 같은 무기를 구매하면 4단계까지 강화됩니다.
-- 투사체, 관통탄, 전류, 근접 베기, 폭발탄 무기 타입이 있습니다.
-- 적은 XP와 광석을 떨어뜨리고, 레벨업 시 3개 보상 중 하나를 고릅니다.
-- 라운드 사이에는 광석으로 무기, 회복, 패시브 아이템을 여러 개 구매하거나 재고를 새로고침한 뒤 다음 라운드를 시작합니다.
+- P1은 5라운드 전투 루프입니다. 1-4라운드는 제한 시간 생존, 5라운드는 보스 좀비 처치가 목표입니다.
+- 라운드 1: 기본 좀비. 적당한 속도로 플레이어에게 접근합니다.
+- 라운드 2: 빠른 좀비. 기본 좀비와 색이 다르고 더 빠르게 압박합니다.
+- 라운드 3: 거미떼. 체력이 낮지만 4-5마리씩 묶여 스폰됩니다.
+- 라운드 4: 돌 던지는 좀비. 거리를 유지하며 원거리 투사체를 던집니다.
+- 라운드 5: 방어력 높은 보스 좀비. 이전 몹 일부가 조연으로 누적되고, 보스를 처치하면 승리합니다.
+- P1에서는 보상/상점/레벨업 선택을 검증하지 않습니다. 라운드 사이에는 체력이 완전히 회복되고, 다음 라운드 시작 버튼만 보여줍니다.
 
 ## Godot 포트
 
@@ -43,6 +51,13 @@ Godot 4.3 이상에서 이 폴더를 열고 실행합니다. 메인 씬은 `res:
 /Users/highfence/Dev/Sweep/engine/godot/bin/godot.macos.editor.arm64 --headless --path /Users/highfence/Documents/Bro-exile -- --smoke-playtest
 /Users/highfence/Dev/Sweep/engine/godot/bin/godot.macos.editor.arm64 --path /Users/highfence/Documents/Bro-exile -- --capture-choice-ui
 /Users/highfence/Dev/Sweep/engine/godot/bin/godot.macos.editor.arm64 --path /Users/highfence/Documents/Bro-exile -- --capture-shop-ui
+```
+
+P1 worktree 검증:
+
+```bash
+/Users/highfence/Dev/Sweep/engine/godot/bin/godot.macos.editor.arm64 --headless --path /Users/highfence/Documents/Bro-exile/.worktrees/codex/p1-playable-loop --quit
+/Users/highfence/Dev/Sweep/engine/godot/bin/godot.macos.editor.arm64 --headless --path /Users/highfence/Documents/Bro-exile/.worktrees/codex/p1-playable-loop -- --smoke-playtest
 ```
 
 ## 다음 확장 훅

@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p1
 issue_id: "004"
 tags: [prototype, p1, playable-loop, godot, quest]
@@ -62,12 +62,12 @@ B에 가깝게 시작한다. 지금은 P1이 주 개발 목표이므로 메인 �
 
 ## Acceptance Criteria
 
-- [ ] 최대 라운드가 P1 기준 5라운드로 동작한다.
-- [ ] 라운드 1-5가 중단 없이 이어진다.
-- [ ] 라운드 사이에 플레이어 체력이 완전히 회복된다.
-- [ ] 라운드 5에서 보스가 등장한다.
-- [ ] 보스 처치 시 승리/테스트 종료 화면이 나온다.
-- [ ] 라운드 사이 보상/상점은 P1 검증을 방해하지 않도록 최소화하거나 우회한다.
+- [x] 최대 라운드가 P1 기준 5라운드로 동작한다.
+- [x] 라운드 1-5가 중단 없이 이어진다.
+- [x] 라운드 사이에 플레이어 체력이 완전히 회복된다.
+- [x] 라운드 5에서 보스가 등장한다.
+- [x] 보스 처치 시 승리/테스트 종료 화면이 나온다.
+- [x] 라운드 사이 보상/상점은 P1 검증을 방해하지 않도록 최소화하거나 우회한다.
 
 ## Work Log
 
@@ -92,3 +92,18 @@ B에 가깝게 시작한다. 지금은 P1이 주 개발 목표이므로 메인 �
 
 **Learnings:**
 - P1 검증에서는 이전 라운드 피해 누적보다 각 라운드의 새 적 패턴을 분리해서 보는 편이 낫다.
+
+### 2026-06-01 - 구현 및 검증
+
+**By:** Codex
+
+**Actions:**
+- `scripts/main.gd`를 P1 기준 5라운드 루프로 변경했다.
+- 보상 드롭, 레벨업 선택, 상점 선택은 P1에서 비활성화했다.
+- 라운드 종료 시 체력을 완전히 회복하고, 다음 라운드 시작 카드만 보여주도록 했다.
+- smoke playtest가 headless에서 캡처 대기에 멈추지 않도록 headless 캡처를 건너뛰게 했다.
+- Godot headless 로드와 smoke playtest를 실행했다.
+
+**Learnings:**
+- 자동 smoke 조종은 수동 플레이보다 회피가 약해서 smoke 전용 체력/화력 보정이 필요했다.
+- 최종 smoke 결과: `SMOKE_PLAYTEST result=VICTORY mode=victory wave=5 level=1 hp=245.0 ore=0 enemies=7 pickups=0 choices=4 elapsed=35.12 capture=skipped-headless`.

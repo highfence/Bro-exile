@@ -53,7 +53,12 @@ func update_hud(data: Dictionary) -> void:
 	xp_bar.max_value = xp_max
 	xp_bar.value = current_xp
 	xp_value.text = "Lv.%d  %d / %d" % [int(data.get("level", 1)), int(round(current_xp)), int(round(xp_max))]
-	wave_label.text = "공세 %d" % int(data.get("wave", 1))
+	var wave := int(data.get("wave", 1))
+	var max_wave := int(data.get("max_wave", 0))
+	if max_wave > 0:
+		wave_label.text = "공세 %d/%d" % [wave, max_wave]
+	else:
+		wave_label.text = "공세 %d" % wave
 	ore_label.text = "광석 %d" % int(data.get("ore", 0))
 	time_label.text = str(data.get("time", "00:00"))
 
