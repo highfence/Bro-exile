@@ -1,0 +1,30 @@
+{
+  "source_style_reference": "assets/sprites/characters/miner_zombie_v1/zombie_idle.png",
+  "style": "single full-frame monster PNGs for runtime transform animation",
+  "cell_size": [
+    256,
+    256
+  ],
+  "monsters": {
+    "fast_zombie": {
+      "file": "fast_zombie.png",
+      "source": "tinted and narrowed from base zombie"
+    },
+    "spider": {
+      "file": "spider_swarm.png",
+      "source": "procedural cute mine spider token"
+    },
+    "thrower": {
+      "file": "thrower_zombie.png",
+      "source": "base zombie with rock cluster read"
+    },
+    "boss": {
+      "file": "boss_zombie.png",
+      "source": "enlarged armored crystal zombie variant"
+    }
+  },
+  "notes": [
+    "Prototype assets for P1 monster readability pass.",
+    "Each monster is intended to be animated in Godot with scale, rotation, bob, flip, and shadow effects rather than frame-by-frame sprite sheets."
+  ]
+}

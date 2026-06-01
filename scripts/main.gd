@@ -22,6 +22,24 @@ const SMOKE_PLAYTEST_DURATION := 70.0
 const SMOKE_PLAYTEST_CAPTURE_PATH := "/private/tmp/orebound-godot-playtest.png"
 const CHOICE_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-choice-ui.png"
 const SHOP_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-shop-ui.png"
+const STAGE1_CAPTURE_PATH := "/private/tmp/orebound-godot-stage1.png"
+const MONSTER_ROSTER_CAPTURE_PATH := "/private/tmp/orebound-godot-monster-roster.png"
+const PLAYER_VISUAL_SCALE := 0.27
+const ZOMBIE_VISUAL_SCALE := 0.25
+const PLAYER_IDLE_PERIOD := 1.32
+const PLAYER_MOVE_PERIOD := 0.52
+const ZOMBIE_IDLE_PERIOD := 1.46
+const ZOMBIE_MOVE_PERIOD := 0.72
+const PLAYER_CORE_BODY_PATH := "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/core_body.png"
+const PLAYER_LEFT_GLOVE_PATH := "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/left_glove.png"
+const PLAYER_RIGHT_GLOVE_PATH := "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/right_glove.png"
+const PLAYER_LEFT_BOOT_PATH := "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/left_boot.png"
+const PLAYER_RIGHT_BOOT_PATH := "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/right_boot.png"
+const ZOMBIE_IDLE_PATH := "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
+const FAST_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/fast_zombie.png"
+const SPIDER_SWARM_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/spider_swarm.png"
+const THROWER_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/thrower_zombie.png"
+const BOSS_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/boss_zombie.png"
 
 var mode := MODE_START
 var elapsed := 0.0
@@ -66,6 +84,16 @@ var smoke_playtest := false
 var smoke_elapsed := 0.0
 var smoke_choices_taken := 0
 var smoke_finishing := false
+var player_core_body_texture: Texture2D
+var player_left_glove_texture: Texture2D
+var player_right_glove_texture: Texture2D
+var player_left_boot_texture: Texture2D
+var player_right_boot_texture: Texture2D
+var zombie_idle_texture: Texture2D
+var fast_zombie_texture: Texture2D
+var spider_swarm_texture: Texture2D
+var thrower_zombie_texture: Texture2D
+var boss_zombie_texture: Texture2D
 
 var stat_rewards := [
 	{"id": "hp", "name": "강철 폐", "desc": "+18 최대 체력, 체력을 조금 회복합니다.", "tag": "생존"},
@@ -110,10 +138,11 @@ var weapon_catalog := {
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.has("--smoke-playtest") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui"):
+	if args.has("--smoke-playtest") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
 		seed(12345)
 	else:
 		randomize()
+	_load_visual_textures()
 	ui_font = OreUIThemeScript.load_font()
 	_build_ui()
 	_reset_run(false)
@@ -124,6 +153,10 @@ func _ready() -> void:
 		_capture_choice_ui_and_quit.call_deferred()
 	elif args.has("--capture-shop-ui"):
 		_capture_shop_ui_and_quit.call_deferred()
+	elif args.has("--capture-stage1"):
+		_capture_stage1_and_quit.call_deferred()
+	elif args.has("--capture-monster-roster"):
+		_capture_monster_roster_and_quit.call_deferred()
 	elif args.has("--smoke-playtest"):
 		_start_smoke_playtest.call_deferred()
 
@@ -161,6 +194,87 @@ func _capture_shop_ui_and_quit() -> void:
 	var image := get_viewport().get_texture().get_image()
 	image.save_png(SHOP_UI_CAPTURE_PATH)
 	get_tree().quit()
+
+
+func _capture_stage1_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	wave = 1
+	wave_timer = P1_ROUND_DURATION
+	elapsed = 2.4
+	enemies.clear()
+	var offsets := [
+		Vector2(-220, -120),
+		Vector2(-170, 80),
+		Vector2(-70, -185),
+		Vector2(130, -150),
+		Vector2(210, -20),
+		Vector2(90, 125),
+		Vector2(-250, 150),
+	]
+	for offset in offsets:
+		var enemy := _make_enemy("zombie")
+		enemy["pos"] = player["pos"] + offset
+		enemies.append(enemy)
+	player["moving"] = true
+	player["facing_right"] = true
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(STAGE1_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _capture_monster_roster_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = "capture"
+	wave = 5
+	wave_timer = P1_BOSS_ROUND_DURATION
+	elapsed = 3.1
+	enemies.clear()
+	var roster := [
+		{"type": "zombie", "offset": Vector2(-330, -90)},
+		{"type": "fast_zombie", "offset": Vector2(-190, -90)},
+		{"type": "spider", "offset": Vector2(-55, -90)},
+		{"type": "thrower", "offset": Vector2(100, -90)},
+		{"type": "boss", "offset": Vector2(300, -65)},
+	]
+	for item in roster:
+		var enemy := _make_enemy(item["type"])
+		enemy["pos"] = player["pos"] + item["offset"]
+		enemies.append(enemy)
+	player["moving"] = false
+	player["facing_right"] = true
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(MONSTER_ROSTER_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _load_visual_textures() -> void:
+	player_core_body_texture = _load_png_texture(PLAYER_CORE_BODY_PATH)
+	player_left_glove_texture = _load_png_texture(PLAYER_LEFT_GLOVE_PATH)
+	player_right_glove_texture = _load_png_texture(PLAYER_RIGHT_GLOVE_PATH)
+	player_left_boot_texture = _load_png_texture(PLAYER_LEFT_BOOT_PATH)
+	player_right_boot_texture = _load_png_texture(PLAYER_RIGHT_BOOT_PATH)
+	zombie_idle_texture = _load_png_texture(ZOMBIE_IDLE_PATH)
+	fast_zombie_texture = _load_png_texture(FAST_ZOMBIE_PATH)
+	spider_swarm_texture = _load_png_texture(SPIDER_SWARM_PATH)
+	thrower_zombie_texture = _load_png_texture(THROWER_ZOMBIE_PATH)
+	boss_zombie_texture = _load_png_texture(BOSS_ZOMBIE_PATH)
+
+
+func _load_png_texture(path: String) -> Texture2D:
+	var image := Image.new()
+	var error := image.load(path)
+	if error != OK:
+		push_error("Failed to load main scene visual texture: %s" % path)
+		return null
+	return ImageTexture.create_from_image(image)
 
 
 func _process(delta: float) -> void:
@@ -217,6 +331,8 @@ func _reset_run(start_playing: bool) -> void:
 		"pickup_range": 115.0,
 		"hurt_cooldown": 0.0,
 		"dash_time": 0.0,
+		"moving": false,
+		"facing_right": false,
 	}
 	weapons.clear()
 	items.clear()
@@ -284,6 +400,9 @@ func _move_player(delta: float) -> void:
 	pos.x = clamp(pos.x, WORLD_MARGIN, WORLD_SIZE.x - WORLD_MARGIN)
 	pos.y = clamp(pos.y, WORLD_MARGIN, WORLD_SIZE.y - WORLD_MARGIN)
 	player["pos"] = pos
+	player["moving"] = direction.length_squared() > 0.001 or player["dash_time"] > 0.0
+	if absf(direction.x) > 0.05:
+		player["facing_right"] = direction.x > 0.0
 
 
 func _start_smoke_playtest() -> void:
@@ -1185,16 +1304,9 @@ func _draw_ground() -> void:
 
 func _draw_player() -> void:
 	var pos: Vector2 = player["pos"]
-	var aim := (get_global_mouse_position() - pos).angle()
 	draw_circle(pos, player["pickup_range"], Color(0.9, 0.72, 0.36, 0.08))
 	draw_arc(pos, player["pickup_range"], 0.0, TAU, 96, Color(0.9, 0.72, 0.36, 0.16), 2.0)
-	draw_set_transform(pos, aim, Vector2.ONE)
-	var body_color := Color("#f5efe3") if player["hurt_cooldown"] > 0.0 else Color("#d4a44e")
-	draw_rect(Rect2(Vector2(-18, -14), Vector2(34, 28)), body_color, true)
-	draw_rect(Rect2(Vector2(2, -7), Vector2(25, 14)), Color("#2f332a"), true)
-	draw_circle(Vector2(-8, -11), 5.0, Color("#f0643b"))
-	draw_circle(Vector2(-8, 11), 5.0, Color("#f0643b"))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	_draw_player_sprite(pos)
 
 
 func _draw_enemies() -> void:
@@ -1202,7 +1314,9 @@ func _draw_enemies() -> void:
 		var pos: Vector2 = enemy["pos"]
 		var radius: float = enemy["radius"]
 		var type := str(enemy.get("type", "zombie"))
-		if type == "spider":
+		if _draw_enemy_asset_sprite(enemy):
+			pass
+		elif type == "spider":
 			for leg in range(4):
 				var angle := -0.95 + float(leg) * 0.64
 				var left := Vector2.LEFT.rotated(angle)
@@ -1224,8 +1338,185 @@ func _draw_enemies() -> void:
 			draw_circle(pos, radius, enemy["color"])
 			draw_circle(pos + Vector2(-radius * 0.25, -radius * 0.2), radius * 0.35, Color(0, 0, 0, 0.28))
 		var hp_ratio = clamp(enemy["hp"] / enemy["max_hp"], 0.0, 1.0)
-		draw_rect(Rect2(pos + Vector2(-radius, -radius - 9), Vector2(radius * 2, 4)), Color("#111412"), true)
-		draw_rect(Rect2(pos + Vector2(-radius, -radius - 9), Vector2(radius * 2 * hp_ratio, 4)), Color("#e6b85c"), true)
+		var hp_width := radius * 2.0
+		var hp_y := -radius - 9.0
+		if _enemy_has_sprite_asset(type):
+			hp_width = _enemy_asset_hp_width(type, radius)
+			hp_y = _enemy_asset_hp_y(type, radius)
+		draw_rect(Rect2(pos + Vector2(-hp_width * 0.5, hp_y), Vector2(hp_width, 4)), Color("#111412"), true)
+		draw_rect(Rect2(pos + Vector2(-hp_width * 0.5, hp_y), Vector2(hp_width * hp_ratio, 4)), Color("#e6b85c"), true)
+
+
+func _enemy_has_sprite_asset(type: String) -> bool:
+	return type == "zombie" or type == "fast_zombie" or type == "spider" or type == "thrower" or type == "boss"
+
+
+func _draw_enemy_asset_sprite(enemy: Dictionary) -> bool:
+	var type := str(enemy.get("type", "zombie"))
+	match type:
+		"zombie":
+			_draw_single_image_enemy_sprite(enemy, zombie_idle_texture, ZOMBIE_VISUAL_SCALE, ZOMBIE_MOVE_PERIOD, 6.5, 3.4, 5.2, 0.038, Vector2(25, 5), 29.0)
+			return true
+		"fast_zombie":
+			_draw_single_image_enemy_sprite(enemy, fast_zombie_texture, 0.225, 0.46, 8.5, 5.2, 7.0, 0.058, Vector2(23, 4.5), 28.0)
+			return true
+		"spider":
+			_draw_single_image_enemy_sprite(enemy, spider_swarm_texture, 0.175, 0.42, 3.2, 2.0, 3.0, 0.028, Vector2(20, 4), 20.0)
+			return true
+		"thrower":
+			_draw_single_image_enemy_sprite(enemy, thrower_zombie_texture, 0.265, 0.88, 4.5, 2.2, 3.2, 0.024, Vector2(27, 5), 30.0)
+			return true
+		"boss":
+			_draw_single_image_enemy_sprite(enemy, boss_zombie_texture, 0.44, 1.18, 3.0, 2.0, 2.1, 0.018, Vector2(48, 9), 52.0)
+			return true
+	return false
+
+
+func _draw_single_image_enemy_sprite(
+	enemy: Dictionary,
+	texture: Texture2D,
+	base_scale: float,
+	period: float,
+	lateral_amount: float,
+	hop_amount: float,
+	rotation_amount: float,
+	squash_amount: float,
+	shadow_size: Vector2,
+	shadow_y: float
+) -> void:
+	var pos: Vector2 = enemy["pos"]
+	var faces_right := player.has("pos") and float(player["pos"].x) > pos.x
+	var sign := 1.0 if faces_right else -1.0
+	var phase := fposmod(elapsed + float(enemy["id"]) * 0.11, period) / period * TAU
+	var step := sin(phase)
+	var hop := absf(step)
+	var drag := cos(phase)
+	var lurch := sin(phase + PI * 0.22)
+	var local_pos := Vector2(lateral_amount * drag, -hop_amount * hop + 1.2 * lurch)
+	var local_rot := deg_to_rad(-rotation_amount * drag + 1.4 * lurch)
+	var local_scale := Vector2(1.0 + squash_amount * hop, 1.0 - squash_amount * 1.16 * hop)
+	var hp: float = enemy["hp"]
+	var max_hp: float = enemy["max_hp"]
+	var flash: float = 1.0 - clamp(hp / max_hp, 0.0, 1.0)
+	var modulate := Color(1.0, 1.0 - flash * 0.18, 1.0 - flash * 0.18)
+
+	_draw_ellipse_shadow(pos + Vector2(0, shadow_y), shadow_size + Vector2(4.0 * hop, 1.5 * hop), Color(0, 0, 0, 0.18))
+	_draw_sprite_part(texture, pos, local_pos, sign, local_rot, local_scale, base_scale, modulate)
+
+
+func _enemy_asset_hp_width(type: String, radius: float) -> float:
+	match type:
+		"fast_zombie":
+			return 38.0
+		"spider":
+			return 32.0
+		"thrower":
+			return 46.0
+		"boss":
+			return 96.0
+	return max(42.0, radius * 2.0)
+
+
+func _enemy_asset_hp_y(type: String, radius: float) -> float:
+	match type:
+		"fast_zombie":
+			return -42.0
+		"spider":
+			return -31.0
+		"thrower":
+			return -47.0
+		"boss":
+			return -92.0
+	return min(-44.0, -radius - 9.0)
+
+
+func _draw_player_sprite(pos: Vector2) -> void:
+	var moving := bool(player.get("moving", false))
+	var faces_right := bool(player.get("facing_right", false))
+	var sign := -1.0 if faces_right else 1.0
+	var modulate := Color(1.0, 0.86, 0.78) if float(player.get("hurt_cooldown", 0.0)) > 0.0 else Color.WHITE
+
+	var body_pos := Vector2.ZERO
+	var body_rot := 0.0
+	var body_scale := Vector2.ONE
+	var left_glove_pos := Vector2(-68, 54)
+	var right_glove_pos := Vector2(76, 54)
+	var left_boot_pos := Vector2(-50, 106)
+	var right_boot_pos := Vector2(26, 106)
+	var left_glove_rot := 0.0
+	var right_glove_rot := 0.0
+	var left_boot_rot := 0.0
+	var right_boot_rot := 0.0
+
+	if moving:
+		var phase := fposmod(elapsed, PLAYER_MOVE_PERIOD) / PLAYER_MOVE_PERIOD * TAU
+		var step := sin(phase)
+		var counter_step := sin(phase + PI)
+		var hop := absf(step)
+		var lean := sin(phase + PI * 0.18)
+		var swing := cos(phase)
+
+		body_pos = Vector2(4.0 * lean, -7.0 * hop)
+		body_rot = deg_to_rad(3.4 * lean)
+		body_scale = Vector2(1.0 - 0.024 * hop, 1.0 + 0.024 * hop)
+		left_glove_pos += Vector2(-4.0 * swing, -2.8 * hop) + Vector2(-6.0 * swing, -4.0 * step)
+		right_glove_pos += Vector2(4.8 * swing, -3.4 * hop) + Vector2(6.6 * swing, -4.6 * counter_step)
+		left_glove_rot = deg_to_rad(-6.0 + 14.0 * swing)
+		right_glove_rot = deg_to_rad(6.0 - 14.0 * swing)
+		left_boot_pos += Vector2(0.0, 2.0 * hop) + Vector2(-7.0 * step, -8.0 * maxf(0.0, step))
+		right_boot_pos += Vector2(0.0, 2.0 * hop) + Vector2(-7.0 * counter_step, -8.0 * maxf(0.0, counter_step))
+		left_boot_rot = deg_to_rad(-4.0 + 10.0 * step)
+		right_boot_rot = deg_to_rad(4.0 + 10.0 * counter_step)
+	else:
+		var phase := fposmod(elapsed, PLAYER_IDLE_PERIOD) / PLAYER_IDLE_PERIOD * TAU
+		var breath := sin(phase)
+		var lift := (1.0 - cos(phase)) * 0.5
+		var settle := sin(phase * 2.0)
+
+		body_pos = Vector2(0.0, -4.5 * lift + 0.9 * settle)
+		body_rot = deg_to_rad(1.1 * breath)
+		body_scale = Vector2(1.0 - 0.010 * lift, 1.0 + 0.014 * lift)
+		left_glove_pos += Vector2(0.0, -2.2 * lift) + Vector2(-1.8 * breath, 1.2 * settle)
+		right_glove_pos += Vector2(0.0, -2.5 * lift) + Vector2(-1.4 * breath, -1.0 * settle)
+		left_glove_rot = deg_to_rad(-2.5 + 5.0 * sin(phase + PI * 0.18))
+		right_glove_rot = deg_to_rad(2.5 + 5.0 * sin(phase + PI * 0.82))
+		left_boot_pos += Vector2(0.0, 1.0 * lift) + Vector2(-0.7 * breath, 0.5 * settle)
+		right_boot_pos += Vector2(0.0, 1.0 * lift) + Vector2(-0.5 * breath, -0.45 * settle)
+		left_boot_rot = deg_to_rad(-1.0 + 1.7 * sin(phase + PI * 0.35))
+		right_boot_rot = deg_to_rad(1.0 + 1.7 * sin(phase + PI * 0.65))
+
+	_draw_ellipse_shadow(pos + Vector2(0, 24), Vector2(28, 6), Color(0, 0, 0, 0.20))
+	_draw_sprite_part(player_left_glove_texture, pos, left_glove_pos, sign, left_glove_rot, Vector2.ONE, PLAYER_VISUAL_SCALE, modulate)
+	_draw_sprite_part(player_left_boot_texture, pos, left_boot_pos, sign, left_boot_rot, Vector2.ONE, PLAYER_VISUAL_SCALE, modulate)
+	_draw_sprite_part(player_right_boot_texture, pos, right_boot_pos, sign, right_boot_rot, Vector2.ONE, PLAYER_VISUAL_SCALE, modulate)
+	_draw_sprite_part(player_core_body_texture, pos, body_pos, sign, body_rot, body_scale, PLAYER_VISUAL_SCALE, modulate)
+	_draw_sprite_part(player_right_glove_texture, pos, right_glove_pos, sign, right_glove_rot, Vector2.ONE, PLAYER_VISUAL_SCALE, modulate)
+
+
+func _draw_sprite_part(
+	texture: Texture2D,
+	origin: Vector2,
+	local_pos: Vector2,
+	facing_sign: float,
+	rotation: float,
+	local_scale: Vector2,
+	base_scale: float,
+	modulate: Color
+) -> void:
+	if texture == null:
+		return
+	var size := texture.get_size()
+	var draw_pos := origin + Vector2(local_pos.x * facing_sign, local_pos.y) * base_scale
+	var draw_scale := Vector2(base_scale * facing_sign * local_scale.x, base_scale * local_scale.y)
+	draw_set_transform(draw_pos, rotation * facing_sign, draw_scale)
+	draw_texture_rect(texture, Rect2(-size * 0.5, size), false, modulate)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_ellipse_shadow(pos: Vector2, scale: Vector2, color: Color) -> void:
+	draw_set_transform(pos, 0.0, scale)
+	draw_circle(Vector2.ZERO, 1.0, color)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _draw_bullets() -> void:
