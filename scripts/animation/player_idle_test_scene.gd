@@ -1,11 +1,15 @@
 extends Node2D
 
 const PlayerIdleRigScene := preload("res://scenes/animation/player_idle_rig.tscn")
-const CAPTURE_DIR := "/private/tmp/bro-exile-player-idle"
+const CAPTURE_DIR_LEFT := "/private/tmp/bro-exile-player-idle"
+const CAPTURE_DIR_RIGHT := "/private/tmp/bro-exile-player-idle-right"
+const CAPTURE_DIR_MOVE_LEFT := "/private/tmp/bro-exile-player-move-left"
+const CAPTURE_DIR_MOVE_RIGHT := "/private/tmp/bro-exile-player-move-right"
 const CAPTURE_FRAME_COUNT := 24
 const WORLD_SIZE := Vector2(1280, 720)
 
 var player_rig
+var capture_dir := CAPTURE_DIR_LEFT
 
 
 func _ready() -> void:
@@ -19,7 +23,20 @@ func _ready() -> void:
 	player_rig.scale = Vector2(1.28, 1.28)
 	add_child(player_rig)
 
-	if user_args.has("--capture-player-idle") or all_args.has("--capture-player-idle"):
+	var capture_move := user_args.has("--capture-player-move-left") or user_args.has("--capture-player-move-right") or user_args.has("--moving")
+	var capture_right := user_args.has("--capture-player-idle-right") or user_args.has("--capture-player-move-right") or user_args.has("--facing-right")
+	player_rig.set_faces_right(capture_right)
+	player_rig.set_moving(capture_move)
+
+	capture_dir = CAPTURE_DIR_LEFT
+	if user_args.has("--capture-player-idle-right"):
+		capture_dir = CAPTURE_DIR_RIGHT
+	if user_args.has("--capture-player-move-left"):
+		capture_dir = CAPTURE_DIR_MOVE_LEFT
+	elif user_args.has("--capture-player-move-right"):
+		capture_dir = CAPTURE_DIR_MOVE_RIGHT
+
+	if user_args.has("--capture-player-idle") or user_args.has("--capture-player-idle-right") or user_args.has("--capture-player-move-left") or user_args.has("--capture-player-move-right") or all_args.has("--capture-player-idle"):
 		player_rig.auto_play = false
 		_capture_idle_loop_and_quit.call_deferred()
 
@@ -37,10 +54,10 @@ func _draw() -> void:
 
 
 func _capture_idle_loop_and_quit() -> void:
-	DirAccess.make_dir_recursive_absolute(CAPTURE_DIR)
+	DirAccess.make_dir_recursive_absolute(capture_dir)
 	await get_tree().process_frame
 
-	var period: float = player_rig.get_idle_period()
+	var period: float = player_rig.get_current_period()
 	for frame in range(CAPTURE_FRAME_COUNT + 1):
 		var time := period * float(frame) / float(CAPTURE_FRAME_COUNT)
 		player_rig.set_idle_time(time)
@@ -48,7 +65,7 @@ func _capture_idle_loop_and_quit() -> void:
 		await get_tree().process_frame
 		await RenderingServer.frame_post_draw
 		var image := get_viewport().get_texture().get_image()
-		image.save_png("%s/idle_%02d.png" % [CAPTURE_DIR, frame])
+		image.save_png("%s/idle_%02d.png" % [capture_dir, frame])
 
-	print("PLAYER_IDLE_CAPTURE frames=%d period=%.2f path=%s" % [CAPTURE_FRAME_COUNT + 1, period, CAPTURE_DIR])
+	print("PLAYER_IDLE_CAPTURE frames=%d period=%.2f path=%s" % [CAPTURE_FRAME_COUNT + 1, period, capture_dir])
 	get_tree().quit()
