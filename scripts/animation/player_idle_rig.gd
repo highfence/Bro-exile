@@ -11,11 +11,12 @@ const RIGHT_BOOT_PATH := "res://assets/sprites/characters/player_helmet_mascot_s
 
 @onready var shadow: Polygon2D = $Shadow
 @onready var body: Node2D = $Body
-@onready var gloves: Node2D = $Gloves
+@onready var back_gloves: Node2D = $BackGloves
+@onready var front_gloves: Node2D = $FrontGloves
 @onready var boots: Node2D = $Boots
 @onready var core_body: Sprite2D = $Body/CoreBody
-@onready var left_glove: Sprite2D = $Gloves/LeftGlove
-@onready var right_glove: Sprite2D = $Gloves/RightGlove
+@onready var left_glove: Sprite2D = $BackGloves/LeftGlove
+@onready var right_glove: Sprite2D = $FrontGloves/RightGlove
 @onready var left_boot: Sprite2D = $Boots/LeftBoot
 @onready var right_boot: Sprite2D = $Boots/RightBoot
 
@@ -23,7 +24,8 @@ var idle_time := 0.0
 
 var _body_rest_position := Vector2.ZERO
 var _body_rest_scale := Vector2.ONE
-var _gloves_rest_position := Vector2.ZERO
+var _back_gloves_rest_position := Vector2.ZERO
+var _front_gloves_rest_position := Vector2.ZERO
 var _boots_rest_position := Vector2.ZERO
 var _left_glove_rest_position := Vector2.ZERO
 var _right_glove_rest_position := Vector2.ZERO
@@ -76,7 +78,8 @@ func _load_png_texture(path: String) -> Texture2D:
 func _store_rest_pose() -> void:
 	_body_rest_position = body.position
 	_body_rest_scale = body.scale
-	_gloves_rest_position = gloves.position
+	_back_gloves_rest_position = back_gloves.position
+	_front_gloves_rest_position = front_gloves.position
 	_boots_rest_position = boots.position
 	_left_glove_rest_position = left_glove.position
 	_right_glove_rest_position = right_glove.position
@@ -98,7 +101,8 @@ func _apply_idle_pose() -> void:
 	body.rotation = deg_to_rad(1.1 * breath)
 	body.scale = _body_rest_scale * Vector2(1.0 - 0.010 * lift, 1.0 + 0.014 * lift)
 
-	gloves.position = _gloves_rest_position + Vector2(0.0, -2.5 * lift)
+	back_gloves.position = _back_gloves_rest_position + Vector2(0.0, -2.2 * lift)
+	front_gloves.position = _front_gloves_rest_position + Vector2(0.0, -2.5 * lift)
 	left_glove.position = _left_glove_rest_position + Vector2(-1.8 * breath, 1.2 * settle)
 	right_glove.position = _right_glove_rest_position + Vector2(-1.4 * breath, -1.0 * settle)
 	left_glove.rotation = deg_to_rad(-2.5 + 5.0 * sin(phase + PI * 0.18))
