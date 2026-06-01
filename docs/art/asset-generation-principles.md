@@ -241,6 +241,12 @@ AI로 에셋을 만들 때는 다음을 반드시 포함한다.
 - `verification`
 - `notes`
 
+## 플레이어 에셋 하네스
+
+플레이어 기본 캐릭터처럼 파츠 리그가 있는 에셋은 [플레이어 에셋 하네스](/Users/highfence/Documents/Bro-exile/docs/art/player-asset-harness.md)를 먼저 통과시킨다.
+
+하네스는 Godot에서 같은 파츠 리그를 렌더링해 `idle_left`, `idle_right`, `move_left`, `move_right`의 PNG 프레임, 256px 시트, 64px 프리뷰, 검증용 `metadata.json`을 만든다. 이 결과를 보고 레이어 위치, 방향 반전, 손발 오프셋, 루프 연결 여부를 확인한 뒤 실사용 에셋 폴더로 승격한다.
+
 ## 권장 폴더 구조
 
 ```text
