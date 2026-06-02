@@ -158,12 +158,12 @@ func show_choice(eyebrow: String, title: String, options: Array, relics: Array =
 
 
 func show_end(eyebrow: String, title: String, body: String, button_text: String, relics: Array = []) -> void:
-	_prepare_overlay(Vector2(660, 0), OreUITheme.PANEL_STRONG)
+	_prepare_overlay(Vector2(760, 0), OreUITheme.PANEL_STRONG)
 	overlay_box.add_child(_make_label(eyebrow, 14, OreUITheme.ORE))
 	overlay_box.add_child(_make_label(title, 40, OreUITheme.INK))
 
 	var body_label := _make_label(body, 16, OreUITheme.MUTED)
-	body_label.custom_minimum_size = Vector2(560, 80)
+	body_label.custom_minimum_size = Vector2(660, 138)
 	body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	overlay_box.add_child(body_label)

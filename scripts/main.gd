@@ -24,6 +24,7 @@ const ROUND_CLEAR_ORE_STEP := 8
 const SMOKE_ROUND_DURATION := 5.0
 const SMOKE_PLAYTEST_DURATION := 70.0
 const SMOKE_PLAYTEST_CAPTURE_PATH := "/private/tmp/orebound-godot-playtest.png"
+const RUN_REPORT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-run-report-ui.png"
 const CHOICE_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-choice-ui.png"
 const SHOP_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-shop-ui.png"
 const RELIC_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-relic-ui.png"
@@ -70,6 +71,15 @@ var round_ore_earned := 0
 var rounds_cleared := 0
 var spider_relic_packs_this_wave := 0
 var debug_hurt_events := 0
+var run_ore_collected := 0
+var run_ore_spent := 0
+var run_rerolls := 0
+var run_purchase_count := 0
+var run_purchase_names: Array = []
+var run_kill_count := 0
+var run_kills_by_type := {}
+var run_boss_damage := 0.0
+var run_boss_defeated := false
 
 var player := {}
 var weapons: Array = []
@@ -208,7 +218,7 @@ var weapon_catalog := {
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
+	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
 		seed(12345)
 	else:
 		randomize()
@@ -225,6 +235,8 @@ func _ready() -> void:
 		_capture_shop_ui_and_quit.call_deferred()
 	elif args.has("--capture-relic-ui"):
 		_capture_relic_ui_and_quit.call_deferred()
+	elif args.has("--capture-run-report-ui"):
+		_capture_run_report_ui_and_quit.call_deferred()
 	elif args.has("--capture-stage1"):
 		_capture_stage1_and_quit.call_deferred()
 	elif args.has("--capture-monster-roster"):
@@ -262,13 +274,14 @@ func _debug_spider_relic_wave2_and_quit() -> void:
 		var type := str(enemy.get("type", "unknown"))
 		enemy_counts[type] = int(enemy_counts.get(type, 0)) + 1
 
-	print("DEBUG_SPIDER_RELIC_WAVE2 relic_count=%d cap=%d spawn_events=%d event_counts=%s enemy_counts=%s spider_packs=%d" % [
+	print("DEBUG_SPIDER_RELIC_WAVE2 relic_count=%d cap=%d spawn_events=%d event_counts=%s enemy_counts=%s spider_packs=%d report=\"%s\"" % [
 		_relic_count("spider_egg_fossil"),
 		_enemy_cap(),
 		spawn_events,
 		str(event_counts),
 		str(enemy_counts),
 		spider_relic_packs_this_wave,
+		_run_report_console_summary(),
 	])
 	get_tree().quit()
 
@@ -324,6 +337,44 @@ func _capture_relic_ui_and_quit() -> void:
 	await RenderingServer.frame_post_draw
 	var image := get_viewport().get_texture().get_image()
 	image.save_png(RELIC_UI_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _capture_run_report_ui_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_VICTORY
+	wave = MAX_ROUNDS
+	rounds_cleared = MAX_ROUNDS
+	level = 5
+	elapsed = 78.4
+	ore = 44
+	run_ore_collected = 166
+	run_ore_spent = 122
+	run_rerolls = 3
+	run_kill_count = 93
+	run_kills_by_type = {
+		"zombie": 31,
+		"fast_zombie": 18,
+		"spider": 34,
+		"thrower": 9,
+		"boss": 1,
+	}
+	run_boss_damage = 420.0
+	run_boss_defeated = true
+	_add_relic(_relic_by_id("spider_egg_fossil"))
+	_add_relic(_relic_by_id("hungry_lantern"))
+	_add_relic(_relic_by_id("hungry_lantern"))
+	_record_shop_purchase({"name": "관통 드릴촉"})
+	_record_shop_purchase({"name": "파편 폭약"})
+	_record_shop_purchase({"name": "파편 폭약"})
+	_record_shop_purchase({"name": "균열 탄심"})
+	_show_victory_overlay()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(RUN_REPORT_UI_CAPTURE_PATH)
 	get_tree().quit()
 
 
@@ -385,7 +436,7 @@ func _debug_boss_pierce_splash_and_quit() -> void:
 			failures += 1
 		results.append("%ddeg=%.1f" % [int(round(rad_to_deg(angle))), damage])
 
-	print("DEBUG_BOSS_PIERCE_SPLASH failures=%d probe={%s} results=%s" % [failures, first_probe, ", ".join(results)])
+	print("DEBUG_BOSS_PIERCE_SPLASH failures=%d probe={%s} results=%s report=\"%s\"" % [failures, first_probe, ", ".join(results), _run_report_console_summary()])
 	get_tree().quit(1 if failures > 0 else 0)
 
 
@@ -518,6 +569,15 @@ func _reset_run(start_playing: bool) -> void:
 	round_ore_earned = 0
 	rounds_cleared = 0
 	spider_relic_packs_this_wave = 0
+	run_ore_collected = 0
+	run_ore_spent = 0
+	run_rerolls = 0
+	run_purchase_count = 0
+	run_purchase_names.clear()
+	run_kill_count = 0
+	run_kills_by_type.clear()
+	run_boss_damage = 0.0
+	run_boss_defeated = false
 	player = {
 		"pos": WORLD_SIZE * 0.5,
 		"radius": 18.0,
@@ -678,7 +738,7 @@ func _finish_smoke_playtest(result: String) -> void:
 		var image := get_viewport().get_texture().get_image()
 		image.save_png(SMOKE_PLAYTEST_CAPTURE_PATH)
 		capture_path = SMOKE_PLAYTEST_CAPTURE_PATH
-	print("SMOKE_PLAYTEST result=%s mode=%s wave=%d level=%d hp=%.1f ore=%d enemies=%d pickups=%d choices=%d elapsed=%.2f capture=%s" % [
+	print("SMOKE_PLAYTEST result=%s mode=%s wave=%d level=%d hp=%.1f ore=%d enemies=%d pickups=%d choices=%d elapsed=%.2f capture=%s report=\"%s\"" % [
 		result,
 		mode,
 		wave,
@@ -690,6 +750,7 @@ func _finish_smoke_playtest(result: String) -> void:
 		smoke_choices_taken,
 		elapsed,
 		capture_path,
+		_run_report_console_summary(),
 	])
 	get_tree().quit(1 if result == "GAME_OVER" or result == "TIMEOUT" else 0)
 
@@ -1143,6 +1204,7 @@ func _update_enemies(delta: float) -> void:
 
 		if enemy["hp"] <= 0.0:
 			var defeated_type := str(enemy.get("type", "zombie"))
+			_record_enemy_defeat(defeated_type)
 			_drop_pickups(enemy)
 			_trigger_relic_death_hazard(enemy)
 			_add_spark(enemy["pos"], enemy["color"], 14)
@@ -1196,9 +1258,12 @@ func _throw_enemy_rock(enemy: Dictionary, direction: Vector2) -> void:
 
 func _hurt_enemy(enemy: Dictionary, damage: float, hit_pos: Vector2, armor_pierce: float = 0.0) -> void:
 	debug_hurt_events += 1
+	var hp_before := float(enemy.get("hp", 0.0))
 	var effective_armor = max(0.0, float(enemy.get("armor", 0.0)) - armor_pierce)
 	var final_damage = max(1.0, damage - effective_armor)
-	enemy["hp"] -= final_damage
+	enemy["hp"] = hp_before - final_damage
+	if str(enemy.get("type", "")) == "boss":
+		run_boss_damage += min(final_damage, max(0.0, hp_before))
 	_add_floating_text(str(int(round(final_damage))), hit_pos + Vector2(0, -8), Color("#f5efe3"))
 	_add_spark(hit_pos, Color("#f5efe3"), 4)
 
@@ -1232,8 +1297,10 @@ func _update_pickups(delta: float) -> void:
 
 		if distance < player["radius"] + item["radius"]:
 			if item["type"] == "ore":
-				ore += item["value"]
-				round_ore_earned += item["value"]
+				var value := int(item.get("value", 0))
+				ore += value
+				round_ore_earned += value
+				run_ore_collected += value
 			else:
 				_add_xp(item["value"] * xp_multiplier)
 			pickups.remove_at(i)
@@ -1383,8 +1450,10 @@ func _finish_round() -> void:
 func _collect_leftover_ore() -> void:
 	for item in pickups:
 		if item["type"] == "ore":
-			ore += item["value"]
-			round_ore_earned += item["value"]
+			var value := int(item.get("value", 0))
+			ore += value
+			round_ore_earned += value
+			run_ore_collected += value
 	pickups.clear()
 
 
@@ -1394,6 +1463,7 @@ func _award_round_clear_ore() -> void:
 	reward += 10 * _relic_count("twin_excavation_seal")
 	ore += reward
 	round_ore_earned += reward
+	run_ore_collected += reward
 
 
 func _clear_combat_state() -> void:
@@ -1655,6 +1725,8 @@ func _choose_shop_option(item: Dictionary) -> void:
 	ore -= cost
 
 	if item["id"] == "reroll":
+		run_ore_spent += cost
+		run_rerolls += 1
 		reroll_cost += 2
 		var reroll_avoid_ids: Array = shop_visit_seen_item_ids.duplicate()
 		for id in _current_shop_item_ids():
@@ -1664,18 +1736,23 @@ func _choose_shop_option(item: Dictionary) -> void:
 		_show_shop_overlay()
 		return
 
-	_apply_shop_purchase(item)
+	var purchased := _apply_shop_purchase(item)
+	if not purchased:
+		ore += cost
+		_show_shop_overlay()
+		return
+	run_ore_spent += cost
+	_record_shop_purchase(item)
 	_remove_shop_stock(item)
 	_show_shop_overlay()
 	_render_weapons()
 
 
-func _apply_shop_purchase(item: Dictionary) -> void:
+func _apply_shop_purchase(item: Dictionary) -> bool:
 	match str(item.get("kind", "")):
 		"weapon":
 			if not _add_weapon(str(item["weapon"])):
-				ore += int(item.get("cost", 0))
-				return
+				return false
 		"part":
 			items.append(item["name"])
 			_apply_weapon_part_stats(item.get("weapon_stats", {}), str(item.get("name", "")))
@@ -1684,10 +1761,13 @@ func _apply_shop_purchase(item: Dictionary) -> void:
 		"item":
 			items.append(item["name"])
 			_apply_item_stats(item.get("stats", {}))
+		_:
+			return false
 	if bool(item.get("unique", false)):
 		var id := str(item.get("id", ""))
 		if not purchased_shop_item_ids.has(id):
 			purchased_shop_item_ids.append(id)
+	return true
 
 
 func _apply_weapon_part_stats(stats: Dictionary, part_name: String) -> void:
@@ -1824,6 +1904,118 @@ func _relic_run_summary_text() -> String:
 		var suffix := "" if count <= 1 else " x%d" % count
 		parts.append("%s%s" % [str(relic.get("name", "")), suffix])
 	return "유물: %s" % ", ".join(parts)
+
+
+func _record_shop_purchase(item: Dictionary) -> void:
+	run_purchase_count += 1
+	run_purchase_names.append(str(item.get("name", "미확인 구매")))
+
+
+func _record_enemy_defeat(type: String) -> void:
+	run_kill_count += 1
+	run_kills_by_type[type] = int(run_kills_by_type.get(type, 0)) + 1
+	if type == "boss":
+		run_boss_defeated = true
+
+
+func _run_result_label() -> String:
+	if mode == MODE_VICTORY or run_boss_defeated:
+		return "승리"
+	if mode == MODE_GAME_OVER or float(player.get("hp", 0.0)) <= 0.0:
+		return "패배"
+	return "진행 중"
+
+
+func _run_report_lines() -> PackedStringArray:
+	var lines := PackedStringArray()
+	lines.append("결과 %s / 도달 라운드 %d/%d / 생존 %s" % [_run_result_label(), wave, MAX_ROUNDS, _format_time(elapsed)])
+	lines.append("광석 획득 %d / 사용 %d / 보유 %d / 리롤 %d" % [run_ore_collected, run_ore_spent, ore, run_rerolls])
+	lines.append("구매 %d회: %s" % [run_purchase_count, _format_name_counts(run_purchase_names, "없음")])
+	lines.append("유물: %s" % _format_relic_counts_for_report())
+	lines.append("전투 처치 %d (%s) / 보스 피해 %d / 보스 %s" % [
+		run_kill_count,
+		_format_kill_counts_for_report(),
+		int(round(run_boss_damage)),
+		"처치" if run_boss_defeated else "미처치",
+	])
+	return lines
+
+
+func _run_report_text() -> String:
+	return "\n".join(_run_report_lines())
+
+
+func _run_report_console_summary() -> String:
+	return " / ".join(_run_report_lines())
+
+
+func _format_name_counts(names: Array, empty_text: String) -> String:
+	if names.is_empty():
+		return empty_text
+	var counts := {}
+	var order: Array = []
+	for raw_name in names:
+		var name := str(raw_name)
+		if not counts.has(name):
+			counts[name] = 0
+			order.append(name)
+		counts[name] = int(counts[name]) + 1
+	var parts := PackedStringArray()
+	for name in order:
+		var count := int(counts[name])
+		if count <= 1:
+			parts.append(str(name))
+		else:
+			parts.append("%s x%d" % [str(name), count])
+	return ", ".join(parts)
+
+
+func _format_relic_counts_for_report() -> String:
+	var summary := _active_relic_summary()
+	if summary.is_empty():
+		return "없음"
+	var parts := PackedStringArray()
+	for relic in summary:
+		var count := int(relic.get("count", 1))
+		if count <= 1:
+			parts.append(str(relic.get("name", "")))
+		else:
+			parts.append("%s x%d" % [str(relic.get("name", "")), count])
+	return ", ".join(parts)
+
+
+func _format_kill_counts_for_report() -> String:
+	if run_kills_by_type.is_empty():
+		return "없음"
+	var parts := PackedStringArray()
+	var order := ["zombie", "fast_zombie", "spider", "thrower", "elite_zombie", "boss"]
+	for type in order:
+		var count := int(run_kills_by_type.get(type, 0))
+		if count > 0:
+			parts.append("%s %d" % [_enemy_type_label(type), count])
+	for type in run_kills_by_type.keys():
+		if order.has(str(type)):
+			continue
+		parts.append("%s %d" % [_enemy_type_label(str(type)), int(run_kills_by_type[type])])
+	return ", ".join(parts)
+
+
+func _enemy_type_label(type: String) -> String:
+	match type:
+		"zombie":
+			return "좀비"
+		"fast_zombie":
+			return "빠른 좀비"
+		"spider":
+			return "거미"
+		"thrower":
+			return "투척 좀비"
+		"elite_zombie":
+			return "엘리트"
+		"boss":
+			return "보스"
+		_:
+			return type
 
 
 func _relic_enemy_density_multiplier() -> float:
@@ -2271,8 +2463,8 @@ func _show_game_over_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_end(
 		"탐사 종료",
-		"압도당했습니다",
-		"라운드 %d/%d 레벨 %d 광석 %d 생존 시간 %s\n%s" % [wave, MAX_ROUNDS, level, ore, _format_time(elapsed), _relic_run_summary_text()],
+		"P4 런 리포트",
+		_run_report_text(),
 		"다시 도전",
 		_active_relic_summary()
 	)
@@ -2283,8 +2475,8 @@ func _show_victory_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_end(
 		"탐사 완료",
-		"P3 유물 계약 완료",
-		"유물 위험을 누적하고, 상점 대응을 거쳐 5라운드 보스까지 처치했습니다.\n%s" % _relic_run_summary_text(),
+		"P4 런 리포트",
+		_run_report_text(),
 		"다시 시작",
 		_active_relic_summary()
 	)
