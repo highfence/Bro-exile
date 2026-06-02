@@ -1,0 +1,53 @@
+{
+  "purpose": "P3 relic contract prototype icons.",
+  "size": [
+    256,
+    256
+  ],
+  "source_grid": [
+    64,
+    64
+  ],
+  "style_notes": [
+    "original pixel relic icons",
+    "dark mine fantasy, thick silhouette, readable at HUD size",
+    "inspired by roguelike relic readability, not a direct copy of any game's assets"
+  ],
+  "files": {
+    "relic_spider_egg_fossil": {
+      "name_ko": "거미 알 화석",
+      "file": "relic_spider_egg_fossil.png",
+      "path": "res://assets/sprites/items/p3_relics/relic_spider_egg_fossil.png"
+    },
+    "relic_hungry_lantern": {
+      "name_ko": "굶주린 등불",
+      "file": "relic_hungry_lantern.png",
+      "path": "res://assets/sprites/items/p3_relics/relic_hungry_lantern.png"
+    },
+    "relic_echoing_stone_heart": {
+      "name_ko": "메아리나는 돌심장",
+      "file": "relic_echoing_stone_heart.png",
+      "path": "res://assets/sprites/items/p3_relics/relic_echoing_stone_heart.png"
+    },
+    "relic_red_vein_sample": {
+      "name_ko": "붉은 광맥 표본",
+      "file": "relic_red_vein_sample.png",
+      "path": "res://assets/sprites/items/p3_relics/relic_red_vein_sample.png"
+    },
+    "relic_black_shell": {
+      "name_ko": "검은 탄피 유물",
+      "file": "relic_black_shell.png",
+      "path": "res://assets/sprites/items/p3_relics/relic_black_shell.png"
+    },
+    "relic_twin_excavation_seal": {
+      "name_ko": "쌍둥이 굴착 인장",
+      "file": "relic_twin_excavation_seal.png",
+      "path": "res://assets/sprites/items/p3_relics/relic_twin_excavation_seal.png"
+    },
+    "relic_unstable_blast_crystal": {
+      "name_ko": "불안정한 폭약 결정",
+      "file": "relic_unstable_blast_crystal.png",
+      "path": "res://assets/sprites/items/p3_relics/relic_unstable_blast_crystal.png"
+    }
+  }
+}

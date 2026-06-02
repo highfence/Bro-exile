@@ -18,11 +18,14 @@ var wave_label: Label
 var ore_label: Label
 var time_label: Label
 var weapon_box: HBoxContainer
+var relic_panel: PanelContainer
+var relic_box: HBoxContainer
 var overlay: Control
 var overlay_panel: PanelContainer
 var overlay_box: VBoxContainer
 var pause_banner: Control
 var icon_texture_cache := {}
+var relic_signature := ""
 
 
 func setup(font: Font) -> void:
@@ -62,6 +65,8 @@ func update_hud(data: Dictionary) -> void:
 		wave_label.text = "공세 %d" % wave
 	ore_label.text = "광석 %d" % int(data.get("ore", 0))
 	time_label.text = str(data.get("time", "00:00"))
+	var relics: Array = data.get("relics", [])
+	render_relics(relics)
 
 
 func render_weapons(weapons: Array, damage_multiplier: float) -> void:
@@ -96,6 +101,20 @@ func render_weapons(weapons: Array, damage_multiplier: float) -> void:
 		box.add_child(detail)
 
 
+func render_relics(relics: Array) -> void:
+	if relic_box == null:
+		return
+	var signature := _relic_signature(relics)
+	if signature == relic_signature:
+		return
+	relic_signature = signature
+
+	_clear_children(relic_box)
+	relic_panel.visible = not relics.is_empty()
+	for relic in relics:
+		relic_box.add_child(_make_relic_icon(relic, 42))
+
+
 func show_start(eyebrow: String, title: String, body: String, button_text: String) -> void:
 	_prepare_overlay(Vector2(650, 0), OreUITheme.PANEL_STRONG)
 	overlay_box.add_child(_make_label(eyebrow, 14, OreUITheme.ORE))
@@ -115,13 +134,15 @@ func show_start(eyebrow: String, title: String, body: String, button_text: Strin
 	overlay.visible = true
 
 
-func show_choice(eyebrow: String, title: String, options: Array) -> void:
+func show_choice(eyebrow: String, title: String, options: Array, relics: Array = []) -> void:
 	var tall := options.size() > 3
 	var columns: int = 2 if tall else 3
 	var card_height: int = 154 if tall else 126
 	_prepare_overlay(Vector2(900, 0), OreUITheme.PANEL_STRONG)
 	overlay_box.add_child(_make_label(eyebrow, 14, OreUITheme.ORE))
 	overlay_box.add_child(_make_label(title, 34, OreUITheme.INK))
+	if not relics.is_empty():
+		overlay_box.add_child(_make_relic_strip(relics, "현재 유물"))
 
 	var grid := GridContainer.new()
 	grid.columns = columns
@@ -136,7 +157,7 @@ func show_choice(eyebrow: String, title: String, options: Array) -> void:
 	overlay.visible = true
 
 
-func show_end(eyebrow: String, title: String, body: String, button_text: String) -> void:
+func show_end(eyebrow: String, title: String, body: String, button_text: String, relics: Array = []) -> void:
 	_prepare_overlay(Vector2(660, 0), OreUITheme.PANEL_STRONG)
 	overlay_box.add_child(_make_label(eyebrow, 14, OreUITheme.ORE))
 	overlay_box.add_child(_make_label(title, 40, OreUITheme.INK))
@@ -146,6 +167,8 @@ func show_end(eyebrow: String, title: String, body: String, button_text: String)
 	body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	overlay_box.add_child(body_label)
+	if not relics.is_empty():
+		overlay_box.add_child(_make_relic_strip(relics, "이번 런 유물"))
 
 	var button := Button.new()
 	button.text = button_text
@@ -225,6 +248,24 @@ func _build_hud() -> void:
 	weapon_box.add_theme_constant_override("separation", 8)
 	weapon_margin.add_child(weapon_box)
 
+	relic_panel = PanelContainer.new()
+	relic_panel.name = "RelicHud"
+	relic_panel.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	relic_panel.offset_left = -324
+	relic_panel.offset_top = -66
+	relic_panel.offset_right = -12
+	relic_panel.offset_bottom = -12
+	relic_panel.visible = false
+	relic_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	relic_panel.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.10, 0.11, 0.09, 0.84), OreUITheme.LINE, 8, 1))
+	root.add_child(relic_panel)
+
+	var relic_margin := _margin(10, 7, 10, 7)
+	relic_panel.add_child(relic_margin)
+	relic_box = HBoxContainer.new()
+	relic_box.add_theme_constant_override("separation", 7)
+	relic_margin.add_child(relic_box)
+
 
 func _build_overlay() -> void:
 	overlay = Control.new()
@@ -284,6 +325,64 @@ func _prepare_overlay(size: Vector2, color: Color) -> void:
 	_clear_children(overlay_box)
 	overlay_panel.custom_minimum_size = size
 	overlay_panel.add_theme_stylebox_override("panel", OreUITheme.panel_style(color, OreUITheme.LINE_STRONG, 8, 1))
+
+
+func _make_relic_strip(relics: Array, title: String) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var label := _make_label(title, 13, OreUITheme.MUTED)
+	label.custom_minimum_size = Vector2(78, 42)
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(label)
+
+	for relic in relics:
+		row.add_child(_make_relic_icon(relic, 42))
+	return row
+
+
+func _make_relic_icon(relic: Dictionary, size: int) -> Control:
+	var shell := Control.new()
+	shell.custom_minimum_size = Vector2(size, size)
+	shell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var frame := PanelContainer.new()
+	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.08, 0.09, 0.075, 0.82), Color(0.42, 0.36, 0.24, 0.82), 7, 1))
+	shell.add_child(frame)
+
+	var margin := _margin(4, 4, 4, 4)
+	frame.add_child(margin)
+
+	var icon := TextureRect.new()
+	icon.texture = _load_png_texture(str(relic.get("icon", "")))
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.custom_minimum_size = Vector2(size - 8, size - 8)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_child(icon)
+
+	var count := int(relic.get("count", 1))
+	if count > 1:
+		var badge := PanelContainer.new()
+		badge.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+		badge.offset_left = -24
+		badge.offset_top = -18
+		badge.offset_right = 2
+		badge.offset_bottom = 2
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.12, 0.09, 0.06, 0.96), OreUITheme.ORE, 5, 1))
+		shell.add_child(badge)
+
+		var badge_label := _make_label("x%d" % count, 10, OreUITheme.INK)
+		badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		badge_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		badge.add_child(badge_label)
+
+	return shell
 
 
 func _make_option_card(option: Dictionary, min_height: int) -> Control:
@@ -380,6 +479,8 @@ func _make_option_card(option: Dictionary, min_height: int) -> Control:
 
 
 func _load_png_texture(path: String) -> Texture2D:
+	if path.is_empty():
+		return null
 	if icon_texture_cache.has(path):
 		return icon_texture_cache[path]
 	var image := Image.new()
@@ -475,3 +576,10 @@ func _clear_children(node: Node) -> void:
 	for child in node.get_children():
 		node.remove_child(child)
 		child.queue_free()
+
+
+func _relic_signature(relics: Array) -> String:
+	var parts := PackedStringArray()
+	for relic in relics:
+		parts.append("%s:%d" % [str(relic.get("id", "")), int(relic.get("count", 1))])
+	return "|".join(parts)

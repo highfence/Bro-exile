@@ -16,6 +16,7 @@
 | --- | --- | --- |
 | 현재 기준 | [프로토타입 퀘스트 대시보드](../todos/README.md) | 현재 프로토타이핑 목표와 사이드 퀘스트 현황을 한눈에 보는 대시보드 |
 | 현재 기준 | [P1 5라운드 플레이어블 루프](brainstorms/2026-06-01-p1-five-round-playable-loop-brainstorm.md) | 보상/계약보다 먼저 검증할 P1 플레이어블 마일스톤 |
+| 현재 기준 | [P3 유물 계약 루프](brainstorms/2026-06-02-p3-relic-contract-loop-brainstorm.md) | 라운드 클리어 후 누적 위험/보상 유물을 선택하는 P3 마일스톤 |
 | 현재 기준 | [프로토타입 사이드 퀘스트 계획](plans/2026-06-01-prototype-side-quest-plan.md) | 검증 가능한 퀘스트 체인과 1차 프로토타입 완료 기준 |
 | 현재 기준 | [계약 카드 기반 위험/보상 시스템](brainstorms/2026-05-22-contract-card-risk-reward-brainstorm.md) | P1 이후 붙일 위험/보상 선택의 핵심 재미 축 정리 |
 
@@ -27,6 +28,7 @@
 | --- | --- | --- | --- |
 | 현재 기준 | 2026-06-01 | [P1 5라운드 플레이어블 루프](brainstorms/2026-06-01-p1-five-round-playable-loop-brainstorm.md) | 보상/계약을 제외하고 라운드 5 보스 처치까지 플레이 가능한 P1 마일스톤 |
 | 현재 기준 | 2026-06-01 | [P2 상점 강화 루프](brainstorms/2026-06-01-p2-upgrade-shop-loop-brainstorm.md) | P1 전투 루프 위에 스테이지별 상점 강화 루프를 붙이는 P2 마일스톤 |
+| 현재 기준 | 2026-06-02 | [P3 유물 계약 루프](brainstorms/2026-06-02-p3-relic-contract-loop-brainstorm.md) | 라운드 클리어 후 중복 선택 가능한 누적 유물로 위험/보상을 조절하는 P3 마일스톤 |
 | 현재 기준 | 2026-06-01 | [프로토타이핑 퀘스트 대시보드 브레인스토밍](brainstorms/2026-06-01-prototyping-quest-dashboard-brainstorm.md) | 러프한 게임을 검증 가능한 사이드 퀘스트와 대시보드로 관리하는 방식 |
 | 현재 기준 | 2026-05-22 | [계약 카드 기반 위험/보상 시스템](brainstorms/2026-05-22-contract-card-risk-reward-brainstorm.md) | 성장 가속감, 팩 클리어 판타지, 시체 폭발 첫 실험, 계약 카드 위험/보상 구조 |
 

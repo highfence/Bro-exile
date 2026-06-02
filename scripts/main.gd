@@ -14,6 +14,7 @@ const MAX_ROUNDS := 5
 const MAX_WEAPON_SLOTS := 6
 const MAX_WEAPON_LEVEL := 4
 const SHOP_OPTION_COUNT := 4
+const RELIC_OPTION_COUNT := 3
 const P1_ROUND_DURATION := 42.0
 const P1_BOSS_ROUND_DURATION := 120.0
 const P2_SHOP_REWARDS_ENABLED := true
@@ -25,6 +26,7 @@ const SMOKE_PLAYTEST_DURATION := 70.0
 const SMOKE_PLAYTEST_CAPTURE_PATH := "/private/tmp/orebound-godot-playtest.png"
 const CHOICE_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-choice-ui.png"
 const SHOP_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-shop-ui.png"
+const RELIC_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-relic-ui.png"
 const STAGE1_CAPTURE_PATH := "/private/tmp/orebound-godot-stage1.png"
 const MONSTER_ROSTER_CAPTURE_PATH := "/private/tmp/orebound-godot-monster-roster.png"
 const PLAYER_VISUAL_SCALE := 0.27
@@ -66,6 +68,8 @@ var next_enemy_id := 1
 var reroll_cost := 2
 var round_ore_earned := 0
 var rounds_cleared := 0
+var spider_relic_packs_this_wave := 0
+var debug_hurt_events := 0
 
 var player := {}
 var weapons: Array = []
@@ -73,6 +77,10 @@ var items: Array = []
 var shop_stock: Array = []
 var purchased_shop_item_ids: Array = []
 var shop_seen_counts := {}
+var shop_visit_seen_item_ids: Array = []
+var active_relics: Array = []
+var relic_counts := {}
+var relic_seen_counts := {}
 var enemies: Array = []
 var bullets: Array = []
 var enemy_projectiles: Array = []
@@ -112,13 +120,79 @@ var stat_rewards := [
 ]
 
 var shop_catalog := [
-	{"id": "rapid_trigger", "kind": "part", "name": "급속 방아쇠", "desc": "드릴촉 발사 간격 -18%. 빠른 좀비가 붙기 전에 깎아냅니다.", "cost": 18, "counter": "빠른 좀비 대응", "counters": [2], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_rapid_trigger.png", "weapon_stats": {"cooldown_mult": 0.82}},
-	{"id": "piercing_bit", "kind": "part", "name": "관통 드릴촉", "desc": "드릴촉 관통 +1. 거미떼처럼 몰려오는 적을 한 줄로 뚫습니다.", "cost": 22, "counter": "거미떼 대응", "counters": [3], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_piercing_bit.png", "weapon_stats": {"pierce_add": 1.0, "damage_mult": 1.06}},
-	{"id": "shatter_charge", "kind": "part", "name": "파편 폭약", "desc": "명중 지점에 작은 폭발을 붙입니다. 뭉친 적을 같이 지웁니다.", "cost": 28, "counter": "거미떼 대응", "counters": [3], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_shatter_charge.png", "weapon_stats": {"splash_add": 42.0, "damage_mult": 0.94}},
-	{"id": "long_barrel", "kind": "part", "name": "긴 총열", "desc": "드릴촉 사거리 +24%, 탄속 +10%. 투척 좀비와 거리를 둡니다.", "cost": 20, "counter": "투척 좀비 대응", "counters": [4], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_long_barrel.png", "weapon_stats": {"range_mult": 1.24, "speed_mult": 1.10}},
-	{"id": "spring_boots", "kind": "item", "name": "스프링 장화", "desc": "이동 속도 +14%. 돌 투사체를 피하고 사거리를 다시 잡습니다.", "cost": 18, "counter": "투척 좀비 대응", "counters": [4], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_spring_boots.png", "stats": {"speed_mult": 1.14}},
-	{"id": "carbide_tip", "kind": "part", "name": "균열 탄심", "desc": "방어 관통 +3. 단단한 보스 좀비의 방어를 뚫습니다.", "cost": 30, "counter": "보스 대응", "counters": [5], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_carbide_tip.png", "weapon_stats": {"armor_pierce_add": 3.0, "damage_mult": 1.08}},
+	{"id": "rapid_trigger", "kind": "part", "name": "급속 방아쇠", "desc": "드릴촉 발사 간격 -18%. 빠른 좀비가 붙기 전에 깎아냅니다.", "cost": 18, "counter": "빠른 좀비 대응", "counters": [2], "icon": "res://assets/sprites/items/p2_parts/part_rapid_trigger.png", "weapon_stats": {"cooldown_mult": 0.82}},
+	{"id": "piercing_bit", "kind": "part", "name": "관통 드릴촉", "desc": "드릴촉 관통 +1. 거미떼처럼 몰려오는 적을 한 줄로 뚫습니다.", "cost": 22, "counter": "거미떼 대응", "counters": [3], "icon": "res://assets/sprites/items/p2_parts/part_piercing_bit.png", "weapon_stats": {"pierce_add": 1.0, "damage_mult": 1.06}},
+	{"id": "shatter_charge", "kind": "part", "name": "파편 폭약", "desc": "명중 지점에 작은 폭발을 붙입니다. 뭉친 적을 같이 지웁니다.", "cost": 28, "counter": "거미떼 대응", "counters": [3], "icon": "res://assets/sprites/items/p2_parts/part_shatter_charge.png", "weapon_stats": {"splash_add": 42.0, "damage_mult": 0.94}},
+	{"id": "long_barrel", "kind": "part", "name": "긴 총열", "desc": "드릴촉 사거리 +24%, 탄속 +10%. 투척 좀비와 거리를 둡니다.", "cost": 20, "counter": "투척 좀비 대응", "counters": [4], "icon": "res://assets/sprites/items/p2_parts/part_long_barrel.png", "weapon_stats": {"range_mult": 1.24, "speed_mult": 1.10}},
+	{"id": "spring_boots", "kind": "item", "name": "스프링 장화", "desc": "이동 속도 +14%. 돌 투사체를 피하고 사거리를 다시 잡습니다.", "cost": 18, "counter": "투척 좀비 대응", "counters": [4], "icon": "res://assets/sprites/items/p2_parts/part_spring_boots.png", "stats": {"speed_mult": 1.14}},
+	{"id": "carbide_tip", "kind": "part", "name": "균열 탄심", "desc": "방어 관통 +3. 단단한 보스 좀비의 방어를 뚫습니다.", "cost": 30, "counter": "보스 대응", "counters": [5], "icon": "res://assets/sprites/items/p2_parts/part_carbide_tip.png", "weapon_stats": {"armor_pierce_add": 3.0, "damage_mult": 1.08}},
 	{"id": "rations", "kind": "heal", "name": "야전 식량", "desc": "체력 35 회복. 상점 루프 검증용 안전 선택지입니다.", "cost": 14, "icon": "res://assets/sprites/items/p2_parts/part_rations.png"},
+]
+
+var relic_catalog := [
+	{
+		"id": "spider_egg_fossil",
+		"kind": "relic",
+		"name": "거미 알 화석",
+		"desc": "위험: 거미 스폰 비율 증가. 보상: 라운드 클리어 광석 +20%.",
+		"danger": "거미 증가",
+		"reward": "클리어 광석 +20%",
+		"icon": "res://assets/sprites/items/p3_relics/relic_spider_egg_fossil.png",
+	},
+	{
+		"id": "hungry_lantern",
+		"kind": "relic",
+		"name": "굶주린 등불",
+		"desc": "위험: 모든 적 이동 속도 +8%. 보상: 상점 리롤 비용 -1.",
+		"danger": "적 속도 +8%",
+		"reward": "리롤 비용 -1",
+		"icon": "res://assets/sprites/items/p3_relics/relic_hungry_lantern.png",
+	},
+	{
+		"id": "echoing_stone_heart",
+		"kind": "relic",
+		"name": "메아리나는 돌심장",
+		"desc": "위험: 투척 좀비 공격이 빨라짐. 보상: 사거리/이동 부품 등장 보장.",
+		"danger": "투척 쿨다운 감소",
+		"reward": "사거리/이동 부품 보장",
+		"icon": "res://assets/sprites/items/p3_relics/relic_echoing_stone_heart.png",
+	},
+	{
+		"id": "red_vein_sample",
+		"kind": "relic",
+		"name": "붉은 광맥 표본",
+		"desc": "위험: 적 수 +15%. 보상: 적 광석 드롭 확률 증가.",
+		"danger": "적 수 +15%",
+		"reward": "광석 드롭 증가",
+		"icon": "res://assets/sprites/items/p3_relics/relic_red_vein_sample.png",
+	},
+	{
+		"id": "black_shell",
+		"kind": "relic",
+		"name": "검은 탄피 유물",
+		"desc": "위험: 적 체력 +10%. 보상: 상점 가격 -10%.",
+		"danger": "적 체력 +10%",
+		"reward": "상점 가격 -10%",
+		"icon": "res://assets/sprites/items/p3_relics/relic_black_shell.png",
+	},
+	{
+		"id": "twin_excavation_seal",
+		"kind": "relic",
+		"name": "쌍둥이 굴착 인장",
+		"desc": "위험: 엘리트 큰 좀비가 가끔 추가 등장. 보상: 클리어 추가 광석.",
+		"danger": "엘리트 추가",
+		"reward": "추가 클리어 광석",
+		"icon": "res://assets/sprites/items/p3_relics/relic_twin_excavation_seal.png",
+	},
+	{
+		"id": "unstable_blast_crystal",
+		"kind": "relic",
+		"name": "불안정한 폭약 결정",
+		"desc": "위험: 적 사망 시 위험 폭발. 보상: 폭발/광역 부품 등장 보장.",
+		"danger": "사망 폭발",
+		"reward": "광역 부품 보장",
+		"icon": "res://assets/sprites/items/p3_relics/relic_unstable_blast_crystal.png",
+	},
 ]
 
 var weapon_catalog := {
@@ -134,7 +208,7 @@ var weapon_catalog := {
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.has("--smoke-playtest") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
+	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
 		seed(12345)
 	else:
 		randomize()
@@ -149,12 +223,54 @@ func _ready() -> void:
 		_capture_choice_ui_and_quit.call_deferred()
 	elif args.has("--capture-shop-ui"):
 		_capture_shop_ui_and_quit.call_deferred()
+	elif args.has("--capture-relic-ui"):
+		_capture_relic_ui_and_quit.call_deferred()
 	elif args.has("--capture-stage1"):
 		_capture_stage1_and_quit.call_deferred()
 	elif args.has("--capture-monster-roster"):
 		_capture_monster_roster_and_quit.call_deferred()
 	elif args.has("--smoke-playtest"):
 		_start_smoke_playtest.call_deferred()
+	elif args.has("--debug-spider-relic-wave2"):
+		_debug_spider_relic_wave2_and_quit.call_deferred()
+	elif args.has("--debug-boss-pierce-splash"):
+		_debug_boss_pierce_splash_and_quit.call_deferred()
+
+
+func _debug_spider_relic_wave2_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	wave = 2
+	rounds_cleared = 1
+	wave_timer = _round_duration(wave)
+	spawn_timer = 0.0
+	enemies.clear()
+	_add_relic(_relic_by_id("spider_egg_fossil"))
+	spider_relic_packs_this_wave = 0
+
+	var event_counts := {}
+	var spawn_events := 0
+	while enemies.size() < _enemy_cap() and spawn_events < 40:
+		var kind := _pick_enemy_kind()
+		var pack_size := _enemy_pack_size(kind)
+		event_counts[kind] = int(event_counts.get(kind, 0)) + 1
+		_spawn_enemy_pack(kind, pack_size)
+		spawn_events += 1
+
+	var enemy_counts := {}
+	for enemy in enemies:
+		var type := str(enemy.get("type", "unknown"))
+		enemy_counts[type] = int(enemy_counts.get(type, 0)) + 1
+
+	print("DEBUG_SPIDER_RELIC_WAVE2 relic_count=%d cap=%d spawn_events=%d event_counts=%s enemy_counts=%s spider_packs=%d" % [
+		_relic_count("spider_egg_fossil"),
+		_enemy_cap(),
+		spawn_events,
+		str(event_counts),
+		str(enemy_counts),
+		spider_relic_packs_this_wave,
+	])
+	get_tree().quit()
 
 
 func _capture_ui_and_quit() -> void:
@@ -183,6 +299,9 @@ func _capture_shop_ui_and_quit() -> void:
 	wave = 3
 	rounds_cleared = 2
 	ore = 120
+	_add_relic(_relic_by_id("spider_egg_fossil"))
+	_add_relic(_relic_by_id("hungry_lantern"))
+	_add_relic(_relic_by_id("hungry_lantern"))
 	_open_shop()
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -190,6 +309,84 @@ func _capture_shop_ui_and_quit() -> void:
 	var image := get_viewport().get_texture().get_image()
 	image.save_png(SHOP_UI_CAPTURE_PATH)
 	get_tree().quit()
+
+
+func _capture_relic_ui_and_quit() -> void:
+	_reset_run(true)
+	wave = 2
+	rounds_cleared = 1
+	round_ore_earned = 34
+	ore = 62
+	_add_relic(_relic_by_id("red_vein_sample"))
+	_open_relic_choice()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(RELIC_UI_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _debug_boss_pierce_splash_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	wave = MAX_ROUNDS
+	debug_hurt_events = 0
+	var failures := 0
+	var results := PackedStringArray()
+	var first_probe := ""
+	for step in range(8):
+		enemies.clear()
+		bullets.clear()
+		var boss: Dictionary = _make_enemy("boss")
+		boss["pos"] = WORLD_SIZE * 0.5
+		enemies.append(boss)
+
+		var angle: float = TAU * float(step) / 8.0
+		var direction := Vector2.RIGHT.rotated(angle)
+		var boss_pos: Vector2 = boss["pos"]
+		var start_hp := float(enemies[0]["hp"])
+		player["pos"] = boss_pos - direction * 240.0
+		var weapon := {
+			"id": "drill_tip",
+			"speed": 690.0,
+			"projectiles": 1,
+			"spread": 0.0,
+			"damage": 16.0,
+			"color": Color("#d8ceb9"),
+			"pierce": 1,
+			"splash": 42.0,
+			"armor_pierce": 0.0,
+			"knockback": 0.0,
+			"shape": "drill_tip",
+		}
+		_fire_projectiles(weapon, boss, 430.0, false)
+		var min_distance := 9999.0
+		var collision_radius: float = 47.0
+		for frame in range(40):
+			if bullets.is_empty():
+				break
+			for bullet in bullets:
+				min_distance = min(min_distance, Vector2(bullet["pos"]).distance_to(boss_pos))
+			_update_bullets(1.0 / 60.0)
+
+		var boss_after: Dictionary = enemies[0]
+		var damage: float = start_hp - float(boss_after["hp"])
+		if step == 0:
+			first_probe = "player=%s boss=%s min_distance=%.2f collision_radius=%.2f bullets_left=%d hurt_events=%d" % [
+				str(player["pos"]),
+				str(boss_pos),
+				min_distance,
+				collision_radius,
+				bullets.size(),
+				debug_hurt_events,
+			]
+		if damage <= 0.0:
+			failures += 1
+		results.append("%ddeg=%.1f" % [int(round(rad_to_deg(angle))), damage])
+
+	print("DEBUG_BOSS_PIERCE_SPLASH failures=%d probe={%s} results=%s" % [failures, first_probe, ", ".join(results)])
+	get_tree().quit(1 if failures > 0 else 0)
 
 
 func _capture_stage1_and_quit() -> void:
@@ -314,9 +511,13 @@ func _reset_run(start_playing: bool) -> void:
 	if game_ui != null:
 		game_ui.set_paused(false)
 	next_enemy_id = 1
+	active_relics.clear()
+	relic_counts.clear()
+	relic_seen_counts.clear()
 	reroll_cost = _shop_reroll_cost()
 	round_ore_earned = 0
 	rounds_cleared = 0
+	spider_relic_packs_this_wave = 0
 	player = {
 		"pos": WORLD_SIZE * 0.5,
 		"radius": 18.0,
@@ -335,6 +536,7 @@ func _reset_run(start_playing: bool) -> void:
 	shop_stock.clear()
 	purchased_shop_item_ids.clear()
 	shop_seen_counts.clear()
+	shop_visit_seen_item_ids.clear()
 	enemies.clear()
 	bullets.clear()
 	enemy_projectiles.clear()
@@ -355,7 +557,8 @@ func _round_duration(round_index: int) -> float:
 
 
 func _shop_reroll_cost() -> int:
-	return max(2, int(round(2.0 + wave * 0.65 + rounds_cleared * 0.25)))
+	var base_cost: int = max(2, int(round(2.0 + wave * 0.65 + rounds_cleared * 0.25)))
+	return max(1, base_cost - _relic_count("hungry_lantern"))
 
 
 func _update_game(delta: float) -> void:
@@ -505,6 +708,11 @@ func _spawn_enemies() -> void:
 		spawn_timer = 0.35
 		return
 
+	if _should_spawn_elite_zombie():
+		_spawn_enemy_pack("elite_zombie", 1)
+		spawn_timer = max(0.38, _enemy_spawn_interval("elite_zombie") * 0.82)
+		return
+
 	var kind := _pick_enemy_kind()
 	var pack_size := _enemy_pack_size(kind)
 	_spawn_enemy_pack(kind, pack_size)
@@ -522,20 +730,33 @@ func _spawn_enemy_pack(kind: String, pack_size: int) -> void:
 
 
 func _enemy_cap() -> int:
+	var base_cap := 12
 	match wave:
 		1:
-			return 14
+			base_cap = 14
 		2:
-			return 18
+			base_cap = 18
 		3:
-			return 24
+			base_cap = 24
 		4:
-			return 26
+			base_cap = 26
 		_:
-			return 12
+			base_cap = 12
+	return int(ceil(float(base_cap) * _relic_enemy_density_multiplier()))
 
 
 func _pick_enemy_kind() -> String:
+	var spider_relic_count := _relic_count("spider_egg_fossil")
+	if wave >= 2 and spider_relic_count > 0:
+		var guaranteed_spider_packs: int = min(2, spider_relic_count)
+		if spider_relic_packs_this_wave < guaranteed_spider_packs:
+			spider_relic_packs_this_wave += 1
+			return "spider"
+		var spider_pressure: float = min(0.42, 0.18 * float(spider_relic_count))
+		if randf() < spider_pressure:
+			spider_relic_packs_this_wave += 1
+			return "spider"
+
 	var roll := randf()
 	match wave:
 		1:
@@ -585,6 +806,7 @@ func _enemy_spawn_interval(kind: String) -> float:
 			interval = 1.36
 	if smoke_playtest:
 		interval *= 0.62
+	interval *= _relic_spawn_interval_multiplier()
 	return max(0.32, interval)
 
 
@@ -636,6 +858,15 @@ func _make_enemy(kind: String) -> Dictionary:
 			color = Color("#7e8a76")
 			desired_range = 360.0
 			attack_cooldown = 2.15
+		"elite_zombie":
+			hp = 82.0
+			radius = 25.0
+			speed = 72.0
+			damage = 13.0
+			armor = 1.0
+			dropped_ore = 4
+			ore_chance = 1.0
+			color = Color("#8b7254")
 		"boss":
 			hp = 380.0
 			radius = 42.0
@@ -646,6 +877,12 @@ func _make_enemy(kind: String) -> Dictionary:
 			color = Color("#6f4f86")
 		_:
 			kind = "zombie"
+
+	hp *= _relic_enemy_hp_multiplier()
+	speed *= _relic_enemy_speed_multiplier()
+	if kind == "thrower":
+		attack_cooldown = max(0.72, attack_cooldown * _relic_thrower_cooldown_multiplier())
+	ore_chance = min(1.0, ore_chance + _relic_ore_drop_bonus())
 
 	var enemy_id := next_enemy_id
 	next_enemy_id += 1
@@ -807,24 +1044,31 @@ func _fire_slash(weapon: Dictionary, effective_range: float) -> void:
 
 func _update_bullets(delta: float) -> void:
 	for i in range(bullets.size() - 1, -1, -1):
-		var bullet = bullets[i]
-		bullet["pos"] += bullet["velocity"] * delta
+		var bullet: Dictionary = bullets[i]
+		var bullet_pos: Vector2 = bullet["pos"]
+		var bullet_velocity: Vector2 = bullet["velocity"]
+		bullet_pos += bullet_velocity * delta
+		bullet["pos"] = bullet_pos
 		bullet["life"] -= delta
 
 		for enemy in enemies:
 			if bullet["hit_ids"].has(enemy["id"]):
 				continue
-			if bullet["pos"].distance_squared_to(enemy["pos"]) <= pow(bullet["radius"] + enemy["radius"], 2.0):
+			var enemy_pos: Vector2 = enemy["pos"]
+			var hit_radius: float = float(bullet["radius"]) + float(enemy["radius"])
+			if bullet_pos.distance_squared_to(enemy_pos) <= hit_radius * hit_radius:
 				bullet["hit_ids"].append(enemy["id"])
 				if float(bullet.get("splash", 0.0)) > 0.0:
-					_explode_bullet(bullet, bullet["pos"])
-					bullet["life"] = 0.0
-					break
+					_explode_bullet(bullet, bullet_pos, int(enemy["id"]))
+					bullet["pierce"] -= 1
+					if bullet["pierce"] < 0:
+						bullet["life"] = 0.0
+						break
 				else:
-					_hurt_enemy(enemy, bullet["damage"], bullet["pos"], float(bullet.get("armor_pierce", 0.0)))
+					_hurt_enemy(enemy, bullet["damage"], bullet_pos, float(bullet.get("armor_pierce", 0.0)))
 					var knockback := float(bullet.get("knockback", 0.0))
 					if knockback > 0.0:
-						var push_dir: Vector2 = bullet["velocity"].normalized()
+						var push_dir: Vector2 = bullet_velocity.normalized()
 						enemy["pos"] += push_dir * knockback
 					bullet["pierce"] -= 1
 					if bullet["pierce"] < 0:
@@ -856,11 +1100,14 @@ func _update_enemy_projectiles(delta: float) -> void:
 			enemy_projectiles.remove_at(i)
 
 
-func _explode_bullet(bullet: Dictionary, pos: Vector2) -> void:
+func _explode_bullet(bullet: Dictionary, pos: Vector2, direct_hit_id: int = -1) -> void:
 	var splash := float(bullet.get("splash", 0.0))
 	if splash <= 0.0:
 		return
 	for enemy in enemies:
+		if int(enemy.get("id", -1)) == direct_hit_id:
+			_hurt_enemy(enemy, bullet["damage"], enemy["pos"], float(bullet.get("armor_pierce", 0.0)))
+			continue
 		var distance := pos.distance_to(enemy["pos"])
 		if distance <= splash:
 			var falloff: float = 1.0 - min(0.45, distance / splash * 0.45)
@@ -897,6 +1144,7 @@ func _update_enemies(delta: float) -> void:
 		if enemy["hp"] <= 0.0:
 			var defeated_type := str(enemy.get("type", "zombie"))
 			_drop_pickups(enemy)
+			_trigger_relic_death_hazard(enemy)
 			_add_spark(enemy["pos"], enemy["color"], 14)
 			enemies.remove_at(i)
 			if defeated_type == "boss":
@@ -947,6 +1195,7 @@ func _throw_enemy_rock(enemy: Dictionary, direction: Vector2) -> void:
 
 
 func _hurt_enemy(enemy: Dictionary, damage: float, hit_pos: Vector2, armor_pierce: float = 0.0) -> void:
+	debug_hurt_events += 1
 	var effective_armor = max(0.0, float(enemy.get("armor", 0.0)) - armor_pierce)
 	var final_damage = max(1.0, damage - effective_armor)
 	enemy["hp"] -= final_damage
@@ -1128,7 +1377,7 @@ func _finish_round() -> void:
 	if wave >= MAX_ROUNDS:
 		_victory()
 	else:
-		_open_shop()
+		_open_relic_choice()
 
 
 func _collect_leftover_ore() -> void:
@@ -1140,7 +1389,9 @@ func _collect_leftover_ore() -> void:
 
 
 func _award_round_clear_ore() -> void:
-	var reward := ROUND_CLEAR_ORE_BASE + wave * ROUND_CLEAR_ORE_STEP
+	var base_reward := ROUND_CLEAR_ORE_BASE + wave * ROUND_CLEAR_ORE_STEP
+	var reward := int(round(float(base_reward) * _relic_clear_ore_multiplier()))
+	reward += 10 * _relic_count("twin_excavation_seal")
 	ore += reward
 	round_ore_earned += reward
 
@@ -1193,9 +1444,47 @@ func _round_brief(round_index: int) -> String:
 			return "다음 라운드를 시작합니다."
 
 
+func _open_relic_choice() -> void:
+	mode = MODE_CHOICE
+	var options := _roll_relic_options()
+	_show_choice_overlay("라운드 %d 완료  +%d 광석" % [wave, round_ore_earned], "발견한 유물 선택", options, "_choose_relic_option")
+
+
+func _choose_relic_option(relic: Dictionary) -> void:
+	if str(relic.get("kind", "")) != "relic":
+		return
+	_add_relic(relic)
+	_open_shop()
+
+
+func _roll_relic_options() -> Array:
+	var candidates := relic_catalog.duplicate(true)
+	candidates.shuffle()
+	candidates.sort_custom(func(a, b): return _relic_seen_count(a) < _relic_seen_count(b))
+
+	var rolled: Array = []
+	for relic in candidates:
+		if rolled.size() >= RELIC_OPTION_COUNT:
+			break
+		rolled.append(relic.duplicate(true))
+	_record_relic_seen(rolled)
+	return rolled
+
+
+func _add_relic(relic: Dictionary) -> void:
+	if relic.is_empty():
+		return
+	var id := str(relic.get("id", ""))
+	if id.is_empty():
+		return
+	active_relics.append(relic.duplicate(true))
+	relic_counts[id] = _relic_count(id) + 1
+
+
 func _open_shop() -> void:
 	mode = MODE_CHOICE
 	_fully_heal_player()
+	shop_visit_seen_item_ids.clear()
 	reroll_cost = _shop_reroll_cost()
 	shop_stock = _roll_shop_stock()
 	_show_shop_overlay()
@@ -1208,19 +1497,27 @@ func _show_shop_overlay() -> void:
 	_show_choice_overlay("라운드 %d 완료  +%d 광석" % [wave, round_ore_earned], "상점 - 광석 %d" % ore, options, "_choose_shop_option")
 
 
-func _roll_shop_stock() -> Array:
+func _roll_shop_stock(avoid_ids: Array = []) -> Array:
 	var rolled: Array = []
 	var next_round: int = min(wave + 1, MAX_ROUNDS)
-	var avoid_ids: Array = _current_shop_item_ids()
 	var counter_pool: Array = _shop_items_for_round(next_round, avoid_ids)
-	if counter_pool.is_empty():
+	if counter_pool.is_empty() and avoid_ids.is_empty():
 		counter_pool = _shop_items_for_round(next_round)
 	if not counter_pool.is_empty():
 		rolled.append(_least_seen_shop_item(counter_pool).duplicate(true))
 
+	var bonus_pool: Array = _relic_bonus_shop_items(avoid_ids)
+	bonus_pool.shuffle()
+	bonus_pool.sort_custom(func(a, b): return _shop_seen_count(a) < _shop_seen_count(b))
+	for option in bonus_pool:
+		if rolled.size() >= SHOP_OPTION_COUNT:
+			break
+		if _stock_has_item_id(rolled, str(option.get("id", ""))):
+			continue
+		rolled.append(option.duplicate(true))
+		break
+
 	var candidates: Array = _available_shop_items(avoid_ids)
-	if candidates.size() < SHOP_OPTION_COUNT:
-		candidates = _available_shop_items([])
 	candidates.shuffle()
 	candidates.sort_custom(func(a, b): return _shop_seen_count(a) < _shop_seen_count(b))
 	for option in candidates:
@@ -1230,11 +1527,23 @@ func _roll_shop_stock() -> Array:
 			continue
 		rolled.append(option.duplicate(true))
 
+	if rolled.size() < SHOP_OPTION_COUNT:
+		var fallback_candidates: Array = _available_shop_items([])
+		fallback_candidates.shuffle()
+		fallback_candidates.sort_custom(func(a, b): return _shop_seen_count(a) < _shop_seen_count(b))
+		for option in fallback_candidates:
+			if rolled.size() >= SHOP_OPTION_COUNT:
+				break
+			if _stock_has_item_id(rolled, str(option.get("id", ""))):
+				continue
+			rolled.append(option.duplicate(true))
+
 	for i in range(rolled.size()):
 		var option: Dictionary = rolled[i]
 		option["stock_id"] = "%s_%d_%d_%d" % [option["id"], wave, rounds_cleared, i]
 		option["cost"] = _scaled_shop_cost(int(option["cost"]))
 	_record_shop_seen(rolled)
+	_record_shop_visit_seen(rolled)
 	return rolled
 
 
@@ -1252,6 +1561,32 @@ func _available_shop_items(avoid_ids: Array) -> Array:
 		if _shop_item_can_appear(option, avoid_ids):
 			pool.append(option)
 	return pool
+
+
+func _relic_bonus_shop_items(avoid_ids: Array) -> Array:
+	var desired_ids: Array = []
+	if _relic_count("echoing_stone_heart") > 0:
+		desired_ids.append("long_barrel")
+		desired_ids.append("spring_boots")
+	if _relic_count("unstable_blast_crystal") > 0:
+		desired_ids.append("shatter_charge")
+		desired_ids.append("piercing_bit")
+
+	var pool: Array = []
+	for id in desired_ids:
+		var option := _shop_item_by_id(str(id))
+		if option.is_empty():
+			continue
+		if _shop_item_can_appear(option, avoid_ids):
+			pool.append(option)
+	return pool
+
+
+func _shop_item_by_id(id: String) -> Dictionary:
+	for option in shop_catalog:
+		if str(option.get("id", "")) == id:
+			return option
+	return {}
 
 
 func _shop_item_can_appear(option: Dictionary, avoid_ids: Array) -> bool:
@@ -1287,6 +1622,13 @@ func _record_shop_seen(stock: Array) -> void:
 		shop_seen_counts[id] = int(shop_seen_counts.get(id, 0)) + 1
 
 
+func _record_shop_visit_seen(stock: Array) -> void:
+	for option in stock:
+		var id := str(option.get("id", ""))
+		if not shop_visit_seen_item_ids.has(id):
+			shop_visit_seen_item_ids.append(id)
+
+
 func _stock_has_item_id(stock: Array, id: String) -> bool:
 	for option in stock:
 		if str(option.get("id", "")) == id:
@@ -1296,7 +1638,7 @@ func _stock_has_item_id(stock: Array, id: String) -> bool:
 
 func _scaled_shop_cost(base_cost: int) -> int:
 	var scale := 1.0 + float(wave - 1) * 0.075
-	return int(max(1.0, round(base_cost * scale)))
+	return int(max(1.0, round(float(base_cost) * scale * _relic_shop_discount_multiplier())))
 
 
 func _choose_shop_option(item: Dictionary) -> void:
@@ -1314,7 +1656,11 @@ func _choose_shop_option(item: Dictionary) -> void:
 
 	if item["id"] == "reroll":
 		reroll_cost += 2
-		shop_stock = _roll_shop_stock()
+		var reroll_avoid_ids: Array = shop_visit_seen_item_ids.duplicate()
+		for id in _current_shop_item_ids():
+			if not reroll_avoid_ids.has(id):
+				reroll_avoid_ids.append(id)
+		shop_stock = _roll_shop_stock(reroll_avoid_ids)
 		_show_shop_overlay()
 		return
 
@@ -1367,7 +1713,7 @@ func _apply_weapon_part_stats(stats: Dictionary, part_name: String) -> void:
 	if stats.has("spread_add"):
 		weapon["spread"] = float(weapon["spread"]) + float(stats["spread_add"])
 	if stats.has("splash_add"):
-		weapon["splash"] = max(float(weapon.get("splash", 0.0)), float(stats["splash_add"]))
+		weapon["splash"] = float(weapon.get("splash", 0.0)) + float(stats["splash_add"])
 	if stats.has("armor_pierce_add"):
 		weapon["armor_pierce"] = float(weapon.get("armor_pierce", 0.0)) + float(stats["armor_pierce_add"])
 	if stats.has("knockback_add"):
@@ -1411,6 +1757,7 @@ func _start_next_round() -> void:
 	wave_timer = _round_duration(wave)
 	spawn_timer = 0.0
 	round_ore_earned = 0
+	spider_relic_packs_this_wave = 0
 	boss_spawned = false
 	_clear_combat_state()
 	_fully_heal_player()
@@ -1431,6 +1778,126 @@ func _sample_array(source: Array, count: int) -> Array:
 	var shuffled := source.duplicate(true)
 	shuffled.shuffle()
 	return shuffled.slice(0, min(count, shuffled.size()))
+
+
+func _relic_count(id: String) -> int:
+	return int(relic_counts.get(id, 0))
+
+
+func _relic_seen_count(relic: Dictionary) -> int:
+	return int(relic_seen_counts.get(str(relic.get("id", "")), 0))
+
+
+func _record_relic_seen(relics: Array) -> void:
+	for relic in relics:
+		var id := str(relic.get("id", ""))
+		relic_seen_counts[id] = int(relic_seen_counts.get(id, 0)) + 1
+
+
+func _relic_by_id(id: String) -> Dictionary:
+	for relic in relic_catalog:
+		if str(relic.get("id", "")) == id:
+			return relic
+	return {}
+
+
+func _active_relic_summary() -> Array:
+	var summary: Array = []
+	for relic in relic_catalog:
+		var id := str(relic.get("id", ""))
+		var count := _relic_count(id)
+		if count <= 0:
+			continue
+		var copy: Dictionary = relic.duplicate(true)
+		copy["count"] = count
+		summary.append(copy)
+	return summary
+
+
+func _relic_run_summary_text() -> String:
+	var summary := _active_relic_summary()
+	if summary.is_empty():
+		return "유물: 없음"
+	var parts := PackedStringArray()
+	for relic in summary:
+		var count := int(relic.get("count", 1))
+		var suffix := "" if count <= 1 else " x%d" % count
+		parts.append("%s%s" % [str(relic.get("name", "")), suffix])
+	return "유물: %s" % ", ".join(parts)
+
+
+func _relic_enemy_density_multiplier() -> float:
+	return 1.0 + 0.15 * float(_relic_count("red_vein_sample"))
+
+
+func _relic_spawn_interval_multiplier() -> float:
+	return max(0.58, 1.0 - 0.08 * float(_relic_count("red_vein_sample")))
+
+
+func _relic_enemy_hp_multiplier() -> float:
+	return float(pow(1.10, _relic_count("black_shell")))
+
+
+func _relic_enemy_speed_multiplier() -> float:
+	return float(pow(1.08, _relic_count("hungry_lantern")))
+
+
+func _relic_thrower_cooldown_multiplier() -> float:
+	return float(pow(0.86, _relic_count("echoing_stone_heart")))
+
+
+func _relic_ore_drop_bonus() -> float:
+	return min(0.45, 0.10 * float(_relic_count("red_vein_sample")))
+
+
+func _relic_clear_ore_multiplier() -> float:
+	return 1.0 + 0.20 * float(_relic_count("spider_egg_fossil"))
+
+
+func _relic_shop_discount_multiplier() -> float:
+	return max(0.55, 1.0 - 0.10 * float(_relic_count("black_shell")))
+
+
+func _should_spawn_elite_zombie() -> bool:
+	var count := _relic_count("twin_excavation_seal")
+	if count <= 0 or wave < 2:
+		return false
+	if enemies.size() >= _enemy_cap():
+		return false
+	var chance: float = min(0.22, 0.045 * float(count))
+	if wave >= MAX_ROUNDS:
+		chance *= 0.65
+	return randf() < chance
+
+
+func _trigger_relic_death_hazard(enemy: Dictionary) -> void:
+	var count := _relic_count("unstable_blast_crystal")
+	if count <= 0 or str(enemy.get("type", "")) == "boss":
+		return
+
+	var pos: Vector2 = enemy["pos"]
+	var radius: float = 42.0 + 8.0 * float(count)
+	var color := Color("#f0643b")
+	sparks.append({
+		"line": false,
+		"pos": pos,
+		"velocity": Vector2.ZERO,
+		"life": 0.22,
+		"max_life": 0.22,
+		"color": color,
+		"radius": radius,
+		"ring": true,
+	})
+	_add_spark(pos, color, 12)
+
+	if player["pos"].distance_to(pos) > radius or player["hurt_cooldown"] > 0.0:
+		return
+
+	var damage: float = max(1.0, 5.0 + 2.0 * float(count) - player["armor"] * 0.5)
+	player["hp"] -= damage
+	player["hurt_cooldown"] = 0.38
+	screen_shake = max(screen_shake, 0.95)
+	_add_floating_text("폭발 -%d" % int(round(damage)), player["pos"] + Vector2(0, -34), color)
 
 
 func _game_over() -> void:
@@ -1517,7 +1984,7 @@ func _draw_enemies() -> void:
 
 
 func _enemy_has_sprite_asset(type: String) -> bool:
-	return type == "zombie" or type == "fast_zombie" or type == "spider" or type == "thrower" or type == "boss"
+	return type == "zombie" or type == "fast_zombie" or type == "spider" or type == "thrower" or type == "elite_zombie" or type == "boss"
 
 
 func _draw_enemy_asset_sprite(enemy: Dictionary) -> bool:
@@ -1534,6 +2001,9 @@ func _draw_enemy_asset_sprite(enemy: Dictionary) -> bool:
 			return true
 		"thrower":
 			_draw_single_image_enemy_sprite(enemy, thrower_zombie_texture, 0.265, 0.88, 4.5, 2.2, 3.2, 0.024, Vector2(27, 5), 30.0)
+			return true
+		"elite_zombie":
+			_draw_single_image_enemy_sprite(enemy, zombie_idle_texture, 0.34, 0.92, 5.2, 2.8, 3.4, 0.026, Vector2(36, 7), 42.0)
 			return true
 		"boss":
 			_draw_single_image_enemy_sprite(enemy, boss_zombie_texture, 0.44, 1.18, 3.0, 2.0, 2.1, 0.018, Vector2(48, 9), 52.0)
@@ -1581,6 +2051,8 @@ func _enemy_asset_hp_width(type: String, radius: float) -> float:
 			return 32.0
 		"thrower":
 			return 46.0
+		"elite_zombie":
+			return 58.0
 		"boss":
 			return 96.0
 	return max(42.0, radius * 2.0)
@@ -1594,6 +2066,8 @@ func _enemy_asset_hp_y(type: String, radius: float) -> float:
 			return -31.0
 		"thrower":
 			return -47.0
+		"elite_zombie":
+			return -63.0
 		"boss":
 			return -92.0
 	return min(-44.0, -radius - 9.0)
@@ -1780,8 +2254,8 @@ func _show_start_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_start(
 		"봉인된 채굴지",
-		"P2 광맥 투기장",
-		"5라운드 동안 적 패턴을 읽고, 라운드 사이 상점에서 드릴촉 부품을 붙여 대응하세요.",
+		"P3 광맥 투기장",
+		"5라운드 동안 유물을 골라 위험을 누적시키고, 상점에서 드릴촉 부품을 붙여 대응하세요.",
 		"탐사 시작"
 	)
 
@@ -1789,7 +2263,7 @@ func _show_start_overlay() -> void:
 func _show_choice_overlay(eyebrow_text: String, title_text: String, options: Array, method_name: String) -> void:
 	active_choice_options = options
 	active_choice_method = method_name
-	game_ui.show_choice(eyebrow_text, title_text, _decorate_choice_options(options))
+	game_ui.show_choice(eyebrow_text, title_text, _decorate_choice_options(options), _active_relic_summary())
 
 
 func _show_game_over_overlay() -> void:
@@ -1798,8 +2272,9 @@ func _show_game_over_overlay() -> void:
 	game_ui.show_end(
 		"탐사 종료",
 		"압도당했습니다",
-		"라운드 %d/%d 레벨 %d 광석 %d 생존 시간 %s" % [wave, MAX_ROUNDS, level, ore, _format_time(elapsed)],
-		"다시 도전"
+		"라운드 %d/%d 레벨 %d 광석 %d 생존 시간 %s\n%s" % [wave, MAX_ROUNDS, level, ore, _format_time(elapsed), _relic_run_summary_text()],
+		"다시 도전",
+		_active_relic_summary()
 	)
 
 
@@ -1808,9 +2283,10 @@ func _show_victory_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_end(
 		"탐사 완료",
-		"P2 보스 처치",
-		"드릴촉 부품 상점을 거쳐 5라운드 전투 루프를 완주했습니다. 다음 단계에서는 부품 선택의 빌드 방향성을 더 다듬습니다.",
-		"다시 시작"
+		"P3 유물 계약 완료",
+		"유물 위험을 누적하고, 상점 대응을 거쳐 5라운드 보스까지 처치했습니다.\n%s" % _relic_run_summary_text(),
+		"다시 시작",
+		_active_relic_summary()
 	)
 
 
@@ -1838,6 +2314,7 @@ func _update_hud() -> void:
 		"max_wave": MAX_ROUNDS,
 		"ore": ore,
 		"time": _format_time(max(0.0, wave_timer)),
+		"relics": _active_relic_summary(),
 	})
 
 
@@ -1860,6 +2337,8 @@ func _decorate_choice_options(options: Array) -> Array:
 func _choice_meta_text(option: Dictionary, disabled: bool) -> String:
 	if disabled and str(option.get("kind", "")) == "weapon":
 		return "무기 슬롯 또는 강화 한도 초과"
+	if str(option.get("kind", "")) == "relic":
+		return "%s · %s" % [str(option.get("danger", "위험 누적")), str(option.get("reward", "보상 누적"))]
 	if option.has("cost"):
 		var cost := int(option["cost"])
 		var price_text := "무료" if cost <= 0 else "광석 %d" % cost
