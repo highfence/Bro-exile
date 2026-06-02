@@ -1,0 +1,22 @@
+{
+  "purpose": "P2 shop part icons for the drill-tip weapon loop.",
+  "size": [
+    256,
+    256
+  ],
+  "style_notes": [
+    "transparent PNG",
+    "thick dark outline",
+    "yellow hard-hat, brown leather, steel, and teal ore accents",
+    "readable at 48-64px"
+  ],
+  "files": {
+    "part_rapid_trigger": "part_rapid_trigger.png",
+    "part_piercing_bit": "part_piercing_bit.png",
+    "part_shatter_charge": "part_shatter_charge.png",
+    "part_long_barrel": "part_long_barrel.png",
+    "part_spring_boots": "part_spring_boots.png",
+    "part_carbide_tip": "part_carbide_tip.png",
+    "part_rations": "part_rations.png"
+  }
+}

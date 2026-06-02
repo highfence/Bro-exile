@@ -26,6 +26,7 @@
 | 상태 | 날짜 | 문서 | 핵심 내용 |
 | --- | --- | --- | --- |
 | 현재 기준 | 2026-06-01 | [P1 5라운드 플레이어블 루프](brainstorms/2026-06-01-p1-five-round-playable-loop-brainstorm.md) | 보상/계약을 제외하고 라운드 5 보스 처치까지 플레이 가능한 P1 마일스톤 |
+| 현재 기준 | 2026-06-01 | [P2 상점 강화 루프](brainstorms/2026-06-01-p2-upgrade-shop-loop-brainstorm.md) | P1 전투 루프 위에 스테이지별 상점 강화 루프를 붙이는 P2 마일스톤 |
 | 현재 기준 | 2026-06-01 | [프로토타이핑 퀘스트 대시보드 브레인스토밍](brainstorms/2026-06-01-prototyping-quest-dashboard-brainstorm.md) | 러프한 게임을 검증 가능한 사이드 퀘스트와 대시보드로 관리하는 방식 |
 | 현재 기준 | 2026-05-22 | [계약 카드 기반 위험/보상 시스템](brainstorms/2026-05-22-contract-card-risk-reward-brainstorm.md) | 성장 가속감, 팩 클리어 판타지, 시체 폭발 첫 실험, 계약 카드 위험/보상 구조 |
 

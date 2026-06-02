@@ -16,7 +16,10 @@ const MAX_WEAPON_LEVEL := 4
 const SHOP_OPTION_COUNT := 4
 const P1_ROUND_DURATION := 42.0
 const P1_BOSS_ROUND_DURATION := 120.0
-const P1_REWARDS_ENABLED := false
+const P2_SHOP_REWARDS_ENABLED := true
+const P2_LEVEL_UP_REWARDS_ENABLED := false
+const ROUND_CLEAR_ORE_BASE := 20
+const ROUND_CLEAR_ORE_STEP := 8
 const SMOKE_ROUND_DURATION := 5.0
 const SMOKE_PLAYTEST_DURATION := 70.0
 const SMOKE_PLAYTEST_CAPTURE_PATH := "/private/tmp/orebound-godot-playtest.png"
@@ -68,6 +71,8 @@ var player := {}
 var weapons: Array = []
 var items: Array = []
 var shop_stock: Array = []
+var purchased_shop_item_ids: Array = []
+var shop_seen_counts := {}
 var enemies: Array = []
 var bullets: Array = []
 var enemy_projectiles: Array = []
@@ -107,26 +112,17 @@ var stat_rewards := [
 ]
 
 var shop_catalog := [
-	{"id": "w_spitter", "kind": "weapon", "weapon": "spitter", "name": "광석 분사기", "desc": "균형 잡힌 단발 자동 무기입니다. 같은 무기는 4단계까지 강화됩니다.", "cost": 18},
-	{"id": "w_flintlock", "kind": "weapon", "weapon": "flintlock", "name": "쌍발 화승총", "desc": "짧은 재사용 대기시간으로 두 발을 흩뿌립니다.", "cost": 20},
-	{"id": "w_drill", "kind": "weapon", "weapon": "drill", "name": "파편 드릴", "desc": "느리지만 강한 관통탄을 발사합니다.", "cost": 28},
-	{"id": "w_coil", "kind": "weapon", "weapon": "coil", "name": "전류 코일", "desc": "근처 적 여럿에게 전류가 튑니다.", "cost": 32},
-	{"id": "w_cleaver", "kind": "weapon", "weapon": "cleaver", "name": "녹슨 절단기", "desc": "가까운 적들을 크게 베어냅니다.", "cost": 24},
-	{"id": "w_launcher", "kind": "weapon", "weapon": "launcher", "name": "광산 유탄기", "desc": "폭발탄으로 작은 무리를 지웁니다.", "cost": 36},
-	{"id": "rations", "kind": "heal", "name": "야전 식량", "desc": "체력 35 회복.", "cost": 14},
-	{"id": "barrel", "kind": "item", "name": "강화 총열", "desc": "+12% 무기 피해.", "cost": 22, "stats": {"damage_mult": 1.12}},
-	{"id": "pocket_magnet", "kind": "item", "name": "휴대 자석", "desc": "+24% 획득 범위.", "cost": 16, "stats": {"pickup_mult": 1.24}},
-	{"id": "tactical_glove", "kind": "item", "name": "전술 장갑", "desc": "+10% 공격 속도, -3% 피해.", "cost": 18, "stats": {"cooldown_mult": 0.90, "damage_mult": 0.97}},
-	{"id": "rangefinder", "kind": "item", "name": "거리 측정기", "desc": "+18% 사거리.", "cost": 18, "stats": {"range_mult": 1.18}},
-	{"id": "iron_plate", "kind": "item", "name": "철판 조끼", "desc": "+3 방어, -5% 이동 속도.", "cost": 24, "stats": {"armor_add": 3.0, "speed_mult": 0.95}},
-	{"id": "glass_core", "kind": "item", "name": "유리 심장", "desc": "+22% 피해, -12 최대 체력.", "cost": 28, "stats": {"damage_mult": 1.22, "max_hp_add": -12.0}},
-	{"id": "harvester", "kind": "item", "name": "수확 부품", "desc": "+28% 광석 획득.", "cost": 25, "stats": {"ore_mult": 1.28}},
-	{"id": "survey_map", "kind": "item", "name": "측량 지도", "desc": "+24% 경험치 획득.", "cost": 20, "stats": {"xp_mult": 1.24}},
-	{"id": "spring_gear", "kind": "item", "name": "스프링 기어", "desc": "+11% 이동 속도.", "cost": 17, "stats": {"speed_mult": 1.11}},
-	{"id": "vita_pump", "kind": "item", "name": "생체 펌프", "desc": "+10 최대 체력, 초당 체력 재생 +0.35.", "cost": 26, "stats": {"max_hp_add": 10.0, "regen_add": 0.35}},
+	{"id": "rapid_trigger", "kind": "part", "name": "급속 방아쇠", "desc": "드릴촉 발사 간격 -18%. 빠른 좀비가 붙기 전에 깎아냅니다.", "cost": 18, "counter": "빠른 좀비 대응", "counters": [2], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_rapid_trigger.png", "weapon_stats": {"cooldown_mult": 0.82}},
+	{"id": "piercing_bit", "kind": "part", "name": "관통 드릴촉", "desc": "드릴촉 관통 +1. 거미떼처럼 몰려오는 적을 한 줄로 뚫습니다.", "cost": 22, "counter": "거미떼 대응", "counters": [3], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_piercing_bit.png", "weapon_stats": {"pierce_add": 1.0, "damage_mult": 1.06}},
+	{"id": "shatter_charge", "kind": "part", "name": "파편 폭약", "desc": "명중 지점에 작은 폭발을 붙입니다. 뭉친 적을 같이 지웁니다.", "cost": 28, "counter": "거미떼 대응", "counters": [3], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_shatter_charge.png", "weapon_stats": {"splash_add": 42.0, "damage_mult": 0.94}},
+	{"id": "long_barrel", "kind": "part", "name": "긴 총열", "desc": "드릴촉 사거리 +24%, 탄속 +10%. 투척 좀비와 거리를 둡니다.", "cost": 20, "counter": "투척 좀비 대응", "counters": [4], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_long_barrel.png", "weapon_stats": {"range_mult": 1.24, "speed_mult": 1.10}},
+	{"id": "spring_boots", "kind": "item", "name": "스프링 장화", "desc": "이동 속도 +14%. 돌 투사체를 피하고 사거리를 다시 잡습니다.", "cost": 18, "counter": "투척 좀비 대응", "counters": [4], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_spring_boots.png", "stats": {"speed_mult": 1.14}},
+	{"id": "carbide_tip", "kind": "part", "name": "균열 탄심", "desc": "방어 관통 +3. 단단한 보스 좀비의 방어를 뚫습니다.", "cost": 30, "counter": "보스 대응", "counters": [5], "unique": true, "icon": "res://assets/sprites/items/p2_parts/part_carbide_tip.png", "weapon_stats": {"armor_pierce_add": 3.0, "damage_mult": 1.08}},
+	{"id": "rations", "kind": "heal", "name": "야전 식량", "desc": "체력 35 회복. 상점 루프 검증용 안전 선택지입니다.", "cost": 14, "icon": "res://assets/sprites/items/p2_parts/part_rations.png"},
 ]
 
 var weapon_catalog := {
+	"drill_tip": {"name": "드릴촉 발사기", "fire_type": "bullet", "cooldown": 0.72, "damage": 16.0, "range": 430.0, "speed": 690.0, "color": Color("#d8ceb9"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0, "armor_pierce": 0.0, "knockback": 0.0, "shape": "drill_tip"},
 	"spitter": {"name": "광석 분사기", "fire_type": "bullet", "cooldown": 0.62, "damage": 18.0, "range": 470.0, "speed": 640.0, "color": Color("#e6b85c"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0},
 	"flintlock": {"name": "쌍발 화승총", "fire_type": "bullet", "cooldown": 0.54, "damage": 9.0, "range": 390.0, "speed": 760.0, "color": Color("#f0643b"), "pierce": 0, "projectiles": 2, "spread": 0.20, "splash": 0.0},
 	"drill": {"name": "파편 드릴", "fire_type": "bullet", "cooldown": 1.28, "damage": 34.0, "range": 560.0, "speed": 500.0, "color": Color("#93c96d"), "pierce": 3, "projectiles": 1, "spread": 0.0, "splash": 0.0},
@@ -337,6 +333,8 @@ func _reset_run(start_playing: bool) -> void:
 	weapons.clear()
 	items.clear()
 	shop_stock.clear()
+	purchased_shop_item_ids.clear()
+	shop_seen_counts.clear()
 	enemies.clear()
 	bullets.clear()
 	enemy_projectiles.clear()
@@ -344,7 +342,7 @@ func _reset_run(start_playing: bool) -> void:
 	sparks.clear()
 	floating_text.clear()
 	boss_spawned = false
-	_add_weapon("spitter")
+	_add_weapon("drill_tip")
 	_render_weapons()
 
 
@@ -435,6 +433,10 @@ func _update_smoke_playtest(delta: float) -> void:
 
 
 func _smoke_direction() -> Vector2:
+	if wave >= MAX_ROUNDS:
+		var boss := _boss_enemy()
+		if not boss.is_empty():
+			return (boss["pos"] - player["pos"]).normalized()
 	var angle := smoke_elapsed * 1.25
 	return Vector2(cos(angle), sin(angle)).normalized()
 
@@ -604,7 +606,8 @@ func _make_enemy(kind: String) -> Dictionary:
 	var damage: float = 9.0
 	var color := Color("#b95b4b")
 	var armor := 0.0
-	var dropped_ore := 0
+	var dropped_ore := 1
+	var ore_chance := 1.0
 	var dropped_xp := 0
 	var desired_range := 0.0
 	var attack_cooldown := 0.0
@@ -621,12 +624,15 @@ func _make_enemy(kind: String) -> Dictionary:
 			radius = 9.0
 			speed = 142.0
 			damage = 4.0
+			dropped_ore = 1
+			ore_chance = 0.35
 			color = Color("#6f9f61")
 		"thrower":
 			hp = 36.0
 			radius = 18.0
 			speed = 76.0
 			damage = 6.0
+			dropped_ore = 2
 			color = Color("#7e8a76")
 			desired_range = 360.0
 			attack_cooldown = 2.15
@@ -636,6 +642,7 @@ func _make_enemy(kind: String) -> Dictionary:
 			speed = 54.0
 			damage = 16.0
 			armor = 3.0
+			dropped_ore = 0
 			color = Color("#6f4f86")
 		_:
 			kind = "zombie"
@@ -655,6 +662,7 @@ func _make_enemy(kind: String) -> Dictionary:
 		"armor": armor,
 		"color": color,
 		"ore": dropped_ore,
+		"ore_chance": ore_chance,
 		"xp": dropped_xp,
 		"desired_range": desired_range,
 		"attack_timer": randf_range(0.25, max(0.35, attack_cooldown)),
@@ -674,6 +682,11 @@ func _update_weapons(delta: float) -> void:
 
 
 func _nearest_enemy(search_range: float) -> Dictionary:
+	if wave >= MAX_ROUNDS:
+		var boss := _boss_in_range(search_range)
+		if not boss.is_empty():
+			return boss
+
 	var best := {}
 	var best_distance := search_range * search_range
 	for enemy in enemies:
@@ -682,6 +695,26 @@ func _nearest_enemy(search_range: float) -> Dictionary:
 			best = enemy
 			best_distance = distance
 	return best
+
+
+func _boss_in_range(search_range: float) -> Dictionary:
+	var best := {}
+	var best_distance := search_range * search_range
+	for enemy in enemies:
+		if str(enemy.get("type", "")) != "boss":
+			continue
+		var distance: float = player["pos"].distance_squared_to(enemy["pos"])
+		if distance < best_distance:
+			best = enemy
+			best_distance = distance
+	return best
+
+
+func _boss_enemy() -> Dictionary:
+	for enemy in enemies:
+		if str(enemy.get("type", "")) == "boss":
+			return enemy
+	return {}
 
 
 func _fire_weapon(weapon: Dictionary, target: Dictionary, effective_range: float) -> void:
@@ -719,7 +752,10 @@ func _fire_projectiles(weapon: Dictionary, target: Dictionary, effective_range: 
 			"damage": weapon["damage"] * damage_multiplier,
 			"color": weapon["color"],
 			"pierce": weapon["pierce"],
-			"splash": float(weapon.get("splash", 0.0)) if explosive else 0.0,
+			"splash": float(weapon.get("splash", 0.0)),
+			"armor_pierce": float(weapon.get("armor_pierce", 0.0)),
+			"knockback": float(weapon.get("knockback", 0.0)),
+			"shape": str(weapon.get("shape", "round")),
 			"hit_ids": [],
 		})
 	_add_spark(origin, weapon["color"], 6)
@@ -785,7 +821,11 @@ func _update_bullets(delta: float) -> void:
 					bullet["life"] = 0.0
 					break
 				else:
-					_hurt_enemy(enemy, bullet["damage"], bullet["pos"])
+					_hurt_enemy(enemy, bullet["damage"], bullet["pos"], float(bullet.get("armor_pierce", 0.0)))
+					var knockback := float(bullet.get("knockback", 0.0))
+					if knockback > 0.0:
+						var push_dir: Vector2 = bullet["velocity"].normalized()
+						enemy["pos"] += push_dir * knockback
 					bullet["pierce"] -= 1
 					if bullet["pierce"] < 0:
 						bullet["life"] = 0.0
@@ -824,7 +864,7 @@ func _explode_bullet(bullet: Dictionary, pos: Vector2) -> void:
 		var distance := pos.distance_to(enemy["pos"])
 		if distance <= splash:
 			var falloff: float = 1.0 - min(0.45, distance / splash * 0.45)
-			_hurt_enemy(enemy, bullet["damage"] * falloff, enemy["pos"])
+			_hurt_enemy(enemy, bullet["damage"] * falloff, enemy["pos"], float(bullet.get("armor_pierce", 0.0)))
 	_add_spark(pos, bullet["color"], 22)
 	sparks.append({
 		"line": false,
@@ -906,18 +946,22 @@ func _throw_enemy_rock(enemy: Dictionary, direction: Vector2) -> void:
 	_add_spark(origin, Color("#c7b08a"), 5)
 
 
-func _hurt_enemy(enemy: Dictionary, damage: float, hit_pos: Vector2) -> void:
-	var final_damage = max(1.0, damage - float(enemy.get("armor", 0.0)))
+func _hurt_enemy(enemy: Dictionary, damage: float, hit_pos: Vector2, armor_pierce: float = 0.0) -> void:
+	var effective_armor = max(0.0, float(enemy.get("armor", 0.0)) - armor_pierce)
+	var final_damage = max(1.0, damage - effective_armor)
 	enemy["hp"] -= final_damage
 	_add_floating_text(str(int(round(final_damage))), hit_pos + Vector2(0, -8), Color("#f5efe3"))
 	_add_spark(hit_pos, Color("#f5efe3"), 4)
 
 
 func _drop_pickups(enemy: Dictionary) -> void:
-	if not P1_REWARDS_ENABLED:
+	if not P2_SHOP_REWARDS_ENABLED:
 		return
-	pickups.append({"pos": enemy["pos"], "radius": 8.0, "type": "xp", "value": enemy["xp"], "color": Color("#6cc3c0")})
+	if P2_LEVEL_UP_REWARDS_ENABLED and float(enemy["xp"]) > 0.0:
+		pickups.append({"pos": enemy["pos"], "radius": 8.0, "type": "xp", "value": enemy["xp"], "color": Color("#6cc3c0")})
 	var ore_count := int(ceil(enemy["ore"] * ore_multiplier))
+	if ore_count > 0 and randf() > float(enemy.get("ore_chance", 1.0)):
+		ore_count = 0
 	for i in range(ore_count):
 		pickups.append({
 			"pos": enemy["pos"] + Vector2(randf_range(-12.0, 12.0), randf_range(-12.0, 12.0)),
@@ -947,7 +991,7 @@ func _update_pickups(delta: float) -> void:
 
 
 func _add_xp(amount: float) -> void:
-	if not P1_REWARDS_ENABLED:
+	if not P2_LEVEL_UP_REWARDS_ENABLED:
 		return
 	xp += amount
 	if xp >= xp_to_next:
@@ -1014,6 +1058,10 @@ func _add_weapon(id: String) -> bool:
 		"projectiles": template["projectiles"],
 		"spread": template["spread"],
 		"splash": template["splash"],
+		"armor_pierce": template.get("armor_pierce", 0.0),
+		"knockback": template.get("knockback", 0.0),
+		"shape": template.get("shape", "round"),
+		"mods": [],
 		"color": template["color"],
 	})
 	return true
@@ -1071,6 +1119,7 @@ func _finish_round() -> void:
 		return
 	rounds_cleared += 1
 	_collect_leftover_ore()
+	_award_round_clear_ore()
 	_clear_combat_state()
 	_fully_heal_player()
 	spawn_timer = 0.0
@@ -1079,7 +1128,7 @@ func _finish_round() -> void:
 	if wave >= MAX_ROUNDS:
 		_victory()
 	else:
-		_open_round_break()
+		_open_shop()
 
 
 func _collect_leftover_ore() -> void:
@@ -1088,6 +1137,12 @@ func _collect_leftover_ore() -> void:
 			ore += item["value"]
 			round_ore_earned += item["value"]
 	pickups.clear()
+
+
+func _award_round_clear_ore() -> void:
+	var reward := ROUND_CLEAR_ORE_BASE + wave * ROUND_CLEAR_ORE_STEP
+	ore += reward
+	round_ore_earned += reward
 
 
 func _clear_combat_state() -> void:
@@ -1133,14 +1188,14 @@ func _round_brief(round_index: int) -> String:
 		4:
 			return "원거리에서 돌을 던지는 좀비가 합류합니다. 투사체와 우선 처치 대상을 읽어야 합니다."
 		5:
-			return "방어력이 높은 보스 좀비가 등장합니다. 보스를 처치하면 P1 테스트가 끝납니다."
+			return "방어력이 높은 보스 좀비가 등장합니다. 보스를 처치하면 P2 테스트가 끝납니다."
 		_:
 			return "다음 라운드를 시작합니다."
 
 
 func _open_shop() -> void:
 	mode = MODE_CHOICE
-	player["hp"] = min(player["max_hp"], player["hp"] + 12.0)
+	_fully_heal_player()
 	reroll_cost = _shop_reroll_cost()
 	shop_stock = _roll_shop_stock()
 	_show_shop_overlay()
@@ -1150,16 +1205,93 @@ func _show_shop_overlay() -> void:
 	var options := shop_stock.duplicate(true)
 	options.append({"id": "reroll", "kind": "command", "name": "재고 새로고침", "desc": "상점 선택지를 다시 뽑습니다.", "cost": reroll_cost})
 	options.append({"id": "next_round", "kind": "command", "name": "다음 라운드", "desc": "구매를 마치고 라운드 %d을 시작합니다." % (wave + 1), "cost": 0})
-	_show_choice_overlay("라운드 %d 완료" % wave, "상점 - 광석 %d" % ore, options, "_choose_shop_option")
+	_show_choice_overlay("라운드 %d 완료  +%d 광석" % [wave, round_ore_earned], "상점 - 광석 %d" % ore, options, "_choose_shop_option")
 
 
 func _roll_shop_stock() -> Array:
-	var rolled := _sample_array(shop_catalog, SHOP_OPTION_COUNT)
+	var rolled: Array = []
+	var next_round: int = min(wave + 1, MAX_ROUNDS)
+	var avoid_ids: Array = _current_shop_item_ids()
+	var counter_pool: Array = _shop_items_for_round(next_round, avoid_ids)
+	if counter_pool.is_empty():
+		counter_pool = _shop_items_for_round(next_round)
+	if not counter_pool.is_empty():
+		rolled.append(_least_seen_shop_item(counter_pool).duplicate(true))
+
+	var candidates: Array = _available_shop_items(avoid_ids)
+	if candidates.size() < SHOP_OPTION_COUNT:
+		candidates = _available_shop_items([])
+	candidates.shuffle()
+	candidates.sort_custom(func(a, b): return _shop_seen_count(a) < _shop_seen_count(b))
+	for option in candidates:
+		if rolled.size() >= SHOP_OPTION_COUNT:
+			break
+		if _stock_has_item_id(rolled, str(option.get("id", ""))):
+			continue
+		rolled.append(option.duplicate(true))
+
 	for i in range(rolled.size()):
 		var option: Dictionary = rolled[i]
 		option["stock_id"] = "%s_%d_%d_%d" % [option["id"], wave, rounds_cleared, i]
 		option["cost"] = _scaled_shop_cost(int(option["cost"]))
+	_record_shop_seen(rolled)
 	return rolled
+
+
+func _shop_items_for_round(round_index: int, avoid_ids: Array = []) -> Array:
+	var pool: Array = []
+	for option in shop_catalog:
+		if _shop_item_can_appear(option, avoid_ids) and option.has("counters") and option["counters"].has(round_index):
+			pool.append(option)
+	return pool
+
+
+func _available_shop_items(avoid_ids: Array) -> Array:
+	var pool: Array = []
+	for option in shop_catalog:
+		if _shop_item_can_appear(option, avoid_ids):
+			pool.append(option)
+	return pool
+
+
+func _shop_item_can_appear(option: Dictionary, avoid_ids: Array) -> bool:
+	var id := str(option.get("id", ""))
+	if avoid_ids.has(id):
+		return false
+	if bool(option.get("unique", false)) and purchased_shop_item_ids.has(id):
+		return false
+	return true
+
+
+func _current_shop_item_ids() -> Array:
+	var ids: Array = []
+	for option in shop_stock:
+		ids.append(str(option.get("id", "")))
+	return ids
+
+
+func _least_seen_shop_item(pool: Array) -> Dictionary:
+	var candidates: Array = pool.duplicate(true)
+	candidates.shuffle()
+	candidates.sort_custom(func(a, b): return _shop_seen_count(a) < _shop_seen_count(b))
+	return candidates[0]
+
+
+func _shop_seen_count(option: Dictionary) -> int:
+	return int(shop_seen_counts.get(str(option.get("id", "")), 0))
+
+
+func _record_shop_seen(stock: Array) -> void:
+	for option in stock:
+		var id := str(option.get("id", ""))
+		shop_seen_counts[id] = int(shop_seen_counts.get(id, 0)) + 1
+
+
+func _stock_has_item_id(stock: Array, id: String) -> bool:
+	for option in stock:
+		if str(option.get("id", "")) == id:
+			return true
+	return false
 
 
 func _scaled_shop_cost(base_cost: int) -> int:
@@ -1198,11 +1330,48 @@ func _apply_shop_purchase(item: Dictionary) -> void:
 			if not _add_weapon(str(item["weapon"])):
 				ore += int(item.get("cost", 0))
 				return
+		"part":
+			items.append(item["name"])
+			_apply_weapon_part_stats(item.get("weapon_stats", {}), str(item.get("name", "")))
 		"heal":
 			player["hp"] = min(player["max_hp"], player["hp"] + 35.0)
 		"item":
 			items.append(item["name"])
 			_apply_item_stats(item.get("stats", {}))
+	if bool(item.get("unique", false)):
+		var id := str(item.get("id", ""))
+		if not purchased_shop_item_ids.has(id):
+			purchased_shop_item_ids.append(id)
+
+
+func _apply_weapon_part_stats(stats: Dictionary, part_name: String) -> void:
+	if weapons.is_empty():
+		return
+	var weapon: Dictionary = weapons[0]
+	var mods: Array = weapon.get("mods", [])
+	mods.append(part_name)
+	weapon["mods"] = mods
+	weapon["level"] = 1 + mods.size()
+	if stats.has("damage_mult"):
+		weapon["damage"] *= float(stats["damage_mult"])
+	if stats.has("cooldown_mult"):
+		weapon["cooldown"] *= float(stats["cooldown_mult"])
+	if stats.has("range_mult"):
+		weapon["range"] *= float(stats["range_mult"])
+	if stats.has("speed_mult"):
+		weapon["speed"] *= float(stats["speed_mult"])
+	if stats.has("pierce_add"):
+		weapon["pierce"] = int(weapon["pierce"]) + int(stats["pierce_add"])
+	if stats.has("projectiles_add"):
+		weapon["projectiles"] = int(weapon["projectiles"]) + int(stats["projectiles_add"])
+	if stats.has("spread_add"):
+		weapon["spread"] = float(weapon["spread"]) + float(stats["spread_add"])
+	if stats.has("splash_add"):
+		weapon["splash"] = max(float(weapon.get("splash", 0.0)), float(stats["splash_add"]))
+	if stats.has("armor_pierce_add"):
+		weapon["armor_pierce"] = float(weapon.get("armor_pierce", 0.0)) + float(stats["armor_pierce_add"])
+	if stats.has("knockback_add"):
+		weapon["knockback"] = float(weapon.get("knockback", 0.0)) + float(stats["knockback_add"])
 
 
 func _apply_item_stats(stats: Dictionary) -> void:
@@ -1521,7 +1690,42 @@ func _draw_ellipse_shadow(pos: Vector2, scale: Vector2, color: Color) -> void:
 
 func _draw_bullets() -> void:
 	for bullet in bullets:
-		draw_circle(bullet["pos"], bullet["radius"], bullet["color"])
+		if str(bullet.get("shape", "round")) == "drill_tip":
+			_draw_drill_tip_bullet(bullet)
+		else:
+			draw_circle(bullet["pos"], bullet["radius"], bullet["color"])
+
+
+func _draw_drill_tip_bullet(bullet: Dictionary) -> void:
+	var pos: Vector2 = bullet["pos"]
+	var velocity: Vector2 = bullet["velocity"]
+	var angle := velocity.angle()
+	var radius: float = bullet["radius"]
+	var outline := [
+		Vector2(radius * 2.05, 0.0),
+		Vector2(-radius * 1.35, -radius * 0.95),
+		Vector2(-radius * 0.85, 0.0),
+		Vector2(-radius * 1.35, radius * 0.95),
+	]
+	var body := [
+		Vector2(radius * 1.55, 0.0),
+		Vector2(-radius * 0.95, -radius * 0.62),
+		Vector2(-radius * 0.55, 0.0),
+		Vector2(-radius * 0.95, radius * 0.62),
+	]
+	draw_colored_polygon(_rotated_polygon(pos, angle, outline), Color("#111412"))
+	draw_colored_polygon(_rotated_polygon(pos, angle, body), bullet["color"])
+	draw_line(pos + Vector2(-radius * 0.68, -radius * 0.58).rotated(angle), pos + Vector2(radius * 0.38, radius * 0.42).rotated(angle), Color("#7d877a"), 2.0)
+	draw_line(pos + Vector2(-radius * 0.12, -radius * 0.48).rotated(angle), pos + Vector2(radius * 0.78, radius * 0.32).rotated(angle), Color("#f5efe3"), 1.5)
+	draw_line(pos - velocity.normalized() * radius * 2.4, pos - velocity.normalized() * radius * 0.8, Color(0.95, 0.78, 0.40, 0.22), 3.0)
+
+
+func _rotated_polygon(pos: Vector2, angle: float, points: Array) -> PackedVector2Array:
+	var polygon := PackedVector2Array()
+	for point in points:
+		var point_vec: Vector2 = point
+		polygon.append(pos + point_vec.rotated(angle))
+	return polygon
 
 
 func _draw_enemy_projectiles() -> void:
@@ -1576,8 +1780,8 @@ func _show_start_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_start(
 		"봉인된 채굴지",
-		"P1 광맥 투기장",
-		"5라운드 동안 새 적 패턴을 버티고, 마지막 보스 좀비를 쓰러뜨리면 테스트가 끝납니다.",
+		"P2 광맥 투기장",
+		"5라운드 동안 적 패턴을 읽고, 라운드 사이 상점에서 드릴촉 부품을 붙여 대응하세요.",
 		"탐사 시작"
 	)
 
@@ -1604,8 +1808,8 @@ func _show_victory_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_end(
 		"탐사 완료",
-		"P1 보스 처치",
-		"5라운드 전투 루프를 완주했습니다. 기본 좀비, 빠른 좀비, 거미떼, 투척 좀비, 보스 좀비 패턴을 모두 통과했습니다.",
+		"P2 보스 처치",
+		"드릴촉 부품 상점을 거쳐 5라운드 전투 루프를 완주했습니다. 다음 단계에서는 부품 선택의 빌드 방향성을 더 다듬습니다.",
 		"다시 시작"
 	)
 
@@ -1658,9 +1862,12 @@ func _choice_meta_text(option: Dictionary, disabled: bool) -> String:
 		return "무기 슬롯 또는 강화 한도 초과"
 	if option.has("cost"):
 		var cost := int(option["cost"])
+		var price_text := "무료" if cost <= 0 else "광석 %d" % cost
+		if option.has("counter"):
+			return "%s · %s" % [str(option["counter"]), price_text]
 		if cost <= 0:
 			return "무료"
-		return "광석 %d" % cost
+		return price_text
 	if option.has("tag"):
 		return str(option["tag"])
 	return ""

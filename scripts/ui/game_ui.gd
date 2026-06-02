@@ -22,6 +22,7 @@ var overlay: Control
 var overlay_panel: PanelContainer
 var overlay_box: VBoxContainer
 var pause_banner: Control
+var icon_texture_cache := {}
 
 
 func setup(font: Font) -> void:
@@ -85,7 +86,11 @@ func render_weapons(weapons: Array, damage_multiplier: float) -> void:
 
 		var title := _make_label(str(weapon["name"]), 12, OreUITheme.INK)
 		title.clip_text = true
-		var detail := _make_label("%d단계  피해 %d" % [int(weapon["level"]), int(round(float(weapon["damage"]) * damage_multiplier))], 11, OreUITheme.MUTED)
+		var mods: Array = weapon.get("mods", [])
+		var detail_text := "%d단계  피해 %d" % [int(weapon["level"]), int(round(float(weapon["damage"]) * damage_multiplier))]
+		if not mods.is_empty():
+			detail_text = "부품 %d  피해 %d" % [mods.size(), int(round(float(weapon["damage"]) * damage_multiplier))]
+		var detail := _make_label(detail_text, 11, OreUITheme.MUTED)
 		detail.clip_text = true
 		box.add_child(title)
 		box.add_child(detail)
@@ -113,7 +118,7 @@ func show_start(eyebrow: String, title: String, body: String, button_text: Strin
 func show_choice(eyebrow: String, title: String, options: Array) -> void:
 	var tall := options.size() > 3
 	var columns: int = 2 if tall else 3
-	var card_height: int = 132 if tall else 120
+	var card_height: int = 154 if tall else 126
 	_prepare_overlay(Vector2(900, 0), OreUITheme.PANEL_STRONG)
 	overlay_box.add_child(_make_label(eyebrow, 14, OreUITheme.ORE))
 	overlay_box.add_child(_make_label(title, 34, OreUITheme.INK))
@@ -302,7 +307,37 @@ func _make_option_card(option: Dictionary, min_height: int) -> Control:
 	box.add_theme_constant_override("separation", 6)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	margin.add_child(box)
+
+	var icon_path := str(option.get("icon", ""))
+	if icon_path.is_empty():
+		margin.add_child(box)
+	else:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		margin.add_child(row)
+
+		var icon_frame := PanelContainer.new()
+		icon_frame.custom_minimum_size = Vector2(76, 76)
+		icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_frame.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.08, 0.09, 0.075, 0.76), Color(0.36, 0.33, 0.25, 0.76), 8, 1))
+		row.add_child(icon_frame)
+
+		var icon_margin := _margin(5, 5, 5, 5)
+		icon_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_frame.add_child(icon_margin)
+
+		var icon := TextureRect.new()
+		icon.texture = _load_png_texture(icon_path)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.custom_minimum_size = Vector2(66, 66)
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_margin.add_child(icon)
+
+		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(box)
 
 	var title_color := OreUITheme.DIM if disabled else OreUITheme.INK
 	var desc_color := Color(0.58, 0.55, 0.49, 0.72) if disabled else OreUITheme.MUTED
@@ -342,6 +377,18 @@ func _make_option_card(option: Dictionary, min_height: int) -> Control:
 		hit_area.pressed.connect(func(): option_selected.emit(option))
 		card.add_child(hit_area)
 	return card
+
+
+func _load_png_texture(path: String) -> Texture2D:
+	if icon_texture_cache.has(path):
+		return icon_texture_cache[path]
+	var image := Image.new()
+	var error := image.load(path)
+	if error != OK:
+		return null
+	var texture := ImageTexture.create_from_image(image)
+	icon_texture_cache[path] = texture
+	return texture
 
 
 func _brand_block() -> Control:
