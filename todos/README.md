@@ -64,7 +64,7 @@ P5는 새 성장 시스템을 늘리기보다 관통, 폭발, 방어 관통, 공
 | 4 | [적 아키타입과 웨이브 패턴](005-complete-p1-enemy-archetypes-and-wave-patterns.md) | 라운드마다 다른 요구를 만들었다. |
 | 5 | [보스 좀비와 테스트 종료](007-complete-p1-boss-zombie-and-test-ending.md) | 라운드 5를 명확한 결산으로 만들었다. |
 | 6 | [P4 런 리포트와 디버그 하네스](014-complete-p4-run-report-and-debug-harness.md) | 플레이테스트 결과를 화면/콘솔에서 복기할 수 있게 됐다. |
-| 7 | [P5 빌드 체감과 전투 가독성](015-ready-p5-build-feedback-and-combat-readability.md) | 다음 작업은 선택한 부품이 전투에서 다르게 느껴지는지 검증한다. |
+| 7 | [P5 빌드 체감과 전투 가독성](015-complete-p5-build-feedback-and-combat-readability.md) | 선택한 부품이 전투에서 다르게 느껴지는지 검증했다. |
 
 ## 한눈에 보기
 
@@ -84,7 +84,7 @@ P5는 새 성장 시스템을 늘리기보다 관통, 폭발, 방어 관통, 공
 | 012 | P2 | complete | P2 | [P2 상점 강화 루프](012-complete-p1-p2-upgrade-shop-loop.md) | 라운드 사이 강화 루프가 생겼다. |
 | 013 | P3 | complete | P3 | [P3 유물 계약 루프](013-complete-p3-relic-contract-loop.md) | 위험/보상을 직접 고르는 누적 유물 루프가 생겼다. |
 | 014 | P4 | complete | 검증 | [P4 런 리포트와 디버그 하네스](014-complete-p4-run-report-and-debug-harness.md) | 플레이테스트 결과가 화면/콘솔 리포트로 남는다. |
-| 015 | P5 | ready | P5 | [P5 빌드 체감과 전투 가독성](015-ready-p5-build-feedback-and-combat-readability.md) | 선택한 부품이 전투에서 다르게 느껴지는지 검증한다. |
+| 015 | P5 | complete | P5 | [P5 빌드 체감과 전투 가독성](015-complete-p5-build-feedback-and-combat-readability.md) | 선택한 부품이 전투에서 다르게 느껴지는지 검증했다. |
 
 ## 체인별 보기
 
@@ -98,7 +98,7 @@ P5는 새 성장 시스템을 늘리기보다 관통, 폭발, 방어 관통, 공
 | P2 | 라운드 사이 강화가 다음 전투에서 체감되는가? | 012 완료 |
 | P3 | 누적 위험/보상 유물을 고른 뒤 상점 대응 선택이 더 재미있어지는가? | 013 완료 |
 | P4 | 한 판의 선택/경제/전투 결과를 바로 복기할 수 있는가? | 014 완료 |
-| P5 | 구매한 부품과 유물 대응이 전투에서 다르게 느껴지는가? | 015 |
+| P5 | 구매한 부품과 유물 대응이 전투에서 다르게 느껴지는가? | 015 완료 |
 
 ## 상태 규칙
 

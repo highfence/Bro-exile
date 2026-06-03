@@ -1,7 +1,7 @@
 ---
 title: "feat: P4/P5 프로토타입 검증 마일스톤"
 type: feat
-status: active
+status: complete
 date: 2026-06-03
 origin: docs/brainstorms/2026-06-02-p3-relic-contract-loop-brainstorm.md
 related_origins:
@@ -24,7 +24,7 @@ P4는 “무엇이 일어났는지 기록할 수 있는가?”를 답하고, P5�
 ## Current Status
 
 - P4는 구현 완료. 종료 화면, smoke/debug 출력, `--capture-run-report-ui`에서 런 리포트를 확인했다.
-- P5는 퀘스트 카드 준비 완료. 다음 작업은 부품별 전투 피드백 강화다.
+- P5는 구현 완료. 부품별 전투 피드백, 몹 넉백/피격감, 이동 속도 완화, separation, 전투 피드백 캡처를 확인했다.
 
 ## Origin Decisions
 
@@ -120,7 +120,7 @@ P3 루프를 반복 테스트 가능한 상태로 만든다. 플레이테스트 
 2. 관통/폭발/방어 관통/공속/사거리 효과의 시각 차이를 만든다.
 3. 보스와 엘리트에게 피격 피드백을 더 강하게 준다.
 4. 거미팩, 엘리트 좀비, 투척 좀비의 위험 신호를 더 빨리 읽히게 한다.
-5. `todos/015-ready-p5-build-feedback-and-combat-readability.md`를 생성하고 대시보드에 연결했다.
+5. `todos/015-complete-p5-build-feedback-and-combat-readability.md`를 생성하고 대시보드에 연결했다.
 
 ### Priority Feedback Targets
 
@@ -133,12 +133,12 @@ P3 루프를 반복 테스트 가능한 상태로 만든다. 플레이테스트 
 
 ### P5 Acceptance Criteria
 
-- [ ] 최소 4개 핵심 부품이 서로 다른 시각/사운드/숫자 피드백을 가진다.
-- [ ] 폭발+관통 조합이 거미팩과 보스 모두에서 읽힌다.
-- [ ] 보스 HP/피격 피드백이 명확해서 데미지 누락처럼 느껴지지 않는다.
-- [ ] 유물 위험에 맞는 대응 부품을 샀을 때 전투가 다르게 느껴진다.
-- [ ] P4 런 리포트에서 P5 변경 후 빌드/부품 선택이 확인된다.
-- [ ] UI/전투 캡처로 가독성을 확인한다.
+- [x] 최소 4개 핵심 부품이 서로 다른 시각/숫자 피드백을 가진다.
+- [x] 폭발+관통 조합이 거미팩과 보스 모두에서 읽힌다.
+- [x] 보스 HP/피격 피드백이 명확해서 데미지 누락처럼 느껴지지 않는다.
+- [x] 유물 위험에 맞는 대응 부품을 샀을 때 전투가 다르게 느껴진다.
+- [x] P4 런 리포트에서 P5 변경 후 빌드/부품 선택이 확인된다.
+- [x] UI/전투 캡처로 가독성을 확인한다.
 
 ### P5 Scope Boundaries
 
@@ -224,7 +224,7 @@ Success:
 
 ### Phase 3: P5 Quest Setup
 
-- `todos/015-ready-p5-build-feedback-and-combat-readability.md` 생성
+- `todos/015-complete-p5-build-feedback-and-combat-readability.md` 생성
 - `todos/README.md`에 P5 메인 퀘스트 추가
 - P4 통계가 P5 검증에 어떻게 쓰이는지 명시
 

@@ -25,6 +25,7 @@ const SMOKE_ROUND_DURATION := 5.0
 const SMOKE_PLAYTEST_DURATION := 70.0
 const SMOKE_PLAYTEST_CAPTURE_PATH := "/private/tmp/orebound-godot-playtest.png"
 const RUN_REPORT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-run-report-ui.png"
+const COMBAT_FEEDBACK_CAPTURE_PATH := "/private/tmp/orebound-godot-combat-feedback.png"
 const CHOICE_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-choice-ui.png"
 const SHOP_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-shop-ui.png"
 const RELIC_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-relic-ui.png"
@@ -218,7 +219,7 @@ var weapon_catalog := {
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
+	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
 		seed(12345)
 	else:
 		randomize()
@@ -237,6 +238,8 @@ func _ready() -> void:
 		_capture_relic_ui_and_quit.call_deferred()
 	elif args.has("--capture-run-report-ui"):
 		_capture_run_report_ui_and_quit.call_deferred()
+	elif args.has("--capture-combat-feedback"):
+		_capture_combat_feedback_and_quit.call_deferred()
 	elif args.has("--capture-stage1"):
 		_capture_stage1_and_quit.call_deferred()
 	elif args.has("--capture-monster-roster"):
@@ -375,6 +378,63 @@ func _capture_run_report_ui_and_quit() -> void:
 	await RenderingServer.frame_post_draw
 	var image := get_viewport().get_texture().get_image()
 	image.save_png(RUN_REPORT_UI_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _capture_combat_feedback_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_PLAY
+	wave = MAX_ROUNDS
+	elapsed = 14.2
+	player["pos"] = Vector2(360.0, 360.0)
+	player["moving"] = false
+	player["facing_right"] = true
+	enemies.clear()
+	bullets.clear()
+	sparks.clear()
+	floating_text.clear()
+	_add_relic(_relic_by_id("spider_egg_fossil"))
+	_add_relic(_relic_by_id("black_shell"))
+
+	var weapon: Dictionary = weapons[0]
+	weapon["mods"] = ["급속 방아쇠", "관통 드릴촉", "파편 폭약", "균열 탄심"]
+	weapon["cooldown"] = 0.38
+	weapon["damage"] = 19.0
+	weapon["range"] = 560.0
+	weapon["speed"] = 760.0
+	weapon["pierce"] = 2
+	weapon["splash"] = 58.0
+	weapon["armor_pierce"] = 3.0
+
+	var boss := _make_enemy("boss")
+	boss["pos"] = Vector2(760.0, 360.0)
+	enemies.append(boss)
+	var elite := _make_enemy("elite_zombie")
+	elite["pos"] = Vector2(830.0, 430.0)
+	enemies.append(elite)
+	var spider_positions := [
+		Vector2(650.0, 310.0),
+		Vector2(690.0, 330.0),
+		Vector2(716.0, 405.0),
+		Vector2(672.0, 430.0),
+		Vector2(622.0, 405.0),
+	]
+	for pos in spider_positions:
+		var spider := _make_enemy("spider")
+		spider["pos"] = pos
+		enemies.append(spider)
+
+	_fire_projectiles(weapon, boss, 620.0, false)
+	for frame in range(34):
+		_update_bullets(1.0 / 60.0)
+		_update_sparks(1.0 / 60.0)
+		_update_floating_text(1.0 / 60.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(COMBAT_FEEDBACK_CAPTURE_PATH)
 	get_tree().quit()
 
 
@@ -786,7 +846,9 @@ func _spawn_enemy_pack(kind: String, pack_size: int) -> void:
 		if enemies.size() >= _enemy_cap():
 			return
 		var enemy := _make_enemy(kind)
-		enemy["pos"] = anchor + Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))
+		var spread_radius := 20.0 + float(pack_size) * 5.0 + float(enemy.get("radius", 12.0)) * 0.55
+		var angle := TAU * float(i) / float(max(1, pack_size)) + randf_range(-0.28, 0.28)
+		enemy["pos"] = anchor + Vector2.RIGHT.rotated(angle) * randf_range(spread_radius * 0.45, spread_radius)
 		enemies.append(enemy)
 
 
@@ -885,7 +947,7 @@ func _spawn_position() -> Vector2:
 func _make_enemy(kind: String) -> Dictionary:
 	var hp := 24.0
 	var radius: float = 16.0
-	var speed := 108.0
+	var speed := 92.0
 	var damage: float = 9.0
 	var color := Color("#b95b4b")
 	var armor := 0.0
@@ -899,13 +961,13 @@ func _make_enemy(kind: String) -> Dictionary:
 		"fast_zombie":
 			hp = 20.0
 			radius = 14.0
-			speed = 166.0
+			speed = 138.0
 			damage = 7.0
 			color = Color("#d68149")
 		"spider":
 			hp = 8.0
 			radius = 9.0
-			speed = 142.0
+			speed = 124.0
 			damage = 4.0
 			dropped_ore = 1
 			ore_chance = 0.35
@@ -913,7 +975,7 @@ func _make_enemy(kind: String) -> Dictionary:
 		"thrower":
 			hp = 36.0
 			radius = 18.0
-			speed = 76.0
+			speed = 66.0
 			damage = 6.0
 			dropped_ore = 2
 			color = Color("#7e8a76")
@@ -922,7 +984,7 @@ func _make_enemy(kind: String) -> Dictionary:
 		"elite_zombie":
 			hp = 82.0
 			radius = 25.0
-			speed = 72.0
+			speed = 62.0
 			damage = 13.0
 			armor = 1.0
 			dropped_ore = 4
@@ -931,7 +993,7 @@ func _make_enemy(kind: String) -> Dictionary:
 		"boss":
 			hp = 380.0
 			radius = 42.0
-			speed = 54.0
+			speed = 48.0
 			damage = 16.0
 			armor = 3.0
 			dropped_ore = 0
@@ -965,6 +1027,9 @@ func _make_enemy(kind: String) -> Dictionary:
 		"desired_range": desired_range,
 		"attack_timer": randf_range(0.25, max(0.35, attack_cooldown)),
 		"attack_cooldown": attack_cooldown,
+		"knockback_velocity": Vector2.ZERO,
+		"hit_flash": 0.0,
+		"hit_flash_color": Color("#f5efe3"),
 	}
 
 
@@ -1032,6 +1097,10 @@ func _fire_projectiles(weapon: Dictionary, target: Dictionary, effective_range: 
 	var base_angle: float = (target["pos"] - origin).angle()
 	var projectile_count := int(weapon.get("projectiles", 1))
 	var spread := float(weapon.get("spread", 0.0))
+	var pierce_count := int(weapon.get("pierce", 0))
+	var splash_radius := float(weapon.get("splash", 0.0))
+	var armor_pierce := float(weapon.get("armor_pierce", 0.0))
+	var has_rapid_feedback := _weapon_has_mod(weapon, "급속 방아쇠")
 	for i in range(projectile_count):
 		var offset := 0.0
 		if projectile_count > 1:
@@ -1049,14 +1118,19 @@ func _fire_projectiles(weapon: Dictionary, target: Dictionary, effective_range: 
 			"life": effective_range / max(1.0, weapon["speed"]),
 			"damage": weapon["damage"] * damage_multiplier,
 			"color": weapon["color"],
-			"pierce": weapon["pierce"],
-			"splash": float(weapon.get("splash", 0.0)),
-			"armor_pierce": float(weapon.get("armor_pierce", 0.0)),
+			"pierce": pierce_count,
+			"initial_pierce": pierce_count,
+			"splash": splash_radius,
+			"armor_pierce": armor_pierce,
 			"knockback": float(weapon.get("knockback", 0.0)),
 			"shape": str(weapon.get("shape", "round")),
+			"pierce_feedback": pierce_count > 0,
+			"splash_feedback": splash_radius > 0.0,
+			"armor_feedback": armor_pierce > 0.0,
+			"rapid_feedback": has_rapid_feedback,
 			"hit_ids": [],
 		})
-	_add_spark(origin, weapon["color"], 6)
+		_add_muzzle_feedback(origin, direction, weapon, has_rapid_feedback)
 
 
 func _fire_arc(weapon: Dictionary, effective_range: float) -> void:
@@ -1069,7 +1143,8 @@ func _fire_arc(weapon: Dictionary, effective_range: float) -> void:
 	var count = min(4, targets.size())
 	for i in range(count):
 		var target = targets[i]
-		_hurt_enemy(target, weapon["damage"] * damage_multiplier, target["pos"])
+		var push_dir: Vector2 = (Vector2(target["pos"]) - Vector2(player["pos"])).normalized()
+		_hurt_enemy(target, weapon["damage"] * damage_multiplier, target["pos"], 0.0, push_dir, "arc")
 		sparks.append({
 			"line": true,
 			"from": player["pos"],
@@ -1090,7 +1165,8 @@ func _fire_slash(weapon: Dictionary, effective_range: float) -> void:
 	var count = min(5, targets.size())
 	for i in range(count):
 		var target = targets[i]
-		_hurt_enemy(target, weapon["damage"] * damage_multiplier, target["pos"])
+		var push_dir: Vector2 = (Vector2(target["pos"]) - Vector2(player["pos"])).normalized()
+		_hurt_enemy(target, weapon["damage"] * damage_multiplier, target["pos"], 0.0, push_dir, "slash")
 		sparks.append({
 			"line": true,
 			"from": player["pos"] + Vector2(randf_range(-10.0, 10.0), randf_range(-10.0, 10.0)),
@@ -1126,11 +1202,8 @@ func _update_bullets(delta: float) -> void:
 						bullet["life"] = 0.0
 						break
 				else:
-					_hurt_enemy(enemy, bullet["damage"], bullet_pos, float(bullet.get("armor_pierce", 0.0)))
-					var knockback := float(bullet.get("knockback", 0.0))
-					if knockback > 0.0:
-						var push_dir: Vector2 = bullet_velocity.normalized()
-						enemy["pos"] += push_dir * knockback
+					var push_dir: Vector2 = bullet_velocity.normalized()
+					_hurt_enemy(enemy, bullet["damage"], bullet_pos, float(bullet.get("armor_pierce", 0.0)), push_dir, _bullet_hit_feedback(bullet, enemy, false, true))
 					bullet["pierce"] -= 1
 					if bullet["pierce"] < 0:
 						bullet["life"] = 0.0
@@ -1167,30 +1240,37 @@ func _explode_bullet(bullet: Dictionary, pos: Vector2, direct_hit_id: int = -1) 
 		return
 	for enemy in enemies:
 		if int(enemy.get("id", -1)) == direct_hit_id:
-			_hurt_enemy(enemy, bullet["damage"], enemy["pos"], float(bullet.get("armor_pierce", 0.0)))
+			var direct_push: Vector2 = Vector2(bullet.get("velocity", Vector2.RIGHT)).normalized()
+			_hurt_enemy(enemy, bullet["damage"], enemy["pos"], float(bullet.get("armor_pierce", 0.0)), direct_push, _bullet_hit_feedback(bullet, enemy, true, true))
 			continue
 		var distance := pos.distance_to(enemy["pos"])
 		if distance <= splash:
 			var falloff: float = 1.0 - min(0.45, distance / splash * 0.45)
-			_hurt_enemy(enemy, bullet["damage"] * falloff, enemy["pos"], float(bullet.get("armor_pierce", 0.0)))
-	_add_spark(pos, bullet["color"], 22)
+			var splash_push: Vector2 = (Vector2(enemy["pos"]) - pos).normalized()
+			_hurt_enemy(enemy, bullet["damage"] * falloff, enemy["pos"], float(bullet.get("armor_pierce", 0.0)), splash_push, _bullet_hit_feedback(bullet, enemy, true, false))
+	_add_spark(pos, _splash_feedback_color(bullet), 24)
+	_add_directional_sparks(pos, Vector2(bullet.get("velocity", Vector2.RIGHT)).normalized(), _splash_feedback_color(bullet), 12)
 	sparks.append({
 		"line": false,
 		"pos": pos,
 		"velocity": Vector2.ZERO,
-		"life": 0.18,
-		"max_life": 0.18,
-		"color": bullet["color"],
+		"life": 0.26,
+		"max_life": 0.26,
+		"color": _splash_feedback_color(bullet),
 		"radius": splash,
 		"ring": true,
+		"width": 4.5,
 	})
 
 
 func _update_enemies(delta: float) -> void:
+	for enemy in enemies:
+		if float(enemy.get("hp", 0.0)) > 0.0:
+			_update_enemy_behavior(enemy, delta)
+	_apply_enemy_separation(delta)
+
 	for i in range(enemies.size() - 1, -1, -1):
 		var enemy = enemies[i]
-		_update_enemy_behavior(enemy, delta)
-
 		var direction: Vector2 = (player["pos"] - enemy["pos"]).normalized()
 		var touch_distance: float = player["radius"] + enemy["radius"]
 		if enemy["pos"].distance_squared_to(player["pos"]) <= touch_distance * touch_distance:
@@ -1216,6 +1296,7 @@ func _update_enemies(delta: float) -> void:
 
 func _update_enemy_behavior(enemy: Dictionary, delta: float) -> void:
 	var type := str(enemy.get("type", "zombie"))
+	enemy["hit_flash"] = max(0.0, float(enemy.get("hit_flash", 0.0)) - delta * 7.5)
 	var to_player: Vector2 = player["pos"] - enemy["pos"]
 	var distance: float = max(1.0, to_player.length())
 	var direction: Vector2 = to_player / distance
@@ -1237,10 +1318,62 @@ func _update_enemy_behavior(enemy: Dictionary, delta: float) -> void:
 	else:
 		enemy["pos"] += direction * enemy["speed"] * delta
 
+	var knockback_velocity: Vector2 = enemy.get("knockback_velocity", Vector2.ZERO)
+	if knockback_velocity.length_squared() > 1.0:
+		enemy["pos"] += knockback_velocity * delta
+		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, 720.0 * delta)
+	else:
+		knockback_velocity = Vector2.ZERO
+	enemy["knockback_velocity"] = knockback_velocity
+
 	var pos: Vector2 = enemy["pos"]
 	pos.x = clamp(pos.x, -60.0, WORLD_SIZE.x + 60.0)
 	pos.y = clamp(pos.y, -60.0, WORLD_SIZE.y + 60.0)
 	enemy["pos"] = pos
+
+
+func _apply_enemy_separation(delta: float) -> void:
+	if enemies.size() < 2:
+		return
+	for i in range(enemies.size()):
+		var enemy: Dictionary = enemies[i]
+		if float(enemy.get("hp", 0.0)) <= 0.0:
+			continue
+		var pos: Vector2 = enemy["pos"]
+		var radius := float(enemy.get("radius", 12.0))
+		var separation := Vector2.ZERO
+		for j in range(enemies.size()):
+			if i == j:
+				continue
+			var other: Dictionary = enemies[j]
+			if float(other.get("hp", 0.0)) <= 0.0:
+				continue
+			var other_pos: Vector2 = other["pos"]
+			var desired_distance := radius + float(other.get("radius", 12.0)) + 7.0
+			var diff := pos - other_pos
+			var distance_sq := diff.length_squared()
+			if distance_sq >= desired_distance * desired_distance:
+				continue
+			var distance := sqrt(max(0.001, distance_sq))
+			if distance < 0.25:
+				diff = Vector2.RIGHT.rotated(float(enemy.get("id", 0)) * 1.79)
+				distance = 1.0
+			var pressure := (desired_distance - distance) / desired_distance
+			separation += diff / distance * pressure
+		if separation.length_squared() <= 0.001:
+			continue
+		var type := str(enemy.get("type", "zombie"))
+		var strength := 72.0
+		if type == "boss":
+			strength = 28.0
+		elif type == "elite_zombie":
+			strength = 44.0
+		elif type == "spider":
+			strength = 88.0
+		var separated_pos := pos + separation.limit_length(1.0) * strength * delta
+		separated_pos.x = clamp(separated_pos.x, -60.0, WORLD_SIZE.x + 60.0)
+		separated_pos.y = clamp(separated_pos.y, -60.0, WORLD_SIZE.y + 60.0)
+		enemy["pos"] = separated_pos
 
 
 func _throw_enemy_rock(enemy: Dictionary, direction: Vector2) -> void:
@@ -1256,7 +1389,7 @@ func _throw_enemy_rock(enemy: Dictionary, direction: Vector2) -> void:
 	_add_spark(origin, Color("#c7b08a"), 5)
 
 
-func _hurt_enemy(enemy: Dictionary, damage: float, hit_pos: Vector2, armor_pierce: float = 0.0) -> void:
+func _hurt_enemy(enemy: Dictionary, damage: float, hit_pos: Vector2, armor_pierce: float = 0.0, push_direction: Vector2 = Vector2.ZERO, feedback: String = "hit") -> void:
 	debug_hurt_events += 1
 	var hp_before := float(enemy.get("hp", 0.0))
 	var effective_armor = max(0.0, float(enemy.get("armor", 0.0)) - armor_pierce)
@@ -1264,8 +1397,168 @@ func _hurt_enemy(enemy: Dictionary, damage: float, hit_pos: Vector2, armor_pierc
 	enemy["hp"] = hp_before - final_damage
 	if str(enemy.get("type", "")) == "boss":
 		run_boss_damage += min(final_damage, max(0.0, hp_before))
-	_add_floating_text(str(int(round(final_damage))), hit_pos + Vector2(0, -8), Color("#f5efe3"))
-	_add_spark(hit_pos, Color("#f5efe3"), 4)
+	var feedback_color := _hit_feedback_color(feedback)
+	enemy["hit_flash"] = 1.0
+	enemy["hit_flash_color"] = feedback_color
+	_apply_enemy_knockback(enemy, push_direction, _hit_knockback_amount(feedback) + float(enemy.get("bonus_knockback", 0.0)))
+	var text_pos := hit_pos + Vector2(0, -8)
+	if feedback == "armor":
+		text_pos += Vector2(0, -18)
+	_add_floating_text(_hit_feedback_text(final_damage, feedback), text_pos, feedback_color)
+	_add_hit_feedback_sparks(hit_pos, push_direction, feedback_color, feedback)
+
+
+func _weapon_has_mod(weapon: Dictionary, mod_name: String) -> bool:
+	var mods: Array = weapon.get("mods", [])
+	return mods.has(mod_name)
+
+
+func _add_muzzle_feedback(origin: Vector2, direction: Vector2, weapon: Dictionary, rapid_feedback: bool) -> void:
+	var color: Color = weapon.get("color", Color("#f5efe3"))
+	var spark_count := 6
+	if rapid_feedback:
+		spark_count = 11
+		_add_line_spark(origin - direction * 7.0, origin + direction * 28.0, Color("#f2cf66"), 0.10, 3.5)
+	if int(weapon.get("pierce", 0)) > 0:
+		_add_line_spark(origin + direction * 4.0, origin + direction * 36.0, Color("#6cc3c0"), 0.12, 2.5)
+	if float(weapon.get("splash", 0.0)) > 0.0:
+		_add_line_spark(origin + direction * 6.0, origin + direction * 24.0, Color("#f0643b"), 0.10, 4.0)
+	if float(weapon.get("armor_pierce", 0.0)) > 0.0:
+		_add_line_spark(origin + direction * 8.0, origin + direction * 32.0, Color("#d8f3ff"), 0.13, 2.0)
+	_add_directional_sparks(origin, direction, color, spark_count)
+
+
+func _bullet_hit_feedback(bullet: Dictionary, enemy: Dictionary, from_splash: bool, direct_hit: bool) -> String:
+	if float(bullet.get("armor_pierce", 0.0)) > 0.0 and float(enemy.get("armor", 0.0)) > 0.0:
+		return "armor"
+	if from_splash:
+		return "splash_direct" if direct_hit else "splash"
+	if bool(bullet.get("pierce_feedback", false)):
+		return "pierce"
+	return "hit"
+
+
+func _splash_feedback_color(bullet: Dictionary) -> Color:
+	if bool(bullet.get("armor_feedback", false)):
+		return Color("#d8f3ff")
+	return Color("#f0643b")
+
+
+func _hit_feedback_color(feedback: String) -> Color:
+	match feedback:
+		"armor":
+			return Color("#d8f3ff")
+		"pierce":
+			return Color("#6cc3c0")
+		"splash", "splash_direct":
+			return Color("#f0643b")
+		"arc":
+			return Color("#6cc3c0")
+		"slash":
+			return Color("#f2cf66")
+		_:
+			return Color("#f5efe3")
+
+
+func _hit_feedback_text(damage: float, feedback: String) -> String:
+	var amount := int(round(damage))
+	match feedback:
+		"armor":
+			return "방관 %d" % amount
+		"pierce":
+			return "관통 %d" % amount
+		"splash_direct":
+			return "직격 %d" % amount
+		"splash":
+			return "폭발 %d" % amount
+		_:
+			return str(amount)
+
+
+func _hit_knockback_amount(feedback: String) -> float:
+	match feedback:
+		"armor":
+			return 58.0
+		"pierce":
+			return 48.0
+		"splash_direct":
+			return 44.0
+		"splash":
+			return 32.0
+		"arc":
+			return 26.0
+		"slash":
+			return 38.0
+		_:
+			return 34.0
+
+
+func _apply_enemy_knockback(enemy: Dictionary, direction: Vector2, amount: float) -> void:
+	if direction.length_squared() <= 0.001:
+		direction = (Vector2(enemy.get("pos", Vector2.ZERO)) - Vector2(player.get("pos", Vector2.ZERO))).normalized()
+	if direction.length_squared() <= 0.001:
+		return
+	var type := str(enemy.get("type", "zombie"))
+	var multiplier := 1.0
+	match type:
+		"spider":
+			multiplier = 1.25
+		"thrower":
+			multiplier = 0.85
+		"elite_zombie":
+			multiplier = 0.45
+		"boss":
+			multiplier = 0.24
+	var velocity: Vector2 = enemy.get("knockback_velocity", Vector2.ZERO)
+	enemy["knockback_velocity"] = (velocity + direction.normalized() * amount * multiplier).limit_length(180.0)
+
+
+func _add_hit_feedback_sparks(pos: Vector2, direction: Vector2, color: Color, feedback: String) -> void:
+	var count := 7
+	var size := 3.0
+	match feedback:
+		"armor":
+			count = 14
+			size = 3.6
+			_add_line_spark(pos - direction.normalized() * 12.0, pos + direction.normalized() * 18.0, color, 0.14, 3.0)
+		"pierce":
+			count = 11
+			size = 3.2
+			_add_line_spark(pos - direction.normalized() * 24.0, pos + direction.normalized() * 20.0, color, 0.12, 2.4)
+		"splash", "splash_direct":
+			count = 12
+			size = 4.0
+	_add_directional_sparks(pos, direction, color, count, size)
+
+
+func _add_directional_sparks(pos: Vector2, direction: Vector2, color: Color, count: int, size: float = 3.0) -> void:
+	var base_direction := direction.normalized()
+	if base_direction.length_squared() <= 0.001:
+		base_direction = Vector2.RIGHT.rotated(randf() * TAU)
+	for i in range(count):
+		var angle := randf_range(-0.95, 0.95)
+		var speed := randf_range(70.0, 240.0)
+		sparks.append({
+			"line": false,
+			"pos": pos,
+			"velocity": base_direction.rotated(angle) * speed,
+			"life": randf_range(0.12, 0.28),
+			"max_life": 0.28,
+			"color": color,
+			"size": size,
+		})
+
+
+func _add_line_spark(from: Vector2, to: Vector2, color: Color, life: float = 0.12, width: float = 3.0) -> void:
+	sparks.append({
+		"line": true,
+		"from": from,
+		"to": to,
+		"life": life,
+		"max_life": life,
+		"color": color,
+		"width": width,
+	})
 
 
 func _drop_pickups(enemy: Dictionary) -> void:
@@ -2165,14 +2458,24 @@ func _draw_enemies() -> void:
 		else:
 			draw_circle(pos, radius, enemy["color"])
 			draw_circle(pos + Vector2(-radius * 0.25, -radius * 0.2), radius * 0.35, Color(0, 0, 0, 0.28))
-		var hp_ratio = clamp(enemy["hp"] / enemy["max_hp"], 0.0, 1.0)
+		var hit_flash: float = clamp(float(enemy.get("hit_flash", 0.0)), 0.0, 1.0)
+		if hit_flash > 0.0:
+			var flash_color: Color = enemy.get("hit_flash_color", Color("#f5efe3"))
+			flash_color.a = 0.18 + 0.24 * hit_flash
+			draw_circle(pos, radius * (1.08 + 0.12 * hit_flash), flash_color)
+			flash_color.a = 0.58 * hit_flash
+			draw_arc(pos, radius + 7.0 + 5.0 * hit_flash, -PI * 0.12, TAU - PI * 0.12, 48, flash_color, 3.0)
+		var hp_ratio: float = clamp(float(enemy["hp"]) / float(enemy["max_hp"]), 0.0, 1.0)
 		var hp_width := radius * 2.0
 		var hp_y := -radius - 9.0
 		if _enemy_has_sprite_asset(type):
 			hp_width = _enemy_asset_hp_width(type, radius)
 			hp_y = _enemy_asset_hp_y(type, radius)
+		var hp_color := Color("#e6b85c")
+		if hit_flash > 0.0 and (type == "boss" or type == "elite_zombie"):
+			hp_color = Color(enemy.get("hit_flash_color", Color("#d8f3ff")))
 		draw_rect(Rect2(pos + Vector2(-hp_width * 0.5, hp_y), Vector2(hp_width, 4)), Color("#111412"), true)
-		draw_rect(Rect2(pos + Vector2(-hp_width * 0.5, hp_y), Vector2(hp_width * hp_ratio, 4)), Color("#e6b85c"), true)
+		draw_rect(Rect2(pos + Vector2(-hp_width * 0.5, hp_y), Vector2(hp_width * hp_ratio, 4)), hp_color, true)
 
 
 func _enemy_has_sprite_asset(type: String) -> bool:
@@ -2230,6 +2533,10 @@ func _draw_single_image_enemy_sprite(
 	var max_hp: float = enemy["max_hp"]
 	var flash: float = 1.0 - clamp(hp / max_hp, 0.0, 1.0)
 	var modulate := Color(1.0, 1.0 - flash * 0.18, 1.0 - flash * 0.18)
+	var hit_flash: float = clamp(float(enemy.get("hit_flash", 0.0)), 0.0, 1.0)
+	if hit_flash > 0.0:
+		var hit_color: Color = enemy.get("hit_flash_color", Color("#f5efe3"))
+		modulate = modulate.lerp(hit_color, hit_flash * 0.54)
 
 	_draw_ellipse_shadow(pos + Vector2(0, shadow_y), shadow_size + Vector2(4.0 * hop, 1.5 * hop), Color(0, 0, 0, 0.18))
 	_draw_sprite_part(texture, pos, local_pos, sign, local_rot, local_scale, base_scale, modulate)
@@ -2359,6 +2666,10 @@ func _draw_bullets() -> void:
 		if str(bullet.get("shape", "round")) == "drill_tip":
 			_draw_drill_tip_bullet(bullet)
 		else:
+			if bool(bullet.get("splash_feedback", false)):
+				var splash_color := Color("#f0643b")
+				splash_color.a = 0.20
+				draw_circle(bullet["pos"], float(bullet["radius"]) * 2.3, splash_color)
 			draw_circle(bullet["pos"], bullet["radius"], bullet["color"])
 
 
@@ -2367,6 +2678,17 @@ func _draw_drill_tip_bullet(bullet: Dictionary) -> void:
 	var velocity: Vector2 = bullet["velocity"]
 	var angle := velocity.angle()
 	var radius: float = bullet["radius"]
+	var direction := velocity.normalized()
+	if bool(bullet.get("rapid_feedback", false)):
+		draw_line(pos - direction * radius * 7.0, pos - direction * radius * 1.4, Color(0.95, 0.78, 0.40, 0.28), 4.0)
+		draw_line(pos - direction * radius * 4.4 + direction.rotated(PI * 0.5) * 3.0, pos - direction * radius * 1.2, Color(0.95, 0.78, 0.40, 0.18), 2.0)
+	if bool(bullet.get("pierce_feedback", false)):
+		draw_line(pos - direction * radius * 8.6, pos + direction * radius * 1.8, Color(0.42, 0.76, 0.75, 0.36), 4.5)
+		draw_line(pos - direction * radius * 5.2, pos + direction * radius * 1.5, Color(0.86, 0.97, 0.94, 0.22), 2.0)
+	if bool(bullet.get("splash_feedback", false)):
+		var splash_glow := Color("#f0643b")
+		splash_glow.a = 0.20
+		draw_circle(pos, radius * 2.6, splash_glow)
 	var outline := [
 		Vector2(radius * 2.05, 0.0),
 		Vector2(-radius * 1.35, -radius * 0.95),
@@ -2381,9 +2703,12 @@ func _draw_drill_tip_bullet(bullet: Dictionary) -> void:
 	]
 	draw_colored_polygon(_rotated_polygon(pos, angle, outline), Color("#111412"))
 	draw_colored_polygon(_rotated_polygon(pos, angle, body), bullet["color"])
+	if bool(bullet.get("armor_feedback", false)):
+		draw_line(pos + Vector2(-radius * 0.85, 0.0).rotated(angle), pos + Vector2(radius * 1.25, 0.0).rotated(angle), Color("#d8f3ff"), 2.3)
+		draw_circle(pos + Vector2(radius * 0.9, 0.0).rotated(angle), radius * 0.34, Color("#f5efe3"))
 	draw_line(pos + Vector2(-radius * 0.68, -radius * 0.58).rotated(angle), pos + Vector2(radius * 0.38, radius * 0.42).rotated(angle), Color("#7d877a"), 2.0)
 	draw_line(pos + Vector2(-radius * 0.12, -radius * 0.48).rotated(angle), pos + Vector2(radius * 0.78, radius * 0.32).rotated(angle), Color("#f5efe3"), 1.5)
-	draw_line(pos - velocity.normalized() * radius * 2.4, pos - velocity.normalized() * radius * 0.8, Color(0.95, 0.78, 0.40, 0.22), 3.0)
+	draw_line(pos - direction * radius * 2.4, pos - direction * radius * 0.8, Color(0.95, 0.78, 0.40, 0.22), 3.0)
 
 
 func _rotated_polygon(pos: Vector2, angle: float, points: Array) -> PackedVector2Array:
@@ -2419,17 +2744,19 @@ func _draw_sparks() -> void:
 		var color: Color = spark["color"]
 		color.a = alpha
 		if spark.get("line", false):
-			draw_line(spark["from"], spark["to"], color, 3.0)
+			draw_line(spark["from"], spark["to"], color, float(spark.get("width", 3.0)))
 		elif spark.get("ring", false):
-			draw_arc(spark["pos"], float(spark.get("radius", 30.0)) * (1.0 - alpha * 0.2), 0.0, TAU, 48, color, 3.0)
+			draw_arc(spark["pos"], float(spark.get("radius", 30.0)) * (1.0 - alpha * 0.2), 0.0, TAU, 48, color, float(spark.get("width", 3.0)))
 		else:
-			draw_circle(spark["pos"], 3.0, color)
+			draw_circle(spark["pos"], float(spark.get("size", 3.0)), color)
 
 
 func _draw_floating_text() -> void:
 	for text in floating_text:
 		var color: Color = text["color"]
 		color.a = clamp(text["life"] / 0.55, 0.0, 1.0)
+		var shadow := Color(0, 0, 0, color.a * 0.62)
+		draw_string(ui_font, text["pos"] + Vector2(1.5, 1.5), text["text"], HORIZONTAL_ALIGNMENT_CENTER, -1.0, 16, shadow)
 		draw_string(ui_font, text["pos"], text["text"], HORIZONTAL_ALIGNMENT_CENTER, -1.0, 16, color)
 
 
