@@ -230,7 +230,7 @@ var weapon_catalog := {
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
+	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
 		seed(12345)
 	else:
 		randomize()
@@ -267,6 +267,8 @@ func _ready() -> void:
 		_debug_spider_relic_wave2_and_quit.call_deferred()
 	elif args.has("--debug-boss-pierce-splash"):
 		_debug_boss_pierce_splash_and_quit.call_deferred()
+	elif args.has("--debug-emerging-death-cleanup"):
+		_debug_emerging_death_cleanup_and_quit.call_deferred()
 
 
 func _debug_spider_relic_wave2_and_quit() -> void:
@@ -602,6 +604,43 @@ func _debug_boss_pierce_splash_and_quit() -> void:
 
 	print("DEBUG_BOSS_PIERCE_SPLASH failures=%d probe={%s} results=%s report=\"%s\"" % [failures, first_probe, ", ".join(results), _run_report_console_summary()])
 	get_tree().quit(1 if failures > 0 else 0)
+
+
+func _debug_emerging_death_cleanup_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_PLAY
+	wave = 3
+	enemies.clear()
+	sparks.clear()
+	_add_relic(_relic_by_id("unstable_blast_crystal"))
+	for i in range(5):
+		var spider := _make_enemy("spider")
+		spider["pos"] = player["pos"] + Vector2.RIGHT.rotated(TAU * float(i) / 5.0) * 50.0
+		spider["hp"] = 0.0
+		spider["emerge_timer"] = ENEMY_EMERGE_DURATION
+		enemies.append(spider)
+
+	_update_enemies(1.0 / 60.0)
+	var dead_emerging_left := 0
+	for enemy in enemies:
+		if float(enemy.get("hp", 0.0)) <= 0.0 and _enemy_is_emerging(enemy):
+			dead_emerging_left += 1
+
+	for frame in range(80):
+		_update_sparks(1.0 / 60.0)
+	var lingering_ring_count := 0
+	for spark in sparks:
+		if bool(spark.get("ring", false)):
+			lingering_ring_count += 1
+
+	print("DEBUG_EMERGING_DEATH_CLEANUP dead_emerging_left=%d enemies=%d sparks=%d lingering_rings=%d" % [
+		dead_emerging_left,
+		enemies.size(),
+		sparks.size(),
+		lingering_ring_count,
+	])
+	get_tree().quit(1 if dead_emerging_left > 0 else 0)
 
 
 func _capture_stage1_and_quit() -> void:
@@ -1268,6 +1307,8 @@ func _nearest_enemy(search_range: float) -> Dictionary:
 	var best := {}
 	var best_distance := search_range * search_range
 	for enemy in enemies:
+		if float(enemy.get("hp", 0.0)) <= 0.0:
+			continue
 		if _enemy_is_emerging(enemy):
 			continue
 		var distance: float = player["pos"].distance_squared_to(enemy["pos"])
@@ -1282,6 +1323,8 @@ func _boss_in_range(search_range: float) -> Dictionary:
 	var best_distance := search_range * search_range
 	for enemy in enemies:
 		if str(enemy.get("type", "")) != "boss":
+			continue
+		if float(enemy.get("hp", 0.0)) <= 0.0:
 			continue
 		if _enemy_is_emerging(enemy):
 			continue
@@ -1355,6 +1398,8 @@ func _fire_projectiles(weapon: Dictionary, target: Dictionary, effective_range: 
 func _fire_arc(weapon: Dictionary, effective_range: float) -> void:
 	var targets := []
 	for enemy in enemies:
+		if float(enemy.get("hp", 0.0)) <= 0.0 or _enemy_is_emerging(enemy):
+			continue
 		if player["pos"].distance_squared_to(enemy["pos"]) <= effective_range * effective_range:
 			targets.append(enemy)
 	targets.sort_custom(func(a, b): return player["pos"].distance_squared_to(a["pos"]) < player["pos"].distance_squared_to(b["pos"]))
@@ -1377,6 +1422,8 @@ func _fire_arc(weapon: Dictionary, effective_range: float) -> void:
 func _fire_slash(weapon: Dictionary, effective_range: float) -> void:
 	var targets := []
 	for enemy in enemies:
+		if float(enemy.get("hp", 0.0)) <= 0.0 or _enemy_is_emerging(enemy):
+			continue
 		if player["pos"].distance_squared_to(enemy["pos"]) <= effective_range * effective_range:
 			targets.append(enemy)
 	targets.sort_custom(func(a, b): return player["pos"].distance_squared_to(a["pos"]) < player["pos"].distance_squared_to(b["pos"]))
@@ -1408,6 +1455,8 @@ func _update_bullets(delta: float) -> void:
 		bullet["life"] -= delta
 
 		for enemy in enemies:
+			if float(enemy.get("hp", 0.0)) <= 0.0:
+				continue
 			if _enemy_is_emerging(enemy):
 				continue
 			if bullet["hit_ids"].has(enemy["id"]):
@@ -1492,6 +1541,18 @@ func _update_enemies(delta: float) -> void:
 
 	for i in range(enemies.size() - 1, -1, -1):
 		var enemy = enemies[i]
+		if enemy["hp"] <= 0.0:
+			var defeated_type := str(enemy.get("type", "zombie"))
+			_record_enemy_defeat(defeated_type)
+			_drop_pickups(enemy)
+			_trigger_relic_death_hazard(enemy)
+			_add_spark(enemy["pos"], enemy["color"], 14)
+			enemies.remove_at(i)
+			if defeated_type == "boss":
+				_victory()
+				return
+			continue
+
 		if _enemy_is_emerging(enemy):
 			continue
 		var direction: Vector2 = (player["pos"] - enemy["pos"]).normalized()
@@ -1504,17 +1565,6 @@ func _update_enemies(delta: float) -> void:
 				screen_shake = 1.0
 				_add_floating_text("-%d" % int(round(damage)), player["pos"] + Vector2(0, -28), Color("#f0643b"))
 			enemy["pos"] += -direction * 70.0 * delta
-
-		if enemy["hp"] <= 0.0:
-			var defeated_type := str(enemy.get("type", "zombie"))
-			_record_enemy_defeat(defeated_type)
-			_drop_pickups(enemy)
-			_trigger_relic_death_hazard(enemy)
-			_add_spark(enemy["pos"], enemy["color"], 14)
-			enemies.remove_at(i)
-			if defeated_type == "boss":
-				_victory()
-				return
 
 
 func _update_enemy_behavior(enemy: Dictionary, delta: float) -> void:
