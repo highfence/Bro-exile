@@ -3,7 +3,8 @@ extends Node2D
 const GameUIScript = preload("res://scripts/ui/game_ui.gd")
 const OreUIThemeScript = preload("res://scripts/ui/ore_ui_theme.gd")
 
-const WORLD_SIZE := Vector2(1280, 720)
+const VIEW_SIZE := Vector2(1280, 720)
+const WORLD_SIZE := Vector2(2048, 2048)
 const WORLD_MARGIN := 34.0
 const MODE_START := "start"
 const MODE_PLAY := "play"
@@ -26,6 +27,9 @@ const SMOKE_PLAYTEST_DURATION := 70.0
 const SMOKE_PLAYTEST_CAPTURE_PATH := "/private/tmp/orebound-godot-playtest.png"
 const RUN_REPORT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-run-report-ui.png"
 const COMBAT_FEEDBACK_CAPTURE_PATH := "/private/tmp/orebound-godot-combat-feedback.png"
+const P6_MAP_CAMERA_CAPTURE_PATH := "/private/tmp/orebound-godot-p6-map-camera.png"
+const SPAWN_TELEGRAPH_CAPTURE_PATH := "/private/tmp/orebound-godot-spawn-telegraph.png"
+const PAUSE_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-pause-ui.png"
 const CHOICE_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-choice-ui.png"
 const SHOP_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-shop-ui.png"
 const RELIC_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-relic-ui.png"
@@ -47,6 +51,10 @@ const FAST_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v
 const SPIDER_SWARM_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/spider_swarm.png"
 const THROWER_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/thrower_zombie.png"
 const BOSS_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/boss_zombie.png"
+const CAMERA_FOLLOW_SPEED := 7.5
+const SPAWN_WARNING_DURATION := 0.78
+const BOSS_SPAWN_WARNING_DURATION := 1.18
+const ENEMY_EMERGE_DURATION := 0.32
 
 var mode := MODE_START
 var elapsed := 0.0
@@ -66,6 +74,8 @@ var hp_regen := 0.0
 var dash_cooldown := 0.0
 var screen_shake := 0.0
 var paused := false
+var camera_pos := Vector2.ZERO
+var draw_world_offset := Vector2.ZERO
 var next_enemy_id := 1
 var reroll_cost := 2
 var round_ore_earned := 0
@@ -96,6 +106,7 @@ var enemies: Array = []
 var bullets: Array = []
 var enemy_projectiles: Array = []
 var pickups: Array = []
+var spawn_warnings: Array = []
 var sparks: Array = []
 var floating_text: Array = []
 var boss_spawned := false
@@ -219,7 +230,7 @@ var weapon_catalog := {
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
+	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
 		seed(12345)
 	else:
 		randomize()
@@ -240,6 +251,12 @@ func _ready() -> void:
 		_capture_run_report_ui_and_quit.call_deferred()
 	elif args.has("--capture-combat-feedback"):
 		_capture_combat_feedback_and_quit.call_deferred()
+	elif args.has("--capture-p6-map-camera"):
+		_capture_p6_map_camera_and_quit.call_deferred()
+	elif args.has("--capture-spawn-telegraph"):
+		_capture_spawn_telegraph_and_quit.call_deferred()
+	elif args.has("--capture-pause-ui"):
+		_capture_pause_ui_and_quit.call_deferred()
 	elif args.has("--capture-stage1"):
 		_capture_stage1_and_quit.call_deferred()
 	elif args.has("--capture-monster-roster"):
@@ -438,6 +455,93 @@ func _capture_combat_feedback_and_quit() -> void:
 	get_tree().quit()
 
 
+func _capture_p6_map_camera_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_PLAY
+	wave = 4
+	elapsed = 18.6
+	player["pos"] = Vector2(1684.0, 1536.0)
+	player["moving"] = true
+	player["facing_right"] = true
+	camera_pos = _clamped_camera_position(player["pos"])
+	enemies.clear()
+	spawn_warnings.clear()
+	var positions := [
+		Vector2(1420, 1408),
+		Vector2(1768, 1336),
+		Vector2(1900, 1640),
+		Vector2(1510, 1752),
+	]
+	var types := ["zombie", "fast_zombie", "thrower", "spider"]
+	for i in range(positions.size()):
+		var enemy := _make_enemy(types[i])
+		enemy["pos"] = positions[i]
+		enemies.append(enemy)
+	_queue_spawn_warning("spider", 5)
+	_queue_spawn_warning("elite_zombie", 1)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(P6_MAP_CAMERA_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _capture_spawn_telegraph_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_PLAY
+	wave = 3
+	elapsed = 9.5
+	player["pos"] = WORLD_SIZE * 0.5
+	camera_pos = _clamped_camera_position(player["pos"])
+	enemies.clear()
+	spawn_warnings.clear()
+	var center := _visible_world_rect().position + VIEW_SIZE * 0.5
+	spawn_warnings.append({"kind": "zombie", "pack_size": 1, "pos": center + Vector2(-260, -80), "timer": 0.62, "duration": SPAWN_WARNING_DURATION, "seed": 13.0})
+	spawn_warnings.append({"kind": "spider", "pack_size": 5, "pos": center + Vector2(70, 118), "timer": 0.34, "duration": SPAWN_WARNING_DURATION, "seed": 77.0})
+	spawn_warnings.append({"kind": "elite_zombie", "pack_size": 1, "pos": center + Vector2(312, -18), "timer": 0.14, "duration": SPAWN_WARNING_DURATION, "seed": 151.0})
+	var emerging := _make_enemy("fast_zombie")
+	emerging["pos"] = center + Vector2(-48, -174)
+	emerging["emerge_timer"] = ENEMY_EMERGE_DURATION * 0.58
+	enemies.append(emerging)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(SPAWN_TELEGRAPH_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _capture_pause_ui_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_PLAY
+	wave = 4
+	wave_timer = 28.0
+	ore = 86
+	run_kill_count = 42
+	run_purchase_count = 3
+	run_rerolls = 1
+	_add_relic(_relic_by_id("spider_egg_fossil"))
+	_add_relic(_relic_by_id("hungry_lantern"))
+	var weapon: Dictionary = weapons[0]
+	weapon["mods"] = ["급속 방아쇠", "관통 드릴촉", "파편 폭약"]
+	weapon["damage"] = 19.0
+	weapon["cooldown"] = 0.42
+	weapon["pierce"] = 1
+	weapon["splash"] = 42.0
+	_render_weapons()
+	_set_paused(true)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(PAUSE_UI_CAPTURE_PATH)
+	get_tree().quit()
+
+
 func _debug_boss_pierce_splash_and_quit() -> void:
 	_reset_run(true)
 	_hide_overlay()
@@ -592,12 +696,20 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause") and mode == MODE_PLAY:
-		paused = not paused
-		if game_ui != null:
-			game_ui.set_paused(paused)
+		_set_paused(not paused)
 	if event.is_action_pressed("dash") and mode == MODE_PLAY and dash_cooldown <= 0.0:
 		player["dash_time"] = 0.16
 		dash_cooldown = 1.7
+
+
+func _set_paused(value: bool) -> void:
+	paused = value
+	if game_ui == null:
+		return
+	if paused:
+		game_ui.show_pause(_current_state_summary(), _active_relic_summary())
+	else:
+		game_ui.hide_pause()
 
 
 func _reset_run(start_playing: bool) -> void:
@@ -620,7 +732,8 @@ func _reset_run(start_playing: bool) -> void:
 	screen_shake = 0.0
 	paused = false
 	if game_ui != null:
-		game_ui.set_paused(false)
+		game_ui.hide_pause()
+	camera_pos = _clamped_camera_position(WORLD_SIZE * 0.5)
 	next_enemy_id = 1
 	active_relics.clear()
 	relic_counts.clear()
@@ -661,6 +774,7 @@ func _reset_run(start_playing: bool) -> void:
 	bullets.clear()
 	enemy_projectiles.clear()
 	pickups.clear()
+	spawn_warnings.clear()
 	sparks.clear()
 	floating_text.clear()
 	boss_spawned = false
@@ -693,7 +807,9 @@ func _update_game(delta: float) -> void:
 		player["hp"] = min(player["max_hp"], player["hp"] + hp_regen * delta)
 
 	_move_player(delta)
+	_update_camera(delta)
 	_spawn_enemies()
+	_update_spawn_warnings(delta)
 	_update_weapons(delta)
 	_update_bullets(delta)
 	_update_enemy_projectiles(delta)
@@ -724,6 +840,36 @@ func _move_player(delta: float) -> void:
 	player["moving"] = direction.length_squared() > 0.001 or player["dash_time"] > 0.0
 	if absf(direction.x) > 0.05:
 		player["facing_right"] = direction.x > 0.0
+
+
+func _update_camera(delta: float) -> void:
+	var target := _clamped_camera_position(Vector2(player.get("pos", WORLD_SIZE * 0.5)))
+	if camera_pos == Vector2.ZERO:
+		camera_pos = target
+	var follow_weight := 1.0 - exp(-CAMERA_FOLLOW_SPEED * max(0.0, delta))
+	camera_pos = camera_pos.lerp(target, follow_weight)
+
+
+func _clamped_camera_position(target_center: Vector2) -> Vector2:
+	var half_view := VIEW_SIZE * 0.5
+	var clamped := target_center
+	if WORLD_SIZE.x <= VIEW_SIZE.x:
+		clamped.x = WORLD_SIZE.x * 0.5
+	else:
+		clamped.x = clamp(clamped.x, half_view.x, WORLD_SIZE.x - half_view.x)
+	if WORLD_SIZE.y <= VIEW_SIZE.y:
+		clamped.y = WORLD_SIZE.y * 0.5
+	else:
+		clamped.y = clamp(clamped.y, half_view.y, WORLD_SIZE.y - half_view.y)
+	return clamped
+
+
+func _camera_origin() -> Vector2:
+	return _clamped_camera_position(camera_pos) - VIEW_SIZE * 0.5
+
+
+func _visible_world_rect() -> Rect2:
+	return Rect2(_camera_origin(), VIEW_SIZE)
 
 
 func _start_smoke_playtest() -> void:
@@ -820,28 +966,31 @@ func _spawn_enemies() -> void:
 		return
 
 	if wave >= MAX_ROUNDS and not boss_spawned:
-		enemies.append(_make_enemy("boss"))
+		_queue_spawn_warning("boss", 1, BOSS_SPAWN_WARNING_DURATION)
 		boss_spawned = true
 		spawn_timer = 1.8
 		return
 
-	if enemies.size() >= _enemy_cap():
+	if enemies.size() + _pending_spawn_count() >= _enemy_cap():
 		spawn_timer = 0.35
 		return
 
 	if _should_spawn_elite_zombie():
-		_spawn_enemy_pack("elite_zombie", 1)
+		_queue_spawn_warning("elite_zombie", 1)
 		spawn_timer = max(0.38, _enemy_spawn_interval("elite_zombie") * 0.82)
 		return
 
 	var kind := _pick_enemy_kind()
 	var pack_size := _enemy_pack_size(kind)
-	_spawn_enemy_pack(kind, pack_size)
+	_queue_spawn_warning(kind, pack_size)
 	spawn_timer = _enemy_spawn_interval(kind)
 
 
 func _spawn_enemy_pack(kind: String, pack_size: int) -> void:
-	var anchor := _spawn_position()
+	_spawn_enemy_pack_at(kind, pack_size, _spawn_position(), false)
+
+
+func _spawn_enemy_pack_at(kind: String, pack_size: int, anchor: Vector2, emerging: bool) -> void:
 	for i in range(pack_size):
 		if enemies.size() >= _enemy_cap():
 			return
@@ -849,7 +998,40 @@ func _spawn_enemy_pack(kind: String, pack_size: int) -> void:
 		var spread_radius := 20.0 + float(pack_size) * 5.0 + float(enemy.get("radius", 12.0)) * 0.55
 		var angle := TAU * float(i) / float(max(1, pack_size)) + randf_range(-0.28, 0.28)
 		enemy["pos"] = anchor + Vector2.RIGHT.rotated(angle) * randf_range(spread_radius * 0.45, spread_radius)
+		if emerging:
+			enemy["emerge_timer"] = ENEMY_EMERGE_DURATION
+			enemy["emerge_duration"] = ENEMY_EMERGE_DURATION
 		enemies.append(enemy)
+
+
+func _queue_spawn_warning(kind: String, pack_size: int, duration: float = SPAWN_WARNING_DURATION) -> void:
+	var capped_pack_size: int = min(pack_size, max(0, _enemy_cap() - enemies.size() - _pending_spawn_count()))
+	if capped_pack_size <= 0:
+		return
+	spawn_warnings.append({
+		"kind": kind,
+		"pack_size": capped_pack_size,
+		"pos": _spawn_warning_position(kind),
+		"timer": duration,
+		"duration": duration,
+		"seed": randf() * 1000.0,
+	})
+
+
+func _update_spawn_warnings(delta: float) -> void:
+	for i in range(spawn_warnings.size() - 1, -1, -1):
+		var warning: Dictionary = spawn_warnings[i]
+		warning["timer"] = float(warning.get("timer", 0.0)) - delta
+		if float(warning["timer"]) <= 0.0:
+			_spawn_enemy_pack_at(str(warning.get("kind", "zombie")), int(warning.get("pack_size", 1)), Vector2(warning.get("pos", player.get("pos", WORLD_SIZE * 0.5))), true)
+			spawn_warnings.remove_at(i)
+
+
+func _pending_spawn_count() -> int:
+	var count := 0
+	for warning in spawn_warnings:
+		count += int(warning.get("pack_size", 1))
+	return count
 
 
 func _enemy_cap() -> int:
@@ -944,6 +1126,37 @@ func _spawn_position() -> Vector2:
 	return Vector2(randf() * WORLD_SIZE.x, WORLD_SIZE.y + 30.0)
 
 
+func _spawn_warning_position(kind: String) -> Vector2:
+	var visible := _visible_world_rect()
+	var margin := 74.0
+	var top_margin := 120.0
+	var radius_bonus := 30.0
+	if kind == "boss":
+		radius_bonus = 72.0
+	elif kind == "elite_zombie":
+		radius_bonus = 48.0
+	var min_x: float = maxf(WORLD_MARGIN + radius_bonus, visible.position.x + margin)
+	var max_x: float = minf(WORLD_SIZE.x - WORLD_MARGIN - radius_bonus, visible.position.x + visible.size.x - margin)
+	var min_y: float = maxf(WORLD_MARGIN + radius_bonus, visible.position.y + top_margin)
+	var max_y: float = minf(WORLD_SIZE.y - WORLD_MARGIN - radius_bonus, visible.position.y + visible.size.y - margin)
+	if max_x < min_x:
+		min_x = WORLD_MARGIN + radius_bonus
+		max_x = WORLD_SIZE.x - WORLD_MARGIN - radius_bonus
+	if max_y < min_y:
+		min_y = WORLD_MARGIN + radius_bonus
+		max_y = WORLD_SIZE.y - WORLD_MARGIN - radius_bonus
+
+	var chosen := Vector2(randf_range(min_x, max_x), randf_range(min_y, max_y))
+	var min_distance := 150.0 if kind != "boss" else 230.0
+	for attempt in range(8):
+		var candidate := Vector2(randf_range(min_x, max_x), randf_range(min_y, max_y))
+		if candidate.distance_to(player["pos"]) >= min_distance:
+			return candidate
+		if candidate.distance_to(player["pos"]) > chosen.distance_to(player["pos"]):
+			chosen = candidate
+	return chosen
+
+
 func _make_enemy(kind: String) -> Dictionary:
 	var hp := 24.0
 	var radius: float = 16.0
@@ -1030,6 +1243,8 @@ func _make_enemy(kind: String) -> Dictionary:
 		"knockback_velocity": Vector2.ZERO,
 		"hit_flash": 0.0,
 		"hit_flash_color": Color("#f5efe3"),
+		"emerge_timer": 0.0,
+		"emerge_duration": ENEMY_EMERGE_DURATION,
 	}
 
 
@@ -1053,6 +1268,8 @@ func _nearest_enemy(search_range: float) -> Dictionary:
 	var best := {}
 	var best_distance := search_range * search_range
 	for enemy in enemies:
+		if _enemy_is_emerging(enemy):
+			continue
 		var distance: float = player["pos"].distance_squared_to(enemy["pos"])
 		if distance < best_distance:
 			best = enemy
@@ -1065,6 +1282,8 @@ func _boss_in_range(search_range: float) -> Dictionary:
 	var best_distance := search_range * search_range
 	for enemy in enemies:
 		if str(enemy.get("type", "")) != "boss":
+			continue
+		if _enemy_is_emerging(enemy):
 			continue
 		var distance: float = player["pos"].distance_squared_to(enemy["pos"])
 		if distance < best_distance:
@@ -1189,6 +1408,8 @@ func _update_bullets(delta: float) -> void:
 		bullet["life"] -= delta
 
 		for enemy in enemies:
+			if _enemy_is_emerging(enemy):
+				continue
 			if bullet["hit_ids"].has(enemy["id"]):
 				continue
 			var enemy_pos: Vector2 = enemy["pos"]
@@ -1265,12 +1486,14 @@ func _explode_bullet(bullet: Dictionary, pos: Vector2, direct_hit_id: int = -1) 
 
 func _update_enemies(delta: float) -> void:
 	for enemy in enemies:
-		if float(enemy.get("hp", 0.0)) > 0.0:
+		if float(enemy.get("hp", 0.0)) > 0.0 and not _update_enemy_emerge(enemy, delta):
 			_update_enemy_behavior(enemy, delta)
 	_apply_enemy_separation(delta)
 
 	for i in range(enemies.size() - 1, -1, -1):
 		var enemy = enemies[i]
+		if _enemy_is_emerging(enemy):
+			continue
 		var direction: Vector2 = (player["pos"] - enemy["pos"]).normalized()
 		var touch_distance: float = player["radius"] + enemy["radius"]
 		if enemy["pos"].distance_squared_to(player["pos"]) <= touch_distance * touch_distance:
@@ -1332,12 +1555,27 @@ func _update_enemy_behavior(enemy: Dictionary, delta: float) -> void:
 	enemy["pos"] = pos
 
 
+func _update_enemy_emerge(enemy: Dictionary, delta: float) -> bool:
+	var timer := float(enemy.get("emerge_timer", 0.0))
+	enemy["hit_flash"] = max(0.0, float(enemy.get("hit_flash", 0.0)) - delta * 7.5)
+	if timer <= 0.0:
+		return false
+	enemy["emerge_timer"] = max(0.0, timer - delta)
+	return true
+
+
+func _enemy_is_emerging(enemy: Dictionary) -> bool:
+	return float(enemy.get("emerge_timer", 0.0)) > 0.0
+
+
 func _apply_enemy_separation(delta: float) -> void:
 	if enemies.size() < 2:
 		return
 	for i in range(enemies.size()):
 		var enemy: Dictionary = enemies[i]
 		if float(enemy.get("hp", 0.0)) <= 0.0:
+			continue
+		if _enemy_is_emerging(enemy):
 			continue
 		var pos: Vector2 = enemy["pos"]
 		var radius := float(enemy.get("radius", 12.0))
@@ -1347,6 +1585,8 @@ func _apply_enemy_separation(delta: float) -> void:
 				continue
 			var other: Dictionary = enemies[j]
 			if float(other.get("hp", 0.0)) <= 0.0:
+				continue
+			if _enemy_is_emerging(other):
 				continue
 			var other_pos: Vector2 = other["pos"]
 			var desired_distance := radius + float(other.get("radius", 12.0)) + 7.0
@@ -1764,6 +2004,7 @@ func _clear_combat_state() -> void:
 	bullets.clear()
 	enemy_projectiles.clear()
 	pickups.clear()
+	spawn_warnings.clear()
 
 
 func _fully_heal_player() -> void:
@@ -2132,6 +2373,7 @@ func _start_next_round() -> void:
 	round_ore_earned = 0
 	spider_relic_packs_this_wave = 0
 	boss_spawned = false
+	_set_paused(false)
 	_clear_combat_state()
 	_fully_heal_player()
 	_hide_overlay()
@@ -2399,8 +2641,10 @@ func _draw() -> void:
 	var shake := Vector2.ZERO
 	if screen_shake > 0.0:
 		shake = Vector2(randf_range(-4.0, 4.0), randf_range(-4.0, 4.0)) * screen_shake
-	draw_set_transform(shake, 0.0, Vector2.ONE)
+	draw_world_offset = -_camera_origin() + shake
+	draw_set_transform(draw_world_offset, 0.0, Vector2.ONE)
 	_draw_ground()
+	_draw_spawn_warnings()
 	_draw_pickups()
 	_draw_bullets()
 	_draw_enemy_projectiles()
@@ -2408,19 +2652,57 @@ func _draw() -> void:
 	_draw_player()
 	_draw_sparks()
 	_draw_floating_text()
-	if paused:
-		draw_rect(Rect2(Vector2.ZERO, WORLD_SIZE), Color(0, 0, 0, 0.34), true)
+	draw_world_offset = Vector2.ZERO
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if paused:
+		draw_rect(Rect2(Vector2.ZERO, VIEW_SIZE), Color(0, 0, 0, 0.22), true)
 
 
 func _draw_ground() -> void:
 	draw_rect(Rect2(Vector2.ZERO, WORLD_SIZE), Color("#171a15"), true)
 	for x in range(0, int(WORLD_SIZE.x) + 120, 44):
 		draw_line(Vector2(x, 0), Vector2(x - 120, WORLD_SIZE.y), Color(1, 0.96, 0.9, 0.045), 1.0)
-	for i in range(80):
+	for i in range(190):
 		var x := float((i * 97) % int(WORLD_SIZE.x))
 		var y := float((i * 181) % int(WORLD_SIZE.y))
 		draw_rect(Rect2(Vector2(x, y), Vector2(3 + i % 3, 3 + i % 4)), Color(0.9, 0.72, 0.36, 0.08), true)
+
+
+func _draw_spawn_warnings() -> void:
+	for warning in spawn_warnings:
+		var pos: Vector2 = warning.get("pos", player.get("pos", WORLD_SIZE * 0.5))
+		var duration: float = maxf(0.01, float(warning.get("duration", SPAWN_WARNING_DURATION)))
+		var timer: float = clampf(float(warning.get("timer", duration)), 0.0, duration)
+		var progress: float = 1.0 - timer / duration
+		var kind := str(warning.get("kind", "zombie"))
+		var pack_size := int(warning.get("pack_size", 1))
+		var seed_value := float(warning.get("seed", 0.0))
+		var base_radius := 25.0 + 4.0 * float(pack_size)
+		if kind == "boss":
+			base_radius = 68.0
+		elif kind == "elite_zombie":
+			base_radius = 46.0
+		var pulse := sin(elapsed * 18.0 + seed_value) * 0.5 + 0.5
+		var radius: float = base_radius + pulse * 7.0 + progress * 9.0
+		var dirt := Color("#8b7254")
+		dirt.a = 0.28 + 0.32 * pulse
+		_draw_ellipse_shadow(pos + Vector2(0, 8), Vector2(radius * 1.25, 7.0 + pulse * 2.5), Color(0, 0, 0, 0.22))
+		draw_arc(pos, radius, 0.0, TAU, 52, dirt, 3.0)
+		draw_arc(pos, radius * 0.62, sin(elapsed * 3.0), TAU + sin(elapsed * 3.0), 36, Color(0.78, 0.64, 0.42, 0.26), 2.0)
+		for i in range(7):
+			var angle := seed_value + elapsed * (2.0 + float(i) * 0.13) + float(i) * TAU / 7.0
+			var distance: float = radius * (0.24 + 0.54 * absf(sin(seed_value * 1.37 + float(i) * 2.11)))
+			var pebble_pos: Vector2 = pos + Vector2.RIGHT.rotated(angle) * distance
+			var size := 2.0 + float((i + pack_size) % 3)
+			draw_rect(Rect2(pebble_pos - Vector2(size, size) * 0.5, Vector2(size, size)), Color(0.67, 0.49, 0.29, 0.38 + 0.25 * progress), true)
+		var crack_color := Color("#32271f")
+		crack_color.a = 0.28 + 0.35 * progress
+		draw_line(pos + Vector2(-radius * 0.50, -2.0), pos + Vector2(-radius * 0.16, 2.0 + pulse * 3.0), crack_color, 2.0)
+		draw_line(pos + Vector2(radius * 0.18, 1.0), pos + Vector2(radius * 0.54, -3.0 - pulse * 2.0), crack_color, 2.0)
+		if timer < 0.22:
+			var flash := Color("#e6b85c")
+			flash.a = 0.15 + pulse * 0.22
+			draw_circle(pos, radius * 0.82, flash)
 
 
 func _draw_player() -> void:
@@ -2432,7 +2714,7 @@ func _draw_player() -> void:
 
 func _draw_enemies() -> void:
 	for enemy in enemies:
-		var pos: Vector2 = enemy["pos"]
+		var pos: Vector2 = _enemy_draw_pos(enemy)
 		var radius: float = enemy["radius"]
 		var type := str(enemy.get("type", "zombie"))
 		if _draw_enemy_asset_sprite(enemy):
@@ -2518,8 +2800,9 @@ func _draw_single_image_enemy_sprite(
 	shadow_size: Vector2,
 	shadow_y: float
 ) -> void:
-	var pos: Vector2 = enemy["pos"]
-	var faces_right := player.has("pos") and float(player["pos"].x) > pos.x
+	var ground_pos: Vector2 = enemy["pos"]
+	var pos := _enemy_draw_pos(enemy)
+	var faces_right := player.has("pos") and float(player["pos"].x) > ground_pos.x
 	var sign := 1.0 if faces_right else -1.0
 	var phase := fposmod(elapsed + float(enemy["id"]) * 0.11, period) / period * TAU
 	var step := sin(phase)
@@ -2538,8 +2821,19 @@ func _draw_single_image_enemy_sprite(
 		var hit_color: Color = enemy.get("hit_flash_color", Color("#f5efe3"))
 		modulate = modulate.lerp(hit_color, hit_flash * 0.54)
 
-	_draw_ellipse_shadow(pos + Vector2(0, shadow_y), shadow_size + Vector2(4.0 * hop, 1.5 * hop), Color(0, 0, 0, 0.18))
+	_draw_ellipse_shadow(ground_pos + Vector2(0, shadow_y), shadow_size + Vector2(4.0 * hop, 1.5 * hop), Color(0, 0, 0, 0.18))
 	_draw_sprite_part(texture, pos, local_pos, sign, local_rot, local_scale, base_scale, modulate)
+
+
+func _enemy_draw_pos(enemy: Dictionary) -> Vector2:
+	var pos: Vector2 = enemy.get("pos", Vector2.ZERO)
+	var timer := float(enemy.get("emerge_timer", 0.0))
+	if timer <= 0.0:
+		return pos
+	var duration: float = maxf(0.01, float(enemy.get("emerge_duration", ENEMY_EMERGE_DURATION)))
+	var progress: float = clampf(1.0 - timer / duration, 0.0, 1.0)
+	var eased: float = 1.0 - pow(1.0 - progress, 2.0)
+	return pos + Vector2(0.0, (1.0 - eased) * 34.0)
 
 
 func _enemy_asset_hp_width(type: String, radius: float) -> float:
@@ -2650,15 +2944,15 @@ func _draw_sprite_part(
 	var size := texture.get_size()
 	var draw_pos := origin + Vector2(local_pos.x * facing_sign, local_pos.y) * base_scale
 	var draw_scale := Vector2(base_scale * facing_sign * local_scale.x, base_scale * local_scale.y)
-	draw_set_transform(draw_pos, rotation * facing_sign, draw_scale)
+	draw_set_transform(draw_world_offset + draw_pos, rotation * facing_sign, draw_scale)
 	draw_texture_rect(texture, Rect2(-size * 0.5, size), false, modulate)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	draw_set_transform(draw_world_offset, 0.0, Vector2.ONE)
 
 
 func _draw_ellipse_shadow(pos: Vector2, scale: Vector2, color: Color) -> void:
-	draw_set_transform(pos, 0.0, scale)
+	draw_set_transform(draw_world_offset + pos, 0.0, scale)
 	draw_circle(Vector2.ZERO, 1.0, color)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	draw_set_transform(draw_world_offset, 0.0, Vector2.ONE)
 
 
 func _draw_bullets() -> void:
@@ -2766,6 +3060,8 @@ func _build_ui() -> void:
 	game_ui.setup(ui_font)
 	game_ui.start_requested.connect(_start_run)
 	game_ui.option_selected.connect(_on_ui_option_selected)
+	game_ui.resume_requested.connect(func(): _set_paused(false))
+	game_ui.restart_requested.connect(_start_run)
 
 
 func _show_start_overlay() -> void:
@@ -2782,7 +3078,7 @@ func _show_start_overlay() -> void:
 func _show_choice_overlay(eyebrow_text: String, title_text: String, options: Array, method_name: String) -> void:
 	active_choice_options = options
 	active_choice_method = method_name
-	game_ui.show_choice(eyebrow_text, title_text, _decorate_choice_options(options), _active_relic_summary())
+	game_ui.show_choice(eyebrow_text, title_text, _decorate_choice_options(options), _active_relic_summary(), _current_state_summary())
 
 
 func _show_game_over_overlay() -> void:
@@ -2835,6 +3131,37 @@ func _update_hud() -> void:
 		"time": _format_time(max(0.0, wave_timer)),
 		"relics": _active_relic_summary(),
 	})
+
+
+func _current_state_summary() -> Dictionary:
+	var weapon_lines := PackedStringArray()
+	for weapon in weapons:
+		var mods: Array = weapon.get("mods", [])
+		var mod_names := PackedStringArray()
+		for mod_name in mods:
+			mod_names.append(str(mod_name))
+		var mod_text := "부품 없음" if mod_names.is_empty() else ", ".join(mod_names)
+		weapon_lines.append("%s · 피해 %d · %s" % [
+			str(weapon.get("name", "무기")),
+			int(round(float(weapon.get("damage", 0.0)) * damage_multiplier)),
+			mod_text,
+		])
+	if weapon_lines.is_empty():
+		weapon_lines.append("무기 없음")
+
+	var lines := PackedStringArray()
+	lines.append("체력 %d/%d · 광석 %d · 공세 %d/%d · 남은 시간 %s" % [
+		int(round(float(player.get("hp", 0.0)))),
+		int(round(float(player.get("max_hp", 100.0)))),
+		ore,
+		wave,
+		MAX_ROUNDS,
+		_format_time(max(0.0, wave_timer)),
+	])
+	lines.append("무기: %s" % " / ".join(weapon_lines))
+	lines.append("유물: %s" % _format_relic_counts_for_report())
+	lines.append("처치 %d · 구매 %d · 리롤 %d" % [run_kill_count, run_purchase_count, run_rerolls])
+	return {"lines": lines}
 
 
 func _format_time(seconds: float) -> String:

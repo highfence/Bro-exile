@@ -4,6 +4,8 @@ class_name GameUI
 
 signal start_requested
 signal option_selected(option: Dictionary)
+signal resume_requested
+signal restart_requested
 
 const OreUITheme = preload("res://scripts/ui/ore_ui_theme.gd")
 
@@ -17,6 +19,8 @@ var xp_value: Label
 var wave_label: Label
 var ore_label: Label
 var time_label: Label
+var top_panel: PanelContainer
+var weapon_panel: PanelContainer
 var weapon_box: HBoxContainer
 var relic_panel: PanelContainer
 var relic_box: HBoxContainer
@@ -24,6 +28,7 @@ var overlay: Control
 var overlay_panel: PanelContainer
 var overlay_box: VBoxContainer
 var pause_banner: Control
+var pause_box: VBoxContainer
 var icon_texture_cache := {}
 var relic_signature := ""
 
@@ -110,7 +115,7 @@ func render_relics(relics: Array) -> void:
 	relic_signature = signature
 
 	_clear_children(relic_box)
-	relic_panel.visible = not relics.is_empty()
+	relic_panel.visible = false
 	for relic in relics:
 		relic_box.add_child(_make_relic_icon(relic, 42))
 
@@ -134,15 +139,17 @@ func show_start(eyebrow: String, title: String, body: String, button_text: Strin
 	overlay.visible = true
 
 
-func show_choice(eyebrow: String, title: String, options: Array, relics: Array = []) -> void:
+func show_choice(eyebrow: String, title: String, options: Array, relics: Array = [], state_summary: Dictionary = {}) -> void:
 	var tall := options.size() > 3
-	var columns: int = 2 if tall else 3
-	var card_height: int = 154 if tall else 126
+	var columns: int = 2 if options.size() > 6 else 3
+	var card_height: int = 142 if tall else 126
 	_prepare_overlay(Vector2(900, 0), OreUITheme.PANEL_STRONG)
 	overlay_box.add_child(_make_label(eyebrow, 14, OreUITheme.ORE))
 	overlay_box.add_child(_make_label(title, 34, OreUITheme.INK))
 	if not relics.is_empty():
 		overlay_box.add_child(_make_relic_strip(relics, "현재 유물"))
+	if not state_summary.is_empty():
+		overlay_box.add_child(_make_state_summary_panel(state_summary))
 
 	var grid := GridContainer.new()
 	grid.columns = columns
@@ -186,8 +193,40 @@ func set_paused(value: bool) -> void:
 	pause_banner.visible = value
 
 
+func show_pause(state_summary: Dictionary, relics: Array = []) -> void:
+	_clear_children(pause_box)
+	var title := _make_label("일시 정지", 34, OreUITheme.INK)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pause_box.add_child(title)
+	if not relics.is_empty():
+		pause_box.add_child(_make_relic_strip(relics, "현재 유물"))
+	pause_box.add_child(_make_state_summary_panel(state_summary))
+
+	var buttons := HBoxContainer.new()
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	buttons.add_theme_constant_override("separation", 10)
+	pause_box.add_child(buttons)
+
+	var resume_button := Button.new()
+	resume_button.text = "계속"
+	resume_button.custom_minimum_size = Vector2(150, 42)
+	resume_button.pressed.connect(func(): resume_requested.emit())
+	buttons.add_child(resume_button)
+
+	var restart_button := Button.new()
+	restart_button.text = "다시 시작"
+	restart_button.custom_minimum_size = Vector2(150, 42)
+	restart_button.pressed.connect(func(): restart_requested.emit())
+	buttons.add_child(restart_button)
+	pause_banner.visible = true
+
+
+func hide_pause() -> void:
+	pause_banner.visible = false
+
+
 func _build_hud() -> void:
-	var top_panel := PanelContainer.new()
+	top_panel = PanelContainer.new()
 	top_panel.name = "TopHud"
 	top_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	top_panel.offset_left = 12
@@ -195,7 +234,7 @@ func _build_hud() -> void:
 	top_panel.offset_right = -12
 	top_panel.offset_bottom = 70
 	top_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	top_panel.add_theme_stylebox_override("panel", OreUITheme.panel_style(OreUITheme.PANEL, OreUITheme.LINE, 8, 1))
+	top_panel.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.08, 0.09, 0.075, 0.54), Color(0.46, 0.41, 0.31, 0.46), 8, 1))
 	root.add_child(top_panel)
 
 	var top_margin := _margin(12, 8, 12, 8)
@@ -231,7 +270,7 @@ func _build_hud() -> void:
 	stats.add_child(ore_label)
 	stats.add_child(time_label)
 
-	var weapon_panel := PanelContainer.new()
+	weapon_panel = PanelContainer.new()
 	weapon_panel.name = "WeaponHud"
 	weapon_panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	weapon_panel.offset_left = 12
@@ -240,6 +279,7 @@ func _build_hud() -> void:
 	weapon_panel.offset_bottom = -12
 	weapon_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	weapon_panel.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.10, 0.11, 0.09, 0.84), OreUITheme.LINE, 8, 1))
+	weapon_panel.visible = false
 	root.add_child(weapon_panel)
 
 	var weapon_margin := _margin(10, 7, 10, 7)
@@ -300,25 +340,36 @@ func _build_overlay() -> void:
 
 
 func _build_pause_banner() -> void:
+	pause_banner = Control.new()
+	pause_banner.name = "PauseOverlay"
+	pause_banner.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pause_banner.mouse_filter = Control.MOUSE_FILTER_STOP
+	pause_banner.visible = false
+	root.add_child(pause_banner)
+
+	var shade := ColorRect.new()
+	shade.color = Color(0.0, 0.0, 0.0, 0.42)
+	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pause_banner.add_child(shade)
+
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	center.visible = false
-	root.add_child(center)
-	pause_banner = center
+	pause_banner.add_child(center)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(260, 92)
-	panel.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.06, 0.065, 0.055, 0.92), OreUITheme.LINE_STRONG, 8, 1))
+	panel.custom_minimum_size = Vector2(620, 0)
+	panel.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.06, 0.065, 0.055, 0.94), OreUITheme.LINE_STRONG, 8, 1))
 	center.add_child(panel)
 
-	var margin := _margin(18, 14, 18, 14)
+	var margin := _margin(24, 20, 24, 20)
 	panel.add_child(margin)
 
-	var label := _make_label("일시 정지", 30, OreUITheme.INK)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	margin.add_child(label)
+	pause_box = VBoxContainer.new()
+	pause_box.add_theme_constant_override("separation", 12)
+	pause_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	margin.add_child(pause_box)
 
 
 func _prepare_overlay(size: Vector2, color: Color) -> void:
@@ -341,6 +392,28 @@ func _make_relic_strip(relics: Array, title: String) -> Control:
 	for relic in relics:
 		row.add_child(_make_relic_icon(relic, 42))
 	return row
+
+
+func _make_state_summary_panel(state_summary: Dictionary) -> Control:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.08, 0.09, 0.075, 0.62), Color(0.34, 0.31, 0.24, 0.58), 8, 1))
+
+	var margin := _margin(12, 10, 12, 10)
+	panel.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 5)
+	margin.add_child(box)
+
+	var lines: PackedStringArray = state_summary.get("lines", PackedStringArray())
+	for i in range(lines.size()):
+		var color := OreUITheme.INK if i == 0 else OreUITheme.MUTED
+		var label := _make_label(lines[i], 13, color)
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.custom_minimum_size = Vector2(0, 20)
+		box.add_child(label)
+	return panel
 
 
 func _make_relic_icon(relic: Dictionary, size: int) -> Control:
