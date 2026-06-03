@@ -316,7 +316,7 @@ func _debug_spider_relic_wave2_and_quit() -> void:
 	wave_timer = _round_duration(wave)
 	spawn_timer = 0.0
 	enemies.clear()
-	_add_relic(_relic_by_id("spider_egg_fossil"))
+	_add_relic(_relic_by_id("overheated_footsteps"))
 	spider_relic_packs_this_wave = 0
 
 	var event_counts := {}
@@ -334,7 +334,7 @@ func _debug_spider_relic_wave2_and_quit() -> void:
 		enemy_counts[type] = int(enemy_counts.get(type, 0)) + 1
 
 	print("DEBUG_SPIDER_RELIC_WAVE2 relic_count=%d cap=%d spawn_events=%d event_counts=%s enemy_counts=%s spider_packs=%d report=\"%s\"" % [
-		_relic_count("spider_egg_fossil"),
+		_relic_count("overheated_footsteps"),
 		_enemy_cap(),
 		spawn_events,
 		str(event_counts),
@@ -371,9 +371,9 @@ func _capture_shop_ui_and_quit() -> void:
 	wave = 3
 	rounds_cleared = 2
 	ore = 120
-	_add_relic(_relic_by_id("spider_egg_fossil"))
-	_add_relic(_relic_by_id("hungry_lantern"))
-	_add_relic(_relic_by_id("hungry_lantern"))
+	_add_relic(_relic_by_id("chosen_prey"))
+	_add_relic(_relic_by_id("overheated_footsteps"))
+	_add_relic(_relic_by_id("overheated_footsteps"))
 	_open_shop()
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -389,7 +389,7 @@ func _capture_relic_ui_and_quit() -> void:
 	rounds_cleared = 1
 	round_ore_earned = 34
 	ore = 62
-	_add_relic(_relic_by_id("red_vein_sample"))
+	_add_relic(_relic_by_id("rough_vein"))
 	_open_relic_choice()
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -421,9 +421,9 @@ func _capture_run_report_ui_and_quit() -> void:
 	}
 	run_boss_damage = 420.0
 	run_boss_defeated = true
-	_add_relic(_relic_by_id("spider_egg_fossil"))
-	_add_relic(_relic_by_id("hungry_lantern"))
-	_add_relic(_relic_by_id("hungry_lantern"))
+	_add_relic(_relic_by_id("overheated_footsteps"))
+	_add_relic(_relic_by_id("overheated_footsteps"))
+	_add_relic(_relic_by_id("chosen_prey"))
 	_record_shop_purchase({"name": "관통 드릴촉"})
 	_record_shop_purchase({"name": "파편 폭약"})
 	_record_shop_purchase({"name": "파편 폭약"})
@@ -450,8 +450,8 @@ func _capture_combat_feedback_and_quit() -> void:
 	bullets.clear()
 	sparks.clear()
 	floating_text.clear()
-	_add_relic(_relic_by_id("spider_egg_fossil"))
-	_add_relic(_relic_by_id("black_shell"))
+	_add_relic(_relic_by_id("chosen_prey"))
+	_add_relic(_relic_by_id("cracked_shield_oath"))
 
 	var weapon: Dictionary = weapons[0]
 	weapon["mods"] = ["급속 방아쇠", "관통 드릴촉", "파편 폭약", "균열 탄심"]
@@ -563,8 +563,8 @@ func _capture_pause_ui_and_quit() -> void:
 	run_kill_count = 42
 	run_purchase_count = 3
 	run_rerolls = 1
-	_add_relic(_relic_by_id("spider_egg_fossil"))
-	_add_relic(_relic_by_id("hungry_lantern"))
+	_add_relic(_relic_by_id("overheated_footsteps"))
+	_add_relic(_relic_by_id("chosen_prey"))
 	var weapon: Dictionary = weapons[0]
 	weapon["mods"] = ["급속 방아쇠", "관통 드릴촉", "파편 폭약"]
 	weapon["damage"] = 19.0
@@ -650,7 +650,7 @@ func _debug_emerging_death_cleanup_and_quit() -> void:
 	wave = 3
 	enemies.clear()
 	sparks.clear()
-	_add_relic(_relic_by_id("unstable_blast_crystal"))
+	_add_relic(_relic_by_id("shortened_fuse"))
 	for i in range(5):
 		var spider := _make_enemy("spider")
 		spider["pos"] = player["pos"] + Vector2.RIGHT.rotated(TAU * float(i) / 5.0) * 50.0
@@ -1984,7 +1984,6 @@ func _update_enemies(delta: float) -> void:
 			_record_enemy_defeat(defeated_type)
 			_drop_pickups(enemy)
 			_trigger_enemy_death_pattern(enemy)
-			_trigger_relic_death_hazard(enemy)
 			_add_spark(enemy["pos"], enemy["color"], 14)
 			enemies.remove_at(i)
 			if _is_boss_type(defeated_type):
@@ -3038,25 +3037,6 @@ func _available_shop_items_by_rarity(rarity: String, avoid_ids: Array) -> Array:
 	return pool
 
 
-func _relic_bonus_shop_items(avoid_ids: Array) -> Array:
-	var desired_ids: Array = []
-	if _relic_count("echoing_stone_heart") > 0:
-		desired_ids.append("long_barrel")
-		desired_ids.append("spring_boots")
-	if _relic_count("unstable_blast_crystal") > 0:
-		desired_ids.append("shatter_charge")
-		desired_ids.append("piercing_bit")
-
-	var pool: Array = []
-	for id in desired_ids:
-		var option := _shop_item_by_id(str(id))
-		if option.is_empty():
-			continue
-		if _shop_item_can_appear(option, avoid_ids):
-			pool.append(option)
-	return pool
-
-
 func _shop_item_by_id(id: String) -> Dictionary:
 	for option in shop_catalog:
 		if str(option.get("id", "")) == id:
@@ -3497,10 +3477,6 @@ func _relic_clear_ore_multiplier() -> float:
 	return 1.0
 
 
-func _relic_shop_discount_multiplier() -> float:
-	return 1.0
-
-
 func _should_spawn_elite_zombie() -> bool:
 	var count := _relic_count("chosen_prey")
 	if count <= 0 or wave < 2:
@@ -3511,36 +3487,6 @@ func _should_spawn_elite_zombie() -> bool:
 	if _round_is_boss(wave):
 		chance *= 0.65
 	return randf() < chance
-
-
-func _trigger_relic_death_hazard(enemy: Dictionary) -> void:
-	var count := _relic_count("unstable_blast_crystal")
-	if count <= 0 or _is_boss_type(str(enemy.get("type", ""))):
-		return
-
-	var pos: Vector2 = enemy["pos"]
-	var radius: float = 42.0 + 8.0 * float(count)
-	var color := Color("#f0643b")
-	sparks.append({
-		"line": false,
-		"pos": pos,
-		"velocity": Vector2.ZERO,
-		"life": 0.22,
-		"max_life": 0.22,
-		"color": color,
-		"radius": radius,
-		"ring": true,
-	})
-	_add_spark(pos, color, 12)
-
-	if player["pos"].distance_to(pos) > radius or player["hurt_cooldown"] > 0.0:
-		return
-
-	var damage: float = max(1.0, 5.0 + 2.0 * float(count) - player["armor"] * 0.5)
-	player["hp"] -= damage
-	player["hurt_cooldown"] = 0.38
-	screen_shake = max(screen_shake, 0.95)
-	_add_floating_text("폭발 -%d" % int(round(damage)), player["pos"] + Vector2(0, -34), color)
 
 
 func _game_over() -> void:
