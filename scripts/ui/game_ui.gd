@@ -143,11 +143,13 @@ func show_choice(eyebrow: String, title: String, options: Array, relics: Array =
 	var tall := options.size() > 3
 	var columns: int = 2 if options.size() > 6 else 3
 	var card_height: int = 142 if tall else 126
+	if _options_are_contracts(options):
+		card_height = 158
 	_prepare_overlay(Vector2(900, 0), OreUITheme.PANEL_STRONG)
 	overlay_box.add_child(_make_label(eyebrow, 14, OreUITheme.ORE))
 	overlay_box.add_child(_make_label(title, 34, OreUITheme.INK))
 	if not relics.is_empty():
-		overlay_box.add_child(_make_relic_strip(relics, "현재 유물"))
+		overlay_box.add_child(_make_relic_strip(relics, "현재 계약"))
 	if not state_summary.is_empty():
 		overlay_box.add_child(_make_state_summary_panel(state_summary))
 
@@ -164,6 +166,13 @@ func show_choice(eyebrow: String, title: String, options: Array, relics: Array =
 	overlay.visible = true
 
 
+func _options_are_contracts(options: Array) -> bool:
+	for option in options:
+		if str(Dictionary(option).get("kind", "")) == "relic":
+			return true
+	return false
+
+
 func show_end(eyebrow: String, title: String, body: String, button_text: String, relics: Array = []) -> void:
 	_prepare_overlay(Vector2(760, 0), OreUITheme.PANEL_STRONG)
 	overlay_box.add_child(_make_label(eyebrow, 14, OreUITheme.ORE))
@@ -175,7 +184,7 @@ func show_end(eyebrow: String, title: String, body: String, button_text: String,
 	body_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	overlay_box.add_child(body_label)
 	if not relics.is_empty():
-		overlay_box.add_child(_make_relic_strip(relics, "이번 런 유물"))
+		overlay_box.add_child(_make_relic_strip(relics, "이번 런 계약"))
 
 	var button := Button.new()
 	button.text = button_text
@@ -199,7 +208,7 @@ func show_pause(state_summary: Dictionary, relics: Array = []) -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	pause_box.add_child(title)
 	if not relics.is_empty():
-		pause_box.add_child(_make_relic_strip(relics, "현재 유물"))
+		pause_box.add_child(_make_relic_strip(relics, "현재 계약"))
 	pause_box.add_child(_make_state_summary_panel(state_summary))
 
 	var buttons := HBoxContainer.new()
@@ -460,6 +469,7 @@ func _make_relic_icon(relic: Dictionary, size: int) -> Control:
 
 func _make_option_card(option: Dictionary, min_height: int) -> Control:
 	var disabled := bool(option.get("disabled", false))
+	var rarity := str(option.get("rarity", ""))
 	var card := Control.new()
 	card.custom_minimum_size = Vector2(0, min_height)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -468,7 +478,7 @@ func _make_option_card(option: Dictionary, min_height: int) -> Control:
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_theme_stylebox_override("panel", OreUITheme.option_card_style("normal", disabled))
+	panel.add_theme_stylebox_override("panel", OreUITheme.option_card_style("normal", disabled, rarity))
 	card.add_child(panel)
 
 	var margin := _margin(14, 12, 14, 12)
@@ -514,6 +524,14 @@ func _make_option_card(option: Dictionary, min_height: int) -> Control:
 	var title_color := OreUITheme.DIM if disabled else OreUITheme.INK
 	var desc_color := Color(0.58, 0.55, 0.49, 0.72) if disabled else OreUITheme.MUTED
 	var meta_color := Color(0.72, 0.66, 0.52, 0.56) if disabled else OreUITheme.ORE
+	if not rarity.is_empty() and not disabled:
+		meta_color = OreUITheme.rarity_color(rarity)
+
+	if not rarity.is_empty():
+		var badge := _make_label(_rarity_label(rarity), 11, meta_color)
+		badge.clip_text = true
+		badge.custom_minimum_size = Vector2(0, 16)
+		box.add_child(badge)
 
 	var title := _make_label(str(option.get("name", "")), 18 if min_height > 120 else 15, title_color)
 	title.clip_text = true
@@ -529,8 +547,12 @@ func _make_option_card(option: Dictionary, min_height: int) -> Control:
 	box.add_child(desc)
 
 	var meta := _make_label(str(option.get("meta_text", "")), 12, meta_color)
-	meta.clip_text = true
-	meta.custom_minimum_size = Vector2(0, 20)
+	if str(option.get("kind", "")) == "relic":
+		meta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		meta.custom_minimum_size = Vector2(0, 34)
+	else:
+		meta.clip_text = true
+		meta.custom_minimum_size = Vector2(0, 20)
 	meta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	box.add_child(meta)
 
@@ -542,13 +564,23 @@ func _make_option_card(option: Dictionary, min_height: int) -> Control:
 		hit_area.focus_mode = Control.FOCUS_ALL
 		for style_name in ["normal", "hover", "pressed", "disabled", "focus"]:
 			hit_area.add_theme_stylebox_override(style_name, OreUITheme.transparent_style())
-		hit_area.mouse_entered.connect(func(): panel.add_theme_stylebox_override("panel", OreUITheme.option_card_style("hover")))
-		hit_area.mouse_exited.connect(func(): panel.add_theme_stylebox_override("panel", OreUITheme.option_card_style("normal")))
-		hit_area.button_down.connect(func(): panel.add_theme_stylebox_override("panel", OreUITheme.option_card_style("pressed")))
-		hit_area.button_up.connect(func(): panel.add_theme_stylebox_override("panel", OreUITheme.option_card_style("hover")))
+		hit_area.mouse_entered.connect(func(): panel.add_theme_stylebox_override("panel", OreUITheme.option_card_style("hover", false, rarity)))
+		hit_area.mouse_exited.connect(func(): panel.add_theme_stylebox_override("panel", OreUITheme.option_card_style("normal", false, rarity)))
+		hit_area.button_down.connect(func(): panel.add_theme_stylebox_override("panel", OreUITheme.option_card_style("pressed", false, rarity)))
+		hit_area.button_up.connect(func(): panel.add_theme_stylebox_override("panel", OreUITheme.option_card_style("hover", false, rarity)))
 		hit_area.pressed.connect(func(): option_selected.emit(option))
 		card.add_child(hit_area)
 	return card
+
+
+func _rarity_label(rarity: String) -> String:
+	match rarity:
+		"rare":
+			return "RARE"
+		"legendary":
+			return "LEGENDARY"
+		_:
+			return "COMMON"
 
 
 func _load_png_texture(path: String) -> Texture2D:

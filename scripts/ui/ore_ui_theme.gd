@@ -106,14 +106,25 @@ static func card_style(disabled: bool = false) -> StyleBoxFlat:
 	return style
 
 
-static func option_card_style(state: String = "normal", disabled: bool = false) -> StyleBoxFlat:
+static func rarity_color(rarity: String) -> Color:
+	match rarity:
+		"rare":
+			return AQUA
+		"legendary":
+			return ORE
+		_:
+			return LINE
+
+
+static func option_card_style(state: String = "normal", disabled: bool = false, rarity: String = "") -> StyleBoxFlat:
+	var rarity_border := rarity_color(rarity)
 	if disabled:
 		return panel_style(Color(0.10, 0.105, 0.095, 0.82), Color(0.96, 0.91, 0.82, 0.08), 8, 1)
 	if state == "pressed":
-		return panel_style(Color(0.20, 0.17, 0.11, 0.98), ORE, 8, 1)
+		return panel_style(Color(0.20, 0.17, 0.11, 0.98), rarity_border if not rarity.is_empty() else ORE, 8, 2 if not rarity.is_empty() else 1)
 	if state == "hover":
-		return panel_style(Color(0.17, 0.18, 0.145, 0.98), LINE_STRONG, 8, 1)
-	return panel_style(Color(0.13, 0.14, 0.12, 0.96), LINE, 8, 1)
+		return panel_style(Color(0.17, 0.18, 0.145, 0.98), rarity_border if not rarity.is_empty() else LINE_STRONG, 8, 2 if not rarity.is_empty() else 1)
+	return panel_style(Color(0.13, 0.14, 0.12, 0.96), rarity_border if not rarity.is_empty() else LINE, 8, 2 if not rarity.is_empty() else 1)
 
 
 static func transparent_style() -> StyleBoxFlat:

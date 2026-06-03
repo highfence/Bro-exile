@@ -11,7 +11,7 @@ const MODE_PLAY := "play"
 const MODE_CHOICE := "choice"
 const MODE_GAME_OVER := "game_over"
 const MODE_VICTORY := "victory"
-const MAX_ROUNDS := 5
+const MAX_ROUNDS := 10
 const MAX_WEAPON_SLOTS := 6
 const MAX_WEAPON_LEVEL := 4
 const SHOP_OPTION_COUNT := 4
@@ -23,7 +23,7 @@ const P2_LEVEL_UP_REWARDS_ENABLED := false
 const ROUND_CLEAR_ORE_BASE := 20
 const ROUND_CLEAR_ORE_STEP := 8
 const SMOKE_ROUND_DURATION := 5.0
-const SMOKE_PLAYTEST_DURATION := 70.0
+const SMOKE_PLAYTEST_DURATION := 130.0
 const SMOKE_PLAYTEST_CAPTURE_PATH := "/private/tmp/orebound-godot-playtest.png"
 const RUN_REPORT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-run-report-ui.png"
 const COMBAT_FEEDBACK_CAPTURE_PATH := "/private/tmp/orebound-godot-combat-feedback.png"
@@ -35,6 +35,10 @@ const SHOP_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-shop-ui.png"
 const RELIC_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-relic-ui.png"
 const STAGE1_CAPTURE_PATH := "/private/tmp/orebound-godot-stage1.png"
 const MONSTER_ROSTER_CAPTURE_PATH := "/private/tmp/orebound-godot-monster-roster.png"
+const P7_SHOP_RARITY_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-p7-shop-rarity-ui.png"
+const P7_CONTRACT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-p7-contract-ui.png"
+const P7_BOSS_PATTERNS_CAPTURE_PATH := "/private/tmp/orebound-godot-p7-boss-patterns.png"
+const P7_GAME_OVER_SUMMARY_CAPTURE_PATH := "/private/tmp/orebound-godot-p7-game-over-summary.png"
 const PLAYER_VISUAL_SCALE := 0.27
 const ZOMBIE_VISUAL_SCALE := 0.25
 const PLAYER_IDLE_PERIOD := 1.32
@@ -87,6 +91,7 @@ var run_ore_spent := 0
 var run_rerolls := 0
 var run_purchase_count := 0
 var run_purchase_names: Array = []
+var run_rare_legendary_purchase_names: Array = []
 var run_kill_count := 0
 var run_kills_by_type := {}
 var run_boss_damage := 0.0
@@ -102,11 +107,14 @@ var shop_visit_seen_item_ids: Array = []
 var active_relics: Array = []
 var relic_counts := {}
 var relic_seen_counts := {}
+var pending_reward_chain: Array = []
+var active_reward_context := {}
 var enemies: Array = []
 var bullets: Array = []
 var enemy_projectiles: Array = []
 var pickups: Array = []
 var spawn_warnings: Array = []
+var hazard_zones: Array = []
 var sparks: Array = []
 var floating_text: Array = []
 var boss_spawned := false
@@ -131,88 +139,101 @@ var thrower_zombie_texture: Texture2D
 var boss_zombie_texture: Texture2D
 
 var stat_rewards := [
-	{"id": "hp", "name": "강철 폐", "desc": "+18 최대 체력, 체력을 조금 회복합니다.", "tag": "생존"},
-	{"id": "speed", "name": "용수철 장화", "desc": "+12% 이동 속도.", "tag": "기동"},
-	{"id": "magnet", "name": "자석 광맥", "desc": "+34% 획득 범위.", "tag": "수집"},
-	{"id": "damage", "name": "톱니 탄환", "desc": "+16% 무기 피해.", "tag": "공격"},
-	{"id": "cooldown", "name": "빠른 손놀림", "desc": "+14% 공격 속도.", "tag": "공격"},
-	{"id": "ore", "name": "광석 감각", "desc": "+40% 광석 획득.", "tag": "수집"},
-	{"id": "armor", "name": "보강 재킷", "desc": "+2 접촉 피해 방어.", "tag": "생존"},
-	{"id": "xp", "name": "측량 집중", "desc": "+20% 경험치.", "tag": "성장"},
+	{"id": "cooldown", "name": "손목 리듬 조정", "desc": "공격 속도가 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
+	{"id": "range", "name": "거리 감각 보정", "desc": "드릴촉 사거리가 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
+	{"id": "speed", "name": "발걸음 정비", "desc": "이동 속도가 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
+	{"id": "damage", "name": "타격점 보정", "desc": "피해량이 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
+	{"id": "hp", "name": "흉곽 보강", "desc": "최대 체력이 아주 소폭 증가하고 체력을 조금 회복합니다.", "tag": "무료 체급 보정"},
+	{"id": "armor", "name": "충격 흡수", "desc": "방어력이 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
+	{"id": "regen", "name": "응급 호흡법", "desc": "라운드 중 미량 지속 회복이 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
 ]
 
 var shop_catalog := [
-	{"id": "rapid_trigger", "kind": "part", "name": "급속 방아쇠", "desc": "드릴촉 발사 간격 -18%. 빠른 좀비가 붙기 전에 깎아냅니다.", "cost": 18, "counter": "빠른 좀비 대응", "counters": [2], "icon": "res://assets/sprites/items/p2_parts/part_rapid_trigger.png", "weapon_stats": {"cooldown_mult": 0.82}},
-	{"id": "piercing_bit", "kind": "part", "name": "관통 드릴촉", "desc": "드릴촉 관통 +1. 거미떼처럼 몰려오는 적을 한 줄로 뚫습니다.", "cost": 22, "counter": "거미떼 대응", "counters": [3], "icon": "res://assets/sprites/items/p2_parts/part_piercing_bit.png", "weapon_stats": {"pierce_add": 1.0, "damage_mult": 1.06}},
-	{"id": "shatter_charge", "kind": "part", "name": "파편 폭약", "desc": "명중 지점에 작은 폭발을 붙입니다. 뭉친 적을 같이 지웁니다.", "cost": 28, "counter": "거미떼 대응", "counters": [3], "icon": "res://assets/sprites/items/p2_parts/part_shatter_charge.png", "weapon_stats": {"splash_add": 42.0, "damage_mult": 0.94}},
-	{"id": "long_barrel", "kind": "part", "name": "긴 총열", "desc": "드릴촉 사거리 +24%, 탄속 +10%. 투척 좀비와 거리를 둡니다.", "cost": 20, "counter": "투척 좀비 대응", "counters": [4], "icon": "res://assets/sprites/items/p2_parts/part_long_barrel.png", "weapon_stats": {"range_mult": 1.24, "speed_mult": 1.10}},
-	{"id": "spring_boots", "kind": "item", "name": "스프링 장화", "desc": "이동 속도 +14%. 돌 투사체를 피하고 사거리를 다시 잡습니다.", "cost": 18, "counter": "투척 좀비 대응", "counters": [4], "icon": "res://assets/sprites/items/p2_parts/part_spring_boots.png", "stats": {"speed_mult": 1.14}},
-	{"id": "carbide_tip", "kind": "part", "name": "균열 탄심", "desc": "방어 관통 +3. 단단한 보스 좀비의 방어를 뚫습니다.", "cost": 30, "counter": "보스 대응", "counters": [5], "icon": "res://assets/sprites/items/p2_parts/part_carbide_tip.png", "weapon_stats": {"armor_pierce_add": 3.0, "damage_mult": 1.08}},
-	{"id": "rations", "kind": "heal", "name": "야전 식량", "desc": "체력 35 회복. 상점 루프 검증용 안전 선택지입니다.", "cost": 14, "icon": "res://assets/sprites/items/p2_parts/part_rations.png"},
+	{"id": "lubricated_bearing", "kind": "part", "rarity": "common", "name": "윤활 베어링", "desc": "공격 속도 소폭 증가. 기본 화력을 안정적으로 끌어올립니다.", "cost": 16, "counter": "기본 화력", "icon": "res://assets/sprites/items/p2_parts/part_rapid_trigger.png", "weapon_stats": {"cooldown_mult": 0.91}},
+	{"id": "extended_shaft", "kind": "part", "rarity": "common", "name": "연장 샤프트", "desc": "사거리 소폭 증가. 위험 패턴과 거리를 더 여유 있게 둡니다.", "cost": 16, "counter": "거리 확보", "icon": "res://assets/sprites/items/p2_parts/part_long_barrel.png", "weapon_stats": {"range_mult": 1.13, "speed_mult": 1.04}},
+	{"id": "lightweight_grip", "kind": "item", "rarity": "common", "name": "경량 손잡이", "desc": "이동 속도 소폭 증가. 측면 이동과 장판 회피가 쉬워집니다.", "cost": 15, "counter": "기동 보정", "icon": "res://assets/sprites/items/p2_parts/part_spring_boots.png", "stats": {"speed_mult": 1.08}},
+	{"id": "reinforced_bit", "kind": "part", "rarity": "common", "name": "강화 드릴촉", "desc": "피해량 소폭 증가. 모든 위협을 조금 더 빨리 정리합니다.", "cost": 17, "counter": "기본 피해", "icon": "res://assets/sprites/items/p2_parts/part_carbide_tip.png", "weapon_stats": {"damage_mult": 1.10}},
+	{"id": "braced_breastplate", "kind": "item", "rarity": "common", "name": "보강 흉갑", "desc": "최대 체력 소폭 증가. 연속 실수에 버틸 여지를 만듭니다.", "cost": 16, "counter": "생존 보조", "icon": "res://assets/sprites/items/p2_parts/part_rations.png", "stats": {"max_hp_add": 14.0}},
+	{"id": "emergency_compression_pack", "kind": "item", "rarity": "common", "name": "응급 압축팩", "desc": "라운드 중 미량 지속 회복. 오래 끌리는 구간을 보조합니다.", "cost": 18, "counter": "지속 회복", "icon": "res://assets/sprites/items/p2_parts/part_rations.png", "stats": {"regen_add": 0.22}},
+	{"id": "reinforced_armor_plate", "kind": "item", "rarity": "common", "name": "보강 장갑판", "desc": "받는 피해 소폭 감소. 핵심 패턴 피해는 최소 피해를 남깁니다.", "cost": 18, "counter": "피해 완화", "icon": "res://assets/sprites/items/p2_parts/part_carbide_tip.png", "stats": {"armor_add": 0.8}},
+	{"id": "piercing_bit", "kind": "part", "rarity": "rare", "name": "관통 드릴촉", "desc": "드릴촉 관통 +1. 방패 라인과 거미떼를 한 줄로 뚫습니다.", "cost": 34, "counter": "방패/무리 대응", "counters": [5, 6, 7], "icon": "res://assets/sprites/items/p2_parts/part_piercing_bit.png", "weapon_stats": {"pierce_add": 1.0, "damage_mult": 1.03}},
+	{"id": "explosive_core", "kind": "part", "rarity": "rare", "name": "폭약 코어", "desc": "명중 지점에 작은 폭발을 붙입니다. 거미떼와 밀집 적 대응책입니다.", "cost": 38, "counter": "밀집 적 대응", "counters": [7, 8], "icon": "res://assets/sprites/items/p2_parts/part_shatter_charge.png", "weapon_stats": {"splash_add": 44.0, "damage_mult": 0.96}},
+	{"id": "armor_shredding_blade", "kind": "part", "rarity": "rare", "name": "장갑 파쇄날", "desc": "방어 관통 +3. 방패 좀비와 보스 방어를 뚫습니다.", "cost": 40, "counter": "방어 관통", "counters": [5, 10], "icon": "res://assets/sprites/items/p2_parts/part_carbide_tip.png", "weapon_stats": {"armor_pierce_add": 3.0, "damage_mult": 1.05}},
+	{"id": "recoil_spring", "kind": "part", "rarity": "rare", "name": "반동 스프링", "desc": "넉백 강화와 탄속 증가. 자폭 광부와 빠른 좀비를 밀어냅니다.", "cost": 35, "counter": "돌진 대응", "counters": [8, 9], "icon": "res://assets/sprites/items/p2_parts/part_rapid_trigger.png", "weapon_stats": {"knockback_add": 42.0, "speed_mult": 1.10}},
+	{"id": "double_drill_chamber", "kind": "part", "rarity": "legendary", "unique": true, "name": "쌍열 드릴 챔버", "desc": "드릴촉을 한 발 더 발사합니다. 피해는 조금 보정되지만 빌드 방향을 크게 바꿉니다.", "cost": 76, "counter": "전설 변수", "icon": "res://assets/sprites/items/p2_parts/part_piercing_bit.png", "weapon_stats": {"projectiles_add": 1.0, "spread_add": 0.16, "damage_mult": 0.88}},
 ]
 
 var relic_catalog := [
 	{
-		"id": "spider_egg_fossil",
+		"id": "overheated_footsteps",
 		"kind": "relic",
-		"name": "거미 알 화석",
-		"desc": "위험: 거미 스폰 비율 증가. 보상: 라운드 클리어 광석 +20%.",
-		"danger": "거미 증가",
-		"reward": "클리어 광석 +20%",
+		"name": "과열된 발걸음",
+		"desc": "빠른 좀비가 더 빠르게 파고듭니다.",
+		"danger": "빠른 좀비 속도 강화",
+		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_spider_egg_fossil.png",
 	},
 	{
-		"id": "hungry_lantern",
+		"id": "sharpened_throwing",
 		"kind": "relic",
-		"name": "굶주린 등불",
-		"desc": "위험: 모든 적 이동 속도 +8%. 보상: 상점 리롤 비용 -1.",
-		"danger": "적 속도 +8%",
-		"reward": "리롤 비용 -1",
+		"name": "날카로운 투척",
+		"desc": "투척 좀비의 돌이 더 빠르고 아프게 날아옵니다.",
+		"danger": "투척 좀비 투사체 강화",
+		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_hungry_lantern.png",
 	},
 	{
-		"id": "echoing_stone_heart",
+		"id": "rough_vein",
 		"kind": "relic",
-		"name": "메아리나는 돌심장",
-		"desc": "위험: 투척 좀비 공격이 빨라짐. 보상: 사거리/이동 부품 등장 보장.",
-		"danger": "투척 쿨다운 감소",
-		"reward": "사거리/이동 부품 보장",
+		"name": "거친 광맥",
+		"desc": "일반 몹의 체력과 피해가 소폭 증가합니다.",
+		"danger": "기본 몹 체급 강화",
+		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_echoing_stone_heart.png",
 	},
 	{
-		"id": "red_vein_sample",
+		"id": "chosen_prey",
 		"kind": "relic",
-		"name": "붉은 광맥 표본",
-		"desc": "위험: 적 수 +15%. 보상: 적 광석 드롭 확률 증가.",
-		"danger": "적 수 +15%",
-		"reward": "광석 드롭 증가",
+		"name": "선별된 사냥감",
+		"desc": "일부 기존 몹이 엘리트로 승급합니다.",
+		"danger": "엘리트 승급",
+		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_red_vein_sample.png",
 	},
 	{
-		"id": "black_shell",
+		"id": "cracked_shield_oath",
 		"kind": "relic",
-		"name": "검은 탄피 유물",
-		"desc": "위험: 적 체력 +10%. 보상: 상점 가격 -10%.",
-		"danger": "적 체력 +10%",
-		"reward": "상점 가격 -10%",
+		"name": "금 간 방패의 맹세",
+		"desc": "방패 좀비의 정면 방어가 더 단단해집니다.",
+		"danger": "방패 정면 방어 강화",
+		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_black_shell.png",
 	},
 	{
-		"id": "twin_excavation_seal",
+		"id": "viscous_poison_vein",
 		"kind": "relic",
-		"name": "쌍둥이 굴착 인장",
-		"desc": "위험: 엘리트 큰 좀비가 가끔 추가 등장. 보상: 클리어 추가 광석.",
-		"danger": "엘리트 추가",
-		"reward": "추가 클리어 광석",
+		"name": "질척이는 독맥",
+		"desc": "독 장판이 더 오래 남아 이동 경로를 막습니다.",
+		"danger": "독 장판 유지 시간 강화",
+		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_twin_excavation_seal.png",
 	},
 	{
-		"id": "unstable_blast_crystal",
+		"id": "shortened_fuse",
 		"kind": "relic",
-		"name": "불안정한 폭약 결정",
-		"desc": "위험: 적 사망 시 위험 폭발. 보상: 폭발/광역 부품 등장 보장.",
-		"danger": "사망 폭발",
-		"reward": "광역 부품 보장",
+		"name": "짧아진 도화선",
+		"desc": "자폭 광부의 돌진 전조가 더 짧아집니다.",
+		"danger": "자폭 광부 전조 감소",
+		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
+		"icon": "res://assets/sprites/items/p3_relics/relic_unstable_blast_crystal.png",
+	},
+	{
+		"id": "awakened_overseer",
+		"kind": "relic",
+		"name": "깨어난 우두머리",
+		"desc": "보스 패턴 사이 간격이 더 짧아집니다.",
+		"danger": "보스 패턴 간격 강화",
+		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_unstable_blast_crystal.png",
 	},
 ]
@@ -230,7 +251,7 @@ var weapon_catalog := {
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster"):
+	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary"):
 		seed(12345)
 	else:
 		randomize()
@@ -261,6 +282,14 @@ func _ready() -> void:
 		_capture_stage1_and_quit.call_deferred()
 	elif args.has("--capture-monster-roster"):
 		_capture_monster_roster_and_quit.call_deferred()
+	elif args.has("--capture-p7-shop-rarity-ui"):
+		_capture_p7_shop_rarity_ui_and_quit.call_deferred()
+	elif args.has("--capture-p7-contract-ui"):
+		_capture_p7_contract_ui_and_quit.call_deferred()
+	elif args.has("--capture-p7-boss-patterns"):
+		_capture_p7_boss_patterns_and_quit.call_deferred()
+	elif args.has("--capture-p7-game-over-summary"):
+		_capture_p7_game_over_summary_and_quit.call_deferred()
 	elif args.has("--smoke-playtest"):
 		_start_smoke_playtest.call_deferred()
 	elif args.has("--debug-spider-relic-wave2"):
@@ -269,6 +298,14 @@ func _ready() -> void:
 		_debug_boss_pierce_splash_and_quit.call_deferred()
 	elif args.has("--debug-emerging-death-cleanup"):
 		_debug_emerging_death_cleanup_and_quit.call_deferred()
+	elif args.has("--debug-p7-reward-routes"):
+		_debug_p7_reward_routes_and_quit.call_deferred()
+	elif args.has("--debug-p7-shop-rarity"):
+		_debug_p7_shop_rarity_and_quit.call_deferred()
+	elif args.has("--debug-p7-relic-contracts"):
+		_debug_p7_relic_contracts_and_quit.call_deferred()
+	elif args.has("--debug-p7-boss-patterns"):
+		_debug_p7_boss_patterns_and_quit.call_deferred()
 
 
 func _debug_spider_relic_wave2_and_quit() -> void:
@@ -702,6 +739,210 @@ func _capture_monster_roster_and_quit() -> void:
 	get_tree().quit()
 
 
+func _capture_p7_shop_rarity_ui_and_quit() -> void:
+	_reset_run(true)
+	wave = 8
+	rounds_cleared = 7
+	ore = 180
+	shop_stock = [
+		_shop_item_by_id("lubricated_bearing").duplicate(true),
+		_shop_item_by_id("piercing_bit").duplicate(true),
+		_shop_item_by_id("double_drill_chamber").duplicate(true),
+		_shop_item_by_id("recoil_spring").duplicate(true),
+	]
+	for i in range(shop_stock.size()):
+		shop_stock[i]["stock_id"] = "capture_%d" % i
+		shop_stock[i]["cost"] = _scaled_shop_cost(int(shop_stock[i]["cost"]), str(shop_stock[i].get("rarity", "common")))
+	active_reward_context = {"type": "shop"}
+	pending_reward_chain.clear()
+	_show_shop_overlay()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(P7_SHOP_RARITY_UI_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _capture_p7_contract_ui_and_quit() -> void:
+	_reset_run(true)
+	wave = 5
+	rounds_cleared = 5
+	round_ore_earned = 68
+	ore = 116
+	_add_relic(_relic_by_id("overheated_footsteps"))
+	_open_contract_choice()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(P7_CONTRACT_UI_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _capture_p7_boss_patterns_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_PLAY
+	wave = 10
+	player["pos"] = WORLD_SIZE * 0.5 + Vector2(-180, 0)
+	camera_pos = _clamped_camera_position(player["pos"])
+	enemies.clear()
+	var boss := _make_enemy("final_boss")
+	boss["pos"] = player["pos"] + Vector2(270, 0)
+	boss["charge_state"] = "windup"
+	boss["charge_timer"] = 0.48
+	boss["charge_dir"] = (player["pos"] - boss["pos"]).normalized()
+	enemies.append(boss)
+	_spawn_poison_zone(boss["pos"] + Vector2(-60, 86), 92.0, 3.5, 4.0, Color("#7560a8"))
+	_boss_barrage(boss)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(P7_BOSS_PATTERNS_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _capture_p7_game_over_summary_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_GAME_OVER
+	wave = 7
+	rounds_cleared = 6
+	elapsed = 154.0
+	ore = 23
+	run_ore_collected = 214
+	run_ore_spent = 191
+	run_rerolls = 4
+	run_kill_count = 148
+	run_kills_by_type = {"zombie": 44, "fast_zombie": 29, "spider": 38, "thrower": 17, "shield_zombie": 8, "toxic_spider": 12}
+	_add_relic(_relic_by_id("overheated_footsteps"))
+	_add_relic(_relic_by_id("overheated_footsteps"))
+	_add_relic(_relic_by_id("cracked_shield_oath"))
+	_record_shop_purchase(_shop_item_by_id("piercing_bit"))
+	_record_shop_purchase(_shop_item_by_id("double_drill_chamber"))
+	_show_game_over_overlay()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(P7_GAME_OVER_SUMMARY_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _debug_p7_reward_routes_and_quit() -> void:
+	var failures := 0
+	for round_index in range(1, MAX_ROUNDS + 1):
+		var actual := _reward_route_label(round_index)
+		var expected := ""
+		match round_index:
+			1:
+				expected = "stat"
+			2:
+				expected = "shop"
+			3:
+				expected = "contract -> shop"
+			4:
+				expected = "shop"
+			5:
+				expected = "stat -> contract -> shop"
+			6:
+				expected = "shop"
+			7:
+				expected = "stat -> contract -> shop"
+			8:
+				expected = "shop"
+			9:
+				expected = "final_shop"
+			10:
+				expected = "victory"
+		if actual != expected:
+			failures += 1
+		print("DEBUG_P7_REWARD_ROUTE round=%d duration=%.1f boss=%s route=\"%s\" expected=\"%s\" warning=\"%s\"" % [
+			round_index,
+			_round_duration(round_index),
+			str(_round_is_boss(round_index)),
+			actual,
+			expected,
+			_next_round_warning_text(min(round_index + 1, MAX_ROUNDS)),
+		])
+	print("DEBUG_P7_REWARD_ROUTES failures=%d" % failures)
+	get_tree().quit(1 if failures > 0 else 0)
+
+
+func _debug_p7_shop_rarity_and_quit() -> void:
+	_reset_run(true)
+	var counts := {"common": 0, "rare": 0, "legendary": 0}
+	var min_cost := 999
+	var max_cost := 0
+	for round_index in range(2, 10):
+		wave = round_index - 1
+		for i in range(80):
+			var stock := _roll_shop_stock([])
+			for item in stock:
+				var rarity := str(item.get("rarity", "common"))
+				counts[rarity] = int(counts.get(rarity, 0)) + 1
+				min_cost = min(min_cost, int(item.get("cost", 0)))
+				max_cost = max(max_cost, int(item.get("cost", 0)))
+	print("DEBUG_P7_SHOP_RARITY counts=%s min_cost=%d max_cost=%d legendary_expected=\"0-1 per normal run, not guaranteed\"" % [str(counts), min_cost, max_cost])
+	get_tree().quit(1 if int(counts.get("common", 0)) <= 0 or int(counts.get("rare", 0)) <= 0 else 0)
+
+
+func _debug_p7_relic_contracts_and_quit() -> void:
+	_reset_run(true)
+	var failures := 0
+	for round_index in [3, 5, 7]:
+		wave = round_index
+		var options := _roll_relic_options()
+		var names := PackedStringArray()
+		for option in options:
+			names.append("%s:%s" % [str(option.get("name", "")), _roman_level(_relic_count(str(option.get("id", ""))) + 1)])
+			if str(option.get("reward_hint", "")).is_empty():
+				failures += 1
+		print("DEBUG_P7_CONTRACT_OPTIONS round=%d options=%s" % [round_index, ", ".join(names)])
+		if options.is_empty():
+			failures += 1
+		_add_relic(options[0])
+	print("DEBUG_P7_RELIC_CONTRACTS failures=%d contracts=\"%s\" rough_hp=%.2f elite_probe=%s ore_mult=%.2f" % [
+		failures,
+		_format_relic_counts_for_report(),
+		_contract_enemy_hp_multiplier("zombie"),
+		str(_should_make_contract_elite("zombie")),
+		_contract_ore_multiplier({"type": "fast_zombie", "ore": 1, "elite": true}),
+	])
+	get_tree().quit(1 if failures > 0 else 0)
+
+
+func _debug_p7_boss_patterns_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_PLAY
+	var mid := _make_enemy("mid_boss")
+	mid["pos"] = WORLD_SIZE * 0.5
+	enemies.append(mid)
+	_execute_boss_pattern(mid)
+	var mid_state := str(mid.get("charge_state", "idle"))
+	enemies.clear()
+	var final := _make_enemy("final_boss")
+	final["pos"] = WORLD_SIZE * 0.5
+	final["hp"] = float(final["max_hp"]) * 0.30
+	enemies.append(final)
+	_execute_boss_pattern(final)
+	_execute_boss_pattern(final)
+	_execute_boss_pattern(final)
+	_execute_boss_pattern(final)
+	var has_projectiles := enemy_projectiles.size() > 0
+	print("DEBUG_P7_BOSS_PATTERNS mid_state=%s hazards=%d projectiles=%d summons=%d final_phase=%d" % [
+		mid_state,
+		hazard_zones.size(),
+		enemy_projectiles.size(),
+		enemies.size() - 1,
+		_boss_phase(final),
+	])
+	get_tree().quit(1 if mid_state != "windup" or not has_projectiles else 0)
+
+
 func _load_visual_textures() -> void:
 	player_core_body_texture = _load_png_texture(PLAYER_CORE_BODY_PATH)
 	player_left_glove_texture = _load_png_texture(PLAYER_LEFT_GLOVE_PATH)
@@ -777,6 +1018,8 @@ func _reset_run(start_playing: bool) -> void:
 	active_relics.clear()
 	relic_counts.clear()
 	relic_seen_counts.clear()
+	pending_reward_chain.clear()
+	active_reward_context.clear()
 	reroll_cost = _shop_reroll_cost()
 	round_ore_earned = 0
 	rounds_cleared = 0
@@ -786,6 +1029,7 @@ func _reset_run(start_playing: bool) -> void:
 	run_rerolls = 0
 	run_purchase_count = 0
 	run_purchase_names.clear()
+	run_rare_legendary_purchase_names.clear()
 	run_kill_count = 0
 	run_kills_by_type.clear()
 	run_boss_damage = 0.0
@@ -814,6 +1058,7 @@ func _reset_run(start_playing: bool) -> void:
 	enemy_projectiles.clear()
 	pickups.clear()
 	spawn_warnings.clear()
+	hazard_zones.clear()
 	sparks.clear()
 	floating_text.clear()
 	boss_spawned = false
@@ -824,14 +1069,38 @@ func _reset_run(start_playing: bool) -> void:
 func _round_duration(round_index: int) -> float:
 	if smoke_playtest:
 		return SMOKE_ROUND_DURATION
-	if round_index >= MAX_ROUNDS:
-		return P1_BOSS_ROUND_DURATION
-	return P1_ROUND_DURATION
+	match round_index:
+		1:
+			return 25.0
+		2:
+			return 35.0
+		3:
+			return 45.0
+		4:
+			return 50.0
+		5:
+			return P1_BOSS_ROUND_DURATION
+		6:
+			return 55.0
+		7:
+			return 60.0
+		8:
+			return 65.0
+		9:
+			return 70.0
+		10:
+			return P1_BOSS_ROUND_DURATION
+		_:
+			return P1_BOSS_ROUND_DURATION
+
+
+func _round_is_boss(round_index: int) -> bool:
+	return round_index == 5 or round_index == 10
 
 
 func _shop_reroll_cost() -> int:
 	var base_cost: int = max(2, int(round(2.0 + wave * 0.65 + rounds_cleared * 0.25)))
-	return max(1, base_cost - _relic_count("hungry_lantern"))
+	return base_cost
 
 
 func _update_game(delta: float) -> void:
@@ -853,11 +1122,12 @@ func _update_game(delta: float) -> void:
 	_update_bullets(delta)
 	_update_enemy_projectiles(delta)
 	_update_enemies(delta)
+	_update_hazard_zones(delta)
 	_update_pickups(delta)
 	_update_sparks(delta)
 	_update_floating_text(delta)
 
-	if wave < MAX_ROUNDS and wave_timer <= 0.0:
+	if not _round_is_boss(wave) and wave_timer <= 0.0:
 		_finish_round()
 		return
 
@@ -917,12 +1187,14 @@ func _start_smoke_playtest() -> void:
 	smoke_choices_taken = 0
 	smoke_finishing = false
 	_start_run()
-	player["max_hp"] = 260.0
-	player["hp"] = 260.0
-	player["armor"] = 4.0
-	player["speed"] = 315.0
-	damage_multiplier = 2.25
-	cooldown_multiplier = 0.55
+	player["max_hp"] = 420.0
+	player["hp"] = 420.0
+	player["armor"] = 8.0
+	player["speed"] = 360.0
+	damage_multiplier = 4.2
+	cooldown_multiplier = 0.38
+	range_multiplier = 1.45
+	hp_regen = 2.0
 
 
 func _update_smoke_playtest(delta: float) -> void:
@@ -1004,8 +1276,8 @@ func _spawn_enemies() -> void:
 	if (wave < MAX_ROUNDS and wave_timer <= 0.0) or spawn_timer > 0.0:
 		return
 
-	if wave >= MAX_ROUNDS and not boss_spawned:
-		_queue_spawn_warning("boss", 1, BOSS_SPAWN_WARNING_DURATION)
+	if _round_is_boss(wave) and not boss_spawned:
+		_queue_spawn_warning(_boss_kind_for_round(wave), 1, BOSS_SPAWN_WARNING_DURATION)
 		boss_spawned = true
 		spawn_timer = 1.8
 		return
@@ -1077,30 +1349,31 @@ func _enemy_cap() -> int:
 	var base_cap := 12
 	match wave:
 		1:
-			base_cap = 14
-		2:
-			base_cap = 18
-		3:
-			base_cap = 24
-		4:
-			base_cap = 26
-		_:
 			base_cap = 12
-	return int(ceil(float(base_cap) * _relic_enemy_density_multiplier()))
+		2:
+			base_cap = 15
+		3:
+			base_cap = 18
+		4:
+			base_cap = 21
+		5:
+			base_cap = 8
+		6:
+			base_cap = 24
+		7:
+			base_cap = 27
+		8:
+			base_cap = 29
+		9:
+			base_cap = 32
+		10:
+			base_cap = 14
+		_:
+			base_cap = 24
+	return base_cap
 
 
 func _pick_enemy_kind() -> String:
-	var spider_relic_count := _relic_count("spider_egg_fossil")
-	if wave >= 2 and spider_relic_count > 0:
-		var guaranteed_spider_packs: int = min(2, spider_relic_count)
-		if spider_relic_packs_this_wave < guaranteed_spider_packs:
-			spider_relic_packs_this_wave += 1
-			return "spider"
-		var spider_pressure: float = min(0.42, 0.18 * float(spider_relic_count))
-		if randf() < spider_pressure:
-			spider_relic_packs_this_wave += 1
-			return "spider"
-
 	var roll := randf()
 	match wave:
 		1:
@@ -1117,6 +1390,36 @@ func _pick_enemy_kind() -> String:
 			if roll < 0.70:
 				return "spider"
 			return "fast_zombie" if roll < 0.88 else "zombie"
+		6:
+			if roll < 0.30:
+				return "shield_zombie"
+			if roll < 0.56:
+				return "thrower"
+			if roll < 0.78:
+				return "fast_zombie"
+			return "zombie"
+		7:
+			if roll < 0.25:
+				return "shield_zombie"
+			if roll < 0.48:
+				return "toxic_spider"
+			if roll < 0.66:
+				return "thrower"
+			if roll < 0.84:
+				return "fast_zombie"
+			return "zombie"
+		8, 9:
+			if roll < 0.21:
+				return "shield_zombie"
+			if roll < 0.42:
+				return "toxic_spider"
+			if roll < 0.58:
+				return "bomb_miner"
+			if roll < 0.74:
+				return "thrower"
+			if roll < 0.90:
+				return "fast_zombie"
+			return "zombie"
 		_:
 			if roll < 0.30:
 				return "thrower"
@@ -1129,8 +1432,12 @@ func _pick_enemy_kind() -> String:
 
 func _enemy_pack_size(kind: String) -> int:
 	if kind == "spider":
-		return randi_range(4, 5) if wave < MAX_ROUNDS else randi_range(3, 4)
-	if wave >= MAX_ROUNDS and kind != "thrower":
+		return randi_range(4, 5) if wave < 8 else randi_range(3, 4)
+	if kind == "toxic_spider":
+		return randi_range(2, 3)
+	if kind == "shield_zombie" or kind == "bomb_miner":
+		return 1
+	if _round_is_boss(wave) and kind != "thrower":
 		return 2 if randf() < 0.35 else 1
 	return 1
 
@@ -1146,11 +1453,22 @@ func _enemy_spawn_interval(kind: String) -> float:
 			interval = 1.12 if kind == "spider" else 0.92
 		4:
 			interval = 1.18 if kind == "thrower" else 0.96
+		5:
+			interval = 1.5
+		6:
+			interval = 1.05
+		7:
+			interval = 1.0
+		8:
+			interval = 0.95
+		9:
+			interval = 0.88
+		10:
+			interval = 1.35
 		_:
 			interval = 1.36
 	if smoke_playtest:
 		interval *= 0.62
-	interval *= _relic_spawn_interval_multiplier()
 	return max(0.32, interval)
 
 
@@ -1170,7 +1488,7 @@ func _spawn_warning_position(kind: String) -> Vector2:
 	var margin := 74.0
 	var top_margin := 120.0
 	var radius_bonus := 30.0
-	if kind == "boss":
+	if _is_boss_type(kind):
 		radius_bonus = 72.0
 	elif kind == "elite_zombie":
 		radius_bonus = 48.0
@@ -1233,6 +1551,29 @@ func _make_enemy(kind: String) -> Dictionary:
 			color = Color("#7e8a76")
 			desired_range = 360.0
 			attack_cooldown = 2.15
+		"shield_zombie":
+			hp = 92.0
+			radius = 25.0
+			speed = 48.0
+			damage = 9.0
+			armor = 2.0
+			dropped_ore = 3
+			color = Color("#5f7167")
+		"toxic_spider":
+			hp = 13.0
+			radius = 10.0
+			speed = 132.0
+			damage = 3.0
+			dropped_ore = 1
+			ore_chance = 0.7
+			color = Color("#8fc45b")
+		"bomb_miner":
+			hp = 42.0
+			radius = 18.0
+			speed = 54.0
+			damage = 12.0
+			dropped_ore = 3
+			color = Color("#c9823a")
 		"elite_zombie":
 			hp = 82.0
 			radius = 25.0
@@ -1250,19 +1591,43 @@ func _make_enemy(kind: String) -> Dictionary:
 			armor = 3.0
 			dropped_ore = 0
 			color = Color("#6f4f86")
+		"mid_boss":
+			hp = 360.0
+			radius = 42.0
+			speed = 44.0
+			damage = 16.0
+			armor = 3.0
+			dropped_ore = 0
+			color = Color("#6f4f86")
+		"final_boss":
+			hp = 860.0
+			radius = 48.0
+			speed = 44.0
+			damage = 18.0
+			armor = 4.0
+			dropped_ore = 0
+			color = Color("#7d456a")
 		_:
 			kind = "zombie"
 
-	hp *= _relic_enemy_hp_multiplier()
-	speed *= _relic_enemy_speed_multiplier()
+	hp *= _contract_enemy_hp_multiplier(kind)
+	damage *= _contract_enemy_damage_multiplier(kind)
+	speed *= _contract_enemy_speed_multiplier(kind)
 	if kind == "thrower":
-		attack_cooldown = max(0.72, attack_cooldown * _relic_thrower_cooldown_multiplier())
-	ore_chance = min(1.0, ore_chance + _relic_ore_drop_bonus())
+		attack_cooldown = max(0.72, attack_cooldown * _contract_thrower_cooldown_multiplier())
+	ore_chance = min(1.0, ore_chance)
+	var elite := _should_make_contract_elite(kind)
+	if elite:
+		hp *= 1.45
+		damage *= 1.18
+		speed *= 1.08
+		armor += 1.0
+		dropped_ore += 2
 
 	var enemy_id := next_enemy_id
 	next_enemy_id += 1
 
-	return {
+	var enemy := {
 		"id": enemy_id,
 		"type": kind,
 		"pos": _spawn_position(),
@@ -1284,7 +1649,20 @@ func _make_enemy(kind: String) -> Dictionary:
 		"hit_flash_color": Color("#f5efe3"),
 		"emerge_timer": 0.0,
 		"emerge_duration": ENEMY_EMERGE_DURATION,
+		"elite": elite,
 	}
+	if _is_boss_type(kind):
+		enemy["pattern_timer"] = 1.25
+		enemy["charge_state"] = "idle"
+		enemy["charge_timer"] = 0.0
+		enemy["charge_dir"] = Vector2.ZERO
+		enemy["summon_count"] = 0
+		enemy["bullet_pattern_used"] = false
+	if kind == "bomb_miner":
+		enemy["bomb_state"] = "approach"
+		enemy["bomb_timer"] = 0.0
+		enemy["charge_dir"] = Vector2.ZERO
+	return enemy
 
 
 func _update_weapons(delta: float) -> void:
@@ -1299,7 +1677,7 @@ func _update_weapons(delta: float) -> void:
 
 
 func _nearest_enemy(search_range: float) -> Dictionary:
-	if wave >= MAX_ROUNDS:
+	if _round_is_boss(wave):
 		var boss := _boss_in_range(search_range)
 		if not boss.is_empty():
 			return boss
@@ -1322,7 +1700,7 @@ func _boss_in_range(search_range: float) -> Dictionary:
 	var best := {}
 	var best_distance := search_range * search_range
 	for enemy in enemies:
-		if str(enemy.get("type", "")) != "boss":
+		if not _is_boss_type(str(enemy.get("type", ""))):
 			continue
 		if float(enemy.get("hp", 0.0)) <= 0.0:
 			continue
@@ -1337,9 +1715,17 @@ func _boss_in_range(search_range: float) -> Dictionary:
 
 func _boss_enemy() -> Dictionary:
 	for enemy in enemies:
-		if str(enemy.get("type", "")) == "boss":
+		if _is_boss_type(str(enemy.get("type", ""))):
 			return enemy
 	return {}
+
+
+func _boss_kind_for_round(round_index: int) -> String:
+	return "mid_boss" if round_index == 5 else "final_boss"
+
+
+func _is_boss_type(type: String) -> bool:
+	return type == "boss" or type == "mid_boss" or type == "final_boss"
 
 
 func _fire_weapon(weapon: Dictionary, target: Dictionary, effective_range: float) -> void:
@@ -1491,17 +1877,69 @@ func _update_enemy_projectiles(delta: float) -> void:
 
 		if projectile["pos"].distance_squared_to(player["pos"]) <= pow(projectile["radius"] + player["radius"], 2.0):
 			if player["hurt_cooldown"] <= 0.0:
-				var damage = max(1.0, projectile["damage"] - player["armor"])
-				player["hp"] -= damage
-				player["hurt_cooldown"] = 0.45
-				screen_shake = 0.8
-				_add_floating_text("-%d" % int(round(damage)), player["pos"] + Vector2(0, -28), Color("#f0643b"))
+				_apply_player_damage(float(projectile["damage"]), "투사체", Color("#f0643b"), 0.45)
 			_add_spark(projectile["pos"], projectile["color"], 8)
 			enemy_projectiles.remove_at(i)
 			continue
 
 		if projectile["life"] <= 0.0 or not Rect2(Vector2(-80, -80), WORLD_SIZE + Vector2(160, 160)).has_point(projectile["pos"]):
 			enemy_projectiles.remove_at(i)
+
+
+func _apply_player_damage(raw_damage: float, label: String = "", color: Color = Color("#f0643b"), cooldown: float = 0.55, armor_scale: float = 1.0) -> float:
+	var damage: float = max(1.0, raw_damage - float(player.get("armor", 0.0)) * armor_scale)
+	player["hp"] = float(player.get("hp", 0.0)) - damage
+	player["hurt_cooldown"] = cooldown
+	screen_shake = max(screen_shake, 0.8)
+	var prefix := "" if label.is_empty() else "%s " % label
+	_add_floating_text("%s-%d" % [prefix, int(round(damage))], Vector2(player.get("pos", Vector2.ZERO)) + Vector2(0, -28), color)
+	return damage
+
+
+func _pattern_damage(base_damage: float) -> float:
+	return base_damage
+
+
+func _update_hazard_zones(delta: float) -> void:
+	for i in range(hazard_zones.size() - 1, -1, -1):
+		var zone: Dictionary = hazard_zones[i]
+		zone["life"] = float(zone.get("life", 0.0)) - delta
+		zone["tick"] = max(0.0, float(zone.get("tick", 0.0)) - delta)
+		if float(zone["life"]) <= 0.0:
+			hazard_zones.remove_at(i)
+			continue
+		var pos: Vector2 = zone.get("pos", Vector2.ZERO)
+		var radius := float(zone.get("radius", 64.0))
+		if Vector2(player.get("pos", Vector2.ZERO)).distance_to(pos) <= radius and float(zone.get("tick", 0.0)) <= 0.0:
+			_apply_player_damage(float(zone.get("damage", 4.0)), str(zone.get("label", "독")), Color(zone.get("color", Color("#93c96d"))), 0.30, 0.45)
+			zone["tick"] = 0.55
+
+
+func _spawn_poison_zone(pos: Vector2, radius: float, duration: float, damage: float, color: Color = Color("#93c96d")) -> void:
+	hazard_zones.append({
+		"pos": pos,
+		"radius": radius,
+		"life": duration,
+		"max_life": duration,
+		"damage": damage,
+		"tick": 0.0,
+		"color": color,
+		"label": "독",
+	})
+
+
+func _add_hazard_ring(pos: Vector2, radius: float, color: Color, duration: float) -> void:
+	sparks.append({
+		"line": false,
+		"pos": pos,
+		"velocity": Vector2.ZERO,
+		"life": duration,
+		"max_life": duration,
+		"color": color,
+		"radius": radius,
+		"ring": true,
+		"width": 4.0,
+	})
 
 
 func _explode_bullet(bullet: Dictionary, pos: Vector2, direct_hit_id: int = -1) -> void:
@@ -1545,11 +1983,15 @@ func _update_enemies(delta: float) -> void:
 			var defeated_type := str(enemy.get("type", "zombie"))
 			_record_enemy_defeat(defeated_type)
 			_drop_pickups(enemy)
+			_trigger_enemy_death_pattern(enemy)
 			_trigger_relic_death_hazard(enemy)
 			_add_spark(enemy["pos"], enemy["color"], 14)
 			enemies.remove_at(i)
-			if defeated_type == "boss":
-				_victory()
+			if _is_boss_type(defeated_type):
+				if wave >= MAX_ROUNDS:
+					_victory()
+				else:
+					_finish_round()
 				return
 			continue
 
@@ -1559,12 +2001,21 @@ func _update_enemies(delta: float) -> void:
 		var touch_distance: float = player["radius"] + enemy["radius"]
 		if enemy["pos"].distance_squared_to(player["pos"]) <= touch_distance * touch_distance:
 			if player["hurt_cooldown"] <= 0.0:
-				var damage = max(1.0, enemy["damage"] - player["armor"])
-				player["hp"] -= damage
-				player["hurt_cooldown"] = 0.55
-				screen_shake = 1.0
-				_add_floating_text("-%d" % int(round(damage)), player["pos"] + Vector2(0, -28), Color("#f0643b"))
+				if str(enemy.get("type", "")) == "bomb_miner":
+					_trigger_bomb_miner_explosion(enemy)
+				else:
+					_apply_player_damage(float(enemy["damage"]), "", Color("#f0643b"), 0.55)
 			enemy["pos"] += -direction * 70.0 * delta
+
+
+func _trigger_enemy_death_pattern(enemy: Dictionary) -> void:
+	var type := str(enemy.get("type", ""))
+	if type == "toxic_spider":
+		_spawn_poison_zone(Vector2(enemy["pos"]), 58.0, _toxic_zone_duration(), 3.6)
+
+
+func _toxic_zone_duration() -> float:
+	return 3.4 + 0.45 * float(_relic_count("viscous_poison_vein"))
 
 
 func _update_enemy_behavior(enemy: Dictionary, delta: float) -> void:
@@ -1574,7 +2025,11 @@ func _update_enemy_behavior(enemy: Dictionary, delta: float) -> void:
 	var distance: float = max(1.0, to_player.length())
 	var direction: Vector2 = to_player / distance
 
-	if type == "thrower":
+	if type == "bomb_miner":
+		_update_bomb_miner_behavior(enemy, delta, direction, distance)
+	elif _is_boss_type(type):
+		_update_boss_behavior(enemy, delta, direction, distance)
+	elif type == "thrower":
 		var desired_range := float(enemy.get("desired_range", 360.0))
 		if distance > desired_range * 1.08:
 			enemy["pos"] += direction * enemy["speed"] * delta
@@ -1603,6 +2058,173 @@ func _update_enemy_behavior(enemy: Dictionary, delta: float) -> void:
 	pos.x = clamp(pos.x, -60.0, WORLD_SIZE.x + 60.0)
 	pos.y = clamp(pos.y, -60.0, WORLD_SIZE.y + 60.0)
 	enemy["pos"] = pos
+
+
+func _update_bomb_miner_behavior(enemy: Dictionary, delta: float, direction: Vector2, distance: float) -> void:
+	var state := str(enemy.get("bomb_state", "approach"))
+	match state:
+		"approach":
+			if distance <= 210.0:
+				enemy["bomb_state"] = "windup"
+				enemy["bomb_timer"] = _bomb_windup_duration()
+				enemy["charge_dir"] = direction
+			else:
+				enemy["pos"] += direction * enemy["speed"] * delta
+		"windup":
+			enemy["bomb_timer"] = float(enemy.get("bomb_timer", 0.0)) - delta
+			if float(enemy["bomb_timer"]) <= 0.0:
+				enemy["bomb_state"] = "charge"
+				enemy["bomb_timer"] = 0.46
+				enemy["charge_dir"] = direction
+		"charge":
+			var charge_dir: Vector2 = enemy.get("charge_dir", direction)
+			enemy["pos"] += charge_dir.normalized() * 330.0 * delta
+			enemy["bomb_timer"] = float(enemy.get("bomb_timer", 0.0)) - delta
+			if float(enemy["bomb_timer"]) <= 0.0:
+				_trigger_bomb_miner_explosion(enemy)
+		_:
+			enemy["pos"] += direction * enemy["speed"] * delta
+
+
+func _bomb_windup_duration() -> float:
+	return max(0.42, 0.82 - 0.12 * float(_relic_count("shortened_fuse")))
+
+
+func _trigger_bomb_miner_explosion(enemy: Dictionary) -> void:
+	var pos: Vector2 = enemy.get("pos", Vector2.ZERO)
+	var radius := 82.0
+	_add_hazard_ring(pos, radius, Color("#f0643b"), 0.22)
+	if Vector2(player.get("pos", Vector2.ZERO)).distance_to(pos) <= radius and float(player.get("hurt_cooldown", 0.0)) <= 0.0:
+		_apply_player_damage(_pattern_damage(24.0), "폭발", Color("#f0643b"))
+	for other in enemies:
+		if int(other.get("id", -1)) == int(enemy.get("id", -2)):
+			continue
+		if float(other.get("hp", 0.0)) <= 0.0:
+			continue
+		if Vector2(other.get("pos", Vector2.ZERO)).distance_to(pos) <= radius:
+			var push_dir := (Vector2(other.get("pos", Vector2.ZERO)) - pos).normalized()
+			_hurt_enemy(other, 10.0, other["pos"], 0.0, push_dir, "splash")
+	enemy["hp"] = 0.0
+	screen_shake = max(screen_shake, 1.1)
+
+
+func _update_boss_behavior(enemy: Dictionary, delta: float, direction: Vector2, distance: float) -> void:
+	var type := str(enemy.get("type", "mid_boss"))
+	var charge_state := str(enemy.get("charge_state", "idle"))
+	if charge_state == "windup":
+		enemy["charge_timer"] = float(enemy.get("charge_timer", 0.0)) - delta
+		if float(enemy["charge_timer"]) <= 0.0:
+			enemy["charge_state"] = "charge"
+			enemy["charge_timer"] = 0.38
+		return
+	if charge_state == "charge":
+		var charge_dir: Vector2 = enemy.get("charge_dir", direction)
+		enemy["pos"] += charge_dir.normalized() * (390.0 if type == "final_boss" else 340.0) * delta
+		enemy["charge_timer"] = float(enemy.get("charge_timer", 0.0)) - delta
+		if float(enemy["charge_timer"]) <= 0.0:
+			enemy["charge_state"] = "idle"
+			enemy["pattern_timer"] = _boss_pattern_interval(enemy)
+		return
+
+	enemy["pattern_timer"] = float(enemy.get("pattern_timer", 1.0)) - delta
+	if float(enemy["pattern_timer"]) <= 0.0:
+		_execute_boss_pattern(enemy)
+		return
+
+	var move_speed: float = float(enemy.get("speed", 44.0))
+	if distance > 260.0:
+		enemy["pos"] += direction * move_speed * delta
+	else:
+		var strafe := direction.rotated(PI * 0.5)
+		enemy["pos"] += strafe * sin(elapsed * 1.4 + float(enemy["id"])) * move_speed * 0.34 * delta
+
+
+func _execute_boss_pattern(enemy: Dictionary) -> void:
+	var type := str(enemy.get("type", "mid_boss"))
+	var phase := _boss_phase(enemy)
+	var pattern_index := int(enemy.get("pattern_index", 0))
+	var choices: Array[String] = ["charge", "pool"]
+	if type == "mid_boss":
+		choices = ["charge", "pool", "summon"]
+	else:
+		if phase >= 2:
+			choices.append("summon")
+		if phase >= 3:
+			choices.append("barrage")
+	var pattern: String = choices[pattern_index % choices.size()]
+	enemy["pattern_index"] = pattern_index + 1
+	match pattern:
+		"charge":
+			_start_boss_charge(enemy)
+		"pool":
+			_spawn_poison_zone(Vector2(enemy.get("pos", Vector2.ZERO)), 94.0, 3.8, _pattern_damage(5.0), Color("#7560a8"))
+			enemy["pattern_timer"] = _boss_pattern_interval(enemy)
+		"summon":
+			_boss_summon(enemy)
+			enemy["pattern_timer"] = _boss_pattern_interval(enemy)
+		"barrage":
+			_boss_barrage(enemy)
+			enemy["pattern_timer"] = _boss_pattern_interval(enemy)
+
+
+func _start_boss_charge(enemy: Dictionary) -> void:
+	var direction := (Vector2(player.get("pos", Vector2.ZERO)) - Vector2(enemy.get("pos", Vector2.ZERO))).normalized()
+	enemy["charge_dir"] = direction
+	enemy["charge_state"] = "windup"
+	enemy["charge_timer"] = 0.72
+	_add_line_spark(enemy["pos"], enemy["pos"] + direction * 190.0, Color("#f0643b"), 0.34, 5.5)
+
+
+func _boss_pattern_interval(enemy: Dictionary) -> float:
+	var base := 2.35 if str(enemy.get("type", "")) == "final_boss" else 2.55
+	return max(1.35, base - 0.20 * float(_relic_count("awakened_overseer")))
+
+
+func _boss_phase(enemy: Dictionary) -> int:
+	var ratio := clampf(float(enemy.get("hp", 0.0)) / maxf(1.0, float(enemy.get("max_hp", 1.0))), 0.0, 1.0)
+	if ratio <= 0.35:
+		return 3
+	if ratio <= 0.70:
+		return 2
+	return 1
+
+
+func _boss_summon(enemy: Dictionary) -> void:
+	var boss_pos: Vector2 = enemy.get("pos", WORLD_SIZE * 0.5)
+	var type := str(enemy.get("type", "mid_boss"))
+	var summon_count := int(enemy.get("summon_count", 0))
+	if type == "mid_boss":
+		for i in range(randi_range(1, 2)):
+			_spawn_enemy_pack_at("shield_zombie", 1, boss_pos + Vector2.RIGHT.rotated(randf() * TAU) * 92.0, true)
+	else:
+		if summon_count >= 4:
+			return
+		var candidates: Array[String] = ["shield_zombie", "fast_zombie", "toxic_spider", "bomb_miner"]
+		var kind: String = candidates[randi_range(0, candidates.size() - 1)]
+		var pack := 1
+		if kind == "fast_zombie":
+			pack = 2
+		elif kind == "toxic_spider":
+			pack = randi_range(2, 3)
+		_spawn_enemy_pack_at(kind, pack, boss_pos + Vector2.RIGHT.rotated(randf() * TAU) * 116.0, true)
+		enemy["summon_count"] = summon_count + 1
+	_add_spark(boss_pos, Color("#e6b85c"), 12)
+
+
+func _boss_barrage(enemy: Dictionary) -> void:
+	var pos: Vector2 = enemy.get("pos", WORLD_SIZE * 0.5)
+	var count := 10
+	for i in range(count):
+		var direction := Vector2.RIGHT.rotated(TAU * float(i) / float(count) + randf_range(-0.10, 0.10))
+		enemy_projectiles.append({
+			"pos": pos + direction * (float(enemy.get("radius", 42.0)) + 8.0),
+			"velocity": direction * 205.0,
+			"radius": 7.5,
+			"damage": _pattern_damage(9.0),
+			"life": 4.0,
+			"color": Color("#c7b08a"),
+		})
+	_add_spark(pos, Color("#c7b08a"), 16)
 
 
 func _update_enemy_emerge(enemy: Dictionary, delta: float) -> bool:
@@ -1654,11 +2276,13 @@ func _apply_enemy_separation(delta: float) -> void:
 			continue
 		var type := str(enemy.get("type", "zombie"))
 		var strength := 72.0
-		if type == "boss":
+		if _is_boss_type(type):
 			strength = 28.0
 		elif type == "elite_zombie":
 			strength = 44.0
-		elif type == "spider":
+		elif type == "shield_zombie":
+			strength = 36.0
+		elif type == "spider" or type == "toxic_spider":
 			strength = 88.0
 		var separated_pos := pos + separation.limit_length(1.0) * strength * delta
 		separated_pos.x = clamp(separated_pos.x, -60.0, WORLD_SIZE.x + 60.0)
@@ -1670,9 +2294,9 @@ func _throw_enemy_rock(enemy: Dictionary, direction: Vector2) -> void:
 	var origin: Vector2 = enemy["pos"]
 	enemy_projectiles.append({
 		"pos": origin + direction * (float(enemy["radius"]) + 8.0),
-		"velocity": direction * 285.0,
+		"velocity": direction * (285.0 + 32.0 * float(_relic_count("sharpened_throwing"))),
 		"radius": 7.0,
-		"damage": 7.0,
+		"damage": 7.0 + 1.4 * float(_relic_count("sharpened_throwing")),
 		"life": 3.0,
 		"color": Color("#c7b08a"),
 	})
@@ -1682,10 +2306,13 @@ func _throw_enemy_rock(enemy: Dictionary, direction: Vector2) -> void:
 func _hurt_enemy(enemy: Dictionary, damage: float, hit_pos: Vector2, armor_pierce: float = 0.0, push_direction: Vector2 = Vector2.ZERO, feedback: String = "hit") -> void:
 	debug_hurt_events += 1
 	var hp_before := float(enemy.get("hp", 0.0))
+	if str(enemy.get("type", "")) == "shield_zombie" and _shield_blocks_hit(enemy, push_direction, armor_pierce, feedback):
+		damage *= _shield_front_damage_multiplier()
+		feedback = "armor"
 	var effective_armor = max(0.0, float(enemy.get("armor", 0.0)) - armor_pierce)
 	var final_damage = max(1.0, damage - effective_armor)
 	enemy["hp"] = hp_before - final_damage
-	if str(enemy.get("type", "")) == "boss":
+	if _is_boss_type(str(enemy.get("type", ""))):
 		run_boss_damage += min(final_damage, max(0.0, hp_before))
 	var feedback_color := _hit_feedback_color(feedback)
 	enemy["hit_flash"] = 1.0
@@ -1696,6 +2323,20 @@ func _hurt_enemy(enemy: Dictionary, damage: float, hit_pos: Vector2, armor_pierc
 		text_pos += Vector2(0, -18)
 	_add_floating_text(_hit_feedback_text(final_damage, feedback), text_pos, feedback_color)
 	_add_hit_feedback_sparks(hit_pos, push_direction, feedback_color, feedback)
+
+
+func _shield_blocks_hit(enemy: Dictionary, push_direction: Vector2, armor_pierce: float, feedback: String) -> bool:
+	if armor_pierce >= 2.5 or feedback == "splash" or feedback == "splash_direct" or feedback == "pierce":
+		return false
+	var front: Vector2 = (Vector2(player.get("pos", Vector2.ZERO)) - Vector2(enemy.get("pos", Vector2.ZERO))).normalized()
+	var incoming := push_direction.normalized()
+	if incoming.length_squared() <= 0.001:
+		return true
+	return incoming.dot(front) > 0.38
+
+
+func _shield_front_damage_multiplier() -> float:
+	return max(0.22, 0.42 - 0.08 * float(_relic_count("cracked_shield_oath")))
 
 
 func _weapon_has_mod(weapon: Dictionary, mod_name: String) -> bool:
@@ -1793,11 +2434,17 @@ func _apply_enemy_knockback(enemy: Dictionary, direction: Vector2, amount: float
 	match type:
 		"spider":
 			multiplier = 1.25
+		"toxic_spider":
+			multiplier = 1.20
+		"bomb_miner":
+			multiplier = 0.95
 		"thrower":
 			multiplier = 0.85
+		"shield_zombie":
+			multiplier = 0.32
 		"elite_zombie":
 			multiplier = 0.45
-		"boss":
+		"boss", "mid_boss", "final_boss":
 			multiplier = 0.24
 	var velocity: Vector2 = enemy.get("knockback_velocity", Vector2.ZERO)
 	enemy["knockback_velocity"] = (velocity + direction.normalized() * amount * multiplier).limit_length(180.0)
@@ -1856,7 +2503,7 @@ func _drop_pickups(enemy: Dictionary) -> void:
 		return
 	if P2_LEVEL_UP_REWARDS_ENABLED and float(enemy["xp"]) > 0.0:
 		pickups.append({"pos": enemy["pos"], "radius": 8.0, "type": "xp", "value": enemy["xp"], "color": Color("#6cc3c0")})
-	var ore_count := int(ceil(enemy["ore"] * ore_multiplier))
+	var ore_count := int(ceil(float(enemy["ore"]) * ore_multiplier * _contract_ore_multiplier(enemy)))
 	if ore_count > 0 and randf() > float(enemy.get("ore_chance", 1.0)):
 		ore_count = 0
 	for i in range(ore_count):
@@ -1992,25 +2639,23 @@ func _open_level_up() -> void:
 func _choose_reward(reward: Dictionary) -> void:
 	match reward["id"]:
 		"hp":
-			player["max_hp"] += 18.0
-			player["hp"] = min(player["max_hp"], player["hp"] + 24.0)
+			player["max_hp"] += 10.0
+			player["hp"] = min(player["max_hp"], player["hp"] + 14.0)
 		"speed":
-			player["speed"] *= 1.12
-		"magnet":
-			player["pickup_range"] *= 1.34
+			player["speed"] *= 1.045
+		"range":
+			range_multiplier *= 1.055
 		"damage":
-			damage_multiplier *= 1.16
+			damage_multiplier *= 1.055
 		"cooldown":
-			cooldown_multiplier *= 0.86
-		"ore":
-			ore_multiplier *= 1.4
+			cooldown_multiplier *= 0.955
 		"armor":
-			player["armor"] += 2.0
-		"xp":
-			xp_multiplier *= 1.2
+			player["armor"] += 0.45
+		"regen":
+			hp_regen += 0.10
 	_hide_overlay()
-	mode = MODE_PLAY
 	_render_weapons()
+	_open_next_reward_or_round()
 
 
 func _finish_round() -> void:
@@ -2024,10 +2669,63 @@ func _finish_round() -> void:
 	spawn_timer = 0.0
 	screen_shake = 0.0
 
-	if wave >= MAX_ROUNDS:
-		_victory()
-	else:
-		_open_relic_choice()
+	pending_reward_chain = _reward_chain_for_round(wave)
+	_open_next_reward_or_round()
+
+
+func _reward_chain_for_round(round_index: int) -> Array:
+	match round_index:
+		1:
+			return [{"type": "stat"}]
+		2:
+			return [{"type": "shop"}]
+		3:
+			return [{"type": "contract"}, {"type": "shop"}]
+		4:
+			return [{"type": "shop"}]
+		5:
+			return [{"type": "stat"}, {"type": "contract"}, {"type": "shop"}]
+		6:
+			return [{"type": "shop"}]
+		7:
+			return [{"type": "stat"}, {"type": "contract"}, {"type": "shop"}]
+		8:
+			return [{"type": "shop"}]
+		9:
+			return [{"type": "final_shop"}]
+		_:
+			return []
+
+
+func _reward_route_label(round_index: int) -> String:
+	var labels := PackedStringArray()
+	for step in _reward_chain_for_round(round_index):
+		match str(step.get("type", "")):
+			"stat":
+				labels.append("stat")
+			"contract":
+				labels.append("contract")
+			"shop":
+				labels.append("shop")
+			"final_shop":
+				labels.append("final_shop")
+	return " -> ".join(labels) if not labels.is_empty() else "victory"
+
+
+func _open_next_reward_or_round() -> void:
+	if pending_reward_chain.is_empty():
+		_start_next_round()
+		return
+	active_reward_context = pending_reward_chain.pop_front()
+	match str(active_reward_context.get("type", "")):
+		"stat":
+			_open_stat_reward()
+		"contract":
+			_open_contract_choice()
+		"shop", "final_shop":
+			_open_shop()
+		_:
+			_open_next_reward_or_round()
 
 
 func _collect_leftover_ore() -> void:
@@ -2043,7 +2741,6 @@ func _collect_leftover_ore() -> void:
 func _award_round_clear_ore() -> void:
 	var base_reward := ROUND_CLEAR_ORE_BASE + wave * ROUND_CLEAR_ORE_STEP
 	var reward := int(round(float(base_reward) * _relic_clear_ore_multiplier()))
-	reward += 10 * _relic_count("twin_excavation_seal")
 	ore += reward
 	round_ore_earned += reward
 	run_ore_collected += reward
@@ -2055,6 +2752,7 @@ func _clear_combat_state() -> void:
 	enemy_projectiles.clear()
 	pickups.clear()
 	spawn_warnings.clear()
+	hazard_zones.clear()
 
 
 func _fully_heal_player() -> void:
@@ -2093,36 +2791,136 @@ func _round_brief(round_index: int) -> String:
 		4:
 			return "원거리에서 돌을 던지는 좀비가 합류합니다. 투사체와 우선 처치 대상을 읽어야 합니다."
 		5:
-			return "방어력이 높은 보스 좀비가 등장합니다. 보스를 처치하면 P2 테스트가 끝납니다."
+			return "중간 보스가 돌진, 장판, 방패 좀비 소환으로 후반 패턴을 예고합니다."
+		6:
+			return "방패 좀비가 일반 웨이브에 섞입니다. 정면을 고집하면 피해가 잘 들어가지 않습니다."
+		7:
+			return "독 거미가 죽으며 독 장판을 남깁니다. 이동 경로가 잠깐 망가집니다."
+		8:
+			return "자폭 광부가 전조 후 짧게 돌진합니다. 거리를 읽고 밀어내야 합니다."
+		9:
+			return "후반 위협이 함께 몰립니다. 최종 준비 상점 전 마지막 광맥입니다."
+		10:
+			return "최종 보스가 돌진, 장판, 소환, 탄막을 체력 페이즈에 따라 확장합니다."
 		_:
 			return "다음 라운드를 시작합니다."
+
+
+func _next_round_warning_text(round_index: int) -> String:
+	match round_index:
+		2:
+			return "다음 광맥: 빨라진 발소리"
+		3:
+			return "다음 광맥: 몰려오는 거미떼"
+		4:
+			return "다음 광맥: 날아오는 돌"
+		5:
+			return "다음 광맥: 중간 우두머리"
+		6:
+			return "다음 광맥: 방패를 든 무리"
+		7:
+			return "다음 광맥: 독 흔적"
+		8:
+			return "다음 광맥: 불안정한 폭약 냄새"
+		9:
+			return "다음 광맥: 후반 압박"
+		10:
+			return "다음 광맥: 최종 우두머리"
+		_:
+			return "다음 광맥: 미확인"
+
+
+func _reward_eyebrow_text() -> String:
+	return "라운드 %d 완료  +%d 광석  ·  %s" % [wave, round_ore_earned, _next_round_warning_text(min(wave + 1, MAX_ROUNDS))]
+
+
+func _next_reward_or_round_desc() -> String:
+	if not pending_reward_chain.is_empty():
+		var next_type := str(Dictionary(pending_reward_chain[0]).get("type", ""))
+		match next_type:
+			"stat":
+				return "다음 보상으로 기본 체급 보정을 선택합니다."
+			"contract":
+				return "다음 보상으로 위험한 광맥 계약을 선택합니다."
+			"shop", "final_shop":
+				return "다음 보상으로 상점에 진입합니다."
+	return "%s\n%s" % [_next_round_warning_text(min(wave + 1, MAX_ROUNDS)), _round_brief(min(wave + 1, MAX_ROUNDS))]
 
 
 func _open_relic_choice() -> void:
 	mode = MODE_CHOICE
 	var options := _roll_relic_options()
-	_show_choice_overlay("라운드 %d 완료  +%d 광석" % [wave, round_ore_earned], "발견한 유물 선택", options, "_choose_relic_option")
+	_show_choice_overlay("라운드 %d 완료  +%d 광석" % [wave, round_ore_earned], "계약 선택", options, "_choose_relic_option")
 
 
 func _choose_relic_option(relic: Dictionary) -> void:
 	if str(relic.get("kind", "")) != "relic":
 		return
 	_add_relic(relic)
-	_open_shop()
+	_open_next_reward_or_round()
+
+
+func _open_stat_reward() -> void:
+	mode = MODE_CHOICE
+	var title := "기본 체급 보정"
+	var eyebrow := _reward_eyebrow_text()
+	_show_choice_overlay(eyebrow, title, _sample_array(stat_rewards, 3), "_choose_reward")
+
+
+func _open_contract_choice() -> void:
+	mode = MODE_CHOICE
+	var options := _roll_relic_options()
+	_show_choice_overlay("계약 이벤트  ·  %s" % _next_round_warning_text(min(wave + 1, MAX_ROUNDS)), "위험한 광맥 선택", options, "_choose_relic_option")
 
 
 func _roll_relic_options() -> Array:
-	var candidates := relic_catalog.duplicate(true)
+	var rolled: Array = []
+	var repeat := _next_contract_repeat_candidate()
+	if not repeat.is_empty():
+		rolled.append(repeat)
+
+	var candidates := _contract_candidates_for_round(wave)
 	candidates.shuffle()
 	candidates.sort_custom(func(a, b): return _relic_seen_count(a) < _relic_seen_count(b))
-
-	var rolled: Array = []
 	for relic in candidates:
 		if rolled.size() >= RELIC_OPTION_COUNT:
 			break
+		var id := str(relic.get("id", ""))
+		if _relic_count(id) >= 3:
+			continue
+		if _stock_has_item_id(rolled, id):
+			continue
 		rolled.append(relic.duplicate(true))
 	_record_relic_seen(rolled)
 	return rolled
+
+
+func _contract_candidates_for_round(round_index: int) -> Array:
+	var ids := ["overheated_footsteps", "sharpened_throwing", "rough_vein", "chosen_prey"]
+	if round_index >= 5:
+		ids.append_array(["cracked_shield_oath", "viscous_poison_vein", "shortened_fuse"])
+	if round_index >= 7:
+		ids.append("awakened_overseer")
+	var candidates: Array = []
+	for id in ids:
+		var relic := _relic_by_id(id)
+		if not relic.is_empty():
+			candidates.append(relic)
+	return candidates
+
+
+func _next_contract_repeat_candidate() -> Dictionary:
+	if wave < 5:
+		return {}
+	for relic in active_relics:
+		var id := str(relic.get("id", ""))
+		if _relic_count(id) <= 0 or _relic_count(id) >= 3:
+			continue
+		var candidates := _contract_candidates_for_round(wave)
+		for candidate in candidates:
+			if str(candidate.get("id", "")) == id:
+				return candidate.duplicate(true)
+	return {}
 
 
 func _add_relic(relic: Dictionary) -> void:
@@ -2130,6 +2928,8 @@ func _add_relic(relic: Dictionary) -> void:
 		return
 	var id := str(relic.get("id", ""))
 	if id.is_empty():
+		return
+	if _relic_count(id) >= 3:
 		return
 	active_relics.append(relic.duplicate(true))
 	relic_counts[id] = _relic_count(id) + 1
@@ -2147,58 +2947,71 @@ func _open_shop() -> void:
 func _show_shop_overlay() -> void:
 	var options := shop_stock.duplicate(true)
 	options.append({"id": "reroll", "kind": "command", "name": "재고 새로고침", "desc": "상점 선택지를 다시 뽑습니다.", "cost": reroll_cost})
-	options.append({"id": "next_round", "kind": "command", "name": "다음 라운드", "desc": "구매를 마치고 라운드 %d을 시작합니다." % (wave + 1), "cost": 0})
-	_show_choice_overlay("라운드 %d 완료  +%d 광석" % [wave, round_ore_earned], "상점 - 광석 %d" % ore, options, "_choose_shop_option")
+	var next_text := "다음 보상" if not pending_reward_chain.is_empty() else "다음 라운드"
+	options.append({"id": "next_round", "kind": "command", "name": next_text, "desc": _next_reward_or_round_desc(), "cost": 0})
+	var title := "최종 준비 상점 - 광석 %d" % ore if str(active_reward_context.get("type", "")) == "final_shop" else "상점 - 광석 %d" % ore
+	_show_choice_overlay(_reward_eyebrow_text(), title, options, "_choose_shop_option")
 
 
 func _roll_shop_stock(avoid_ids: Array = []) -> Array:
 	var rolled: Array = []
 	var next_round: int = min(wave + 1, MAX_ROUNDS)
 	var counter_pool: Array = _shop_items_for_round(next_round, avoid_ids)
-	if counter_pool.is_empty() and avoid_ids.is_empty():
-		counter_pool = _shop_items_for_round(next_round)
 	if not counter_pool.is_empty():
-		rolled.append(_least_seen_shop_item(counter_pool).duplicate(true))
+		var counter := _least_seen_shop_item(counter_pool).duplicate(true)
+		if randf() < _shop_rarity_weight(str(counter.get("rarity", "common")), next_round) + 0.18:
+			rolled.append(counter)
 
-	var bonus_pool: Array = _relic_bonus_shop_items(avoid_ids)
-	bonus_pool.shuffle()
-	bonus_pool.sort_custom(func(a, b): return _shop_seen_count(a) < _shop_seen_count(b))
-	for option in bonus_pool:
-		if rolled.size() >= SHOP_OPTION_COUNT:
-			break
-		if _stock_has_item_id(rolled, str(option.get("id", ""))):
-			continue
-		rolled.append(option.duplicate(true))
-		break
-
-	var candidates: Array = _available_shop_items(avoid_ids)
-	candidates.shuffle()
-	candidates.sort_custom(func(a, b): return _shop_seen_count(a) < _shop_seen_count(b))
-	for option in candidates:
-		if rolled.size() >= SHOP_OPTION_COUNT:
-			break
-		if _stock_has_item_id(rolled, str(option.get("id", ""))):
-			continue
-		rolled.append(option.duplicate(true))
-
-	if rolled.size() < SHOP_OPTION_COUNT:
-		var fallback_candidates: Array = _available_shop_items([])
-		fallback_candidates.shuffle()
-		fallback_candidates.sort_custom(func(a, b): return _shop_seen_count(a) < _shop_seen_count(b))
-		for option in fallback_candidates:
-			if rolled.size() >= SHOP_OPTION_COUNT:
-				break
+	while rolled.size() < SHOP_OPTION_COUNT:
+		var rarity := _roll_shop_rarity(next_round)
+		var candidates: Array = _available_shop_items_by_rarity(rarity, avoid_ids)
+		if candidates.is_empty() and rarity == "legendary":
+			candidates = _available_shop_items_by_rarity("rare", avoid_ids)
+		if candidates.is_empty():
+			candidates = _available_shop_items(avoid_ids)
+		candidates.shuffle()
+		candidates.sort_custom(func(a, b): return _shop_seen_count(a) < _shop_seen_count(b))
+		var added := false
+		for option in candidates:
 			if _stock_has_item_id(rolled, str(option.get("id", ""))):
 				continue
 			rolled.append(option.duplicate(true))
+			added = true
+			break
+		if not added:
+			break
 
 	for i in range(rolled.size()):
 		var option: Dictionary = rolled[i]
 		option["stock_id"] = "%s_%d_%d_%d" % [option["id"], wave, rounds_cleared, i]
-		option["cost"] = _scaled_shop_cost(int(option["cost"]))
+		option["cost"] = _scaled_shop_cost(int(option["cost"]), str(option.get("rarity", "common")))
 	_record_shop_seen(rolled)
 	_record_shop_visit_seen(rolled)
 	return rolled
+
+
+func _roll_shop_rarity(round_index: int) -> String:
+	var common_weight := _shop_rarity_weight("common", round_index)
+	var rare_weight := _shop_rarity_weight("rare", round_index)
+	var legendary_weight := _shop_rarity_weight("legendary", round_index)
+	var total := common_weight + rare_weight + legendary_weight
+	var roll := randf() * total
+	if roll < legendary_weight:
+		return "legendary"
+	if roll < legendary_weight + rare_weight:
+		return "rare"
+	return "common"
+
+
+func _shop_rarity_weight(rarity: String, round_index: int) -> float:
+	var progress := clampf(float(round_index - 1) / float(MAX_ROUNDS - 1), 0.0, 1.0)
+	match rarity:
+		"legendary":
+			return 0.010 + progress * 0.035
+		"rare":
+			return 0.18 + progress * 0.14
+		_:
+			return 0.81 - progress * 0.13
 
 
 func _shop_items_for_round(round_index: int, avoid_ids: Array = []) -> Array:
@@ -2213,6 +3026,14 @@ func _available_shop_items(avoid_ids: Array) -> Array:
 	var pool: Array = []
 	for option in shop_catalog:
 		if _shop_item_can_appear(option, avoid_ids):
+			pool.append(option)
+	return pool
+
+
+func _available_shop_items_by_rarity(rarity: String, avoid_ids: Array) -> Array:
+	var pool: Array = []
+	for option in shop_catalog:
+		if str(option.get("rarity", "common")) == rarity and _shop_item_can_appear(option, avoid_ids):
 			pool.append(option)
 	return pool
 
@@ -2290,9 +3111,14 @@ func _stock_has_item_id(stock: Array, id: String) -> bool:
 	return false
 
 
-func _scaled_shop_cost(base_cost: int) -> int:
+func _scaled_shop_cost(base_cost: int, rarity: String = "common") -> int:
 	var scale := 1.0 + float(wave - 1) * 0.075
-	return int(max(1.0, round(float(base_cost) * scale * _relic_shop_discount_multiplier())))
+	match rarity:
+		"rare":
+			scale *= 1.12
+		"legendary":
+			scale *= 1.24
+	return int(max(1.0, round(float(base_cost) * scale)))
 
 
 func _choose_shop_option(item: Dictionary) -> void:
@@ -2300,7 +3126,7 @@ func _choose_shop_option(item: Dictionary) -> void:
 		return
 
 	if item["id"] == "next_round":
-		_start_next_round()
+		_open_next_reward_or_round()
 		return
 
 	var cost := int(item.get("cost", 0))
@@ -2482,24 +3308,27 @@ func _active_relic_summary() -> Array:
 func _relic_run_summary_text() -> String:
 	var summary := _active_relic_summary()
 	if summary.is_empty():
-		return "유물: 없음"
+		return "계약: 없음"
 	var parts := PackedStringArray()
 	for relic in summary:
 		var count := int(relic.get("count", 1))
-		var suffix := "" if count <= 1 else " x%d" % count
+		var suffix := " %s" % _roman_level(count)
 		parts.append("%s%s" % [str(relic.get("name", "")), suffix])
-	return "유물: %s" % ", ".join(parts)
+	return "계약: %s" % ", ".join(parts)
 
 
 func _record_shop_purchase(item: Dictionary) -> void:
 	run_purchase_count += 1
 	run_purchase_names.append(str(item.get("name", "미확인 구매")))
+	var rarity := str(item.get("rarity", "common"))
+	if rarity == "rare" or rarity == "legendary":
+		run_rare_legendary_purchase_names.append("%s(%s)" % [str(item.get("name", "미확인 구매")), _rarity_label(rarity)])
 
 
 func _record_enemy_defeat(type: String) -> void:
 	run_kill_count += 1
 	run_kills_by_type[type] = int(run_kills_by_type.get(type, 0)) + 1
-	if type == "boss":
+	if type == "final_boss" or (type == "boss" and wave >= MAX_ROUNDS):
 		run_boss_defeated = true
 
 
@@ -2515,8 +3344,8 @@ func _run_report_lines() -> PackedStringArray:
 	var lines := PackedStringArray()
 	lines.append("결과 %s / 도달 라운드 %d/%d / 생존 %s" % [_run_result_label(), wave, MAX_ROUNDS, _format_time(elapsed)])
 	lines.append("광석 획득 %d / 사용 %d / 보유 %d / 리롤 %d" % [run_ore_collected, run_ore_spent, ore, run_rerolls])
-	lines.append("구매 %d회: %s" % [run_purchase_count, _format_name_counts(run_purchase_names, "없음")])
-	lines.append("유물: %s" % _format_relic_counts_for_report())
+	lines.append("구매 %d회 / 희귀·전설: %s" % [run_purchase_count, _format_name_counts(run_rare_legendary_purchase_names, "없음")])
+	lines.append("계약: %s" % _format_relic_counts_for_report())
 	lines.append("전투 처치 %d (%s) / 보스 피해 %d / 보스 %s" % [
 		run_kill_count,
 		_format_kill_counts_for_report(),
@@ -2562,10 +3391,7 @@ func _format_relic_counts_for_report() -> String:
 	var parts := PackedStringArray()
 	for relic in summary:
 		var count := int(relic.get("count", 1))
-		if count <= 1:
-			parts.append(str(relic.get("name", "")))
-		else:
-			parts.append("%s x%d" % [str(relic.get("name", "")), count])
+		parts.append("%s %s" % [str(relic.get("name", "")), _roman_level(count)])
 	return ", ".join(parts)
 
 
@@ -2573,7 +3399,7 @@ func _format_kill_counts_for_report() -> String:
 	if run_kills_by_type.is_empty():
 		return "없음"
 	var parts := PackedStringArray()
-	var order := ["zombie", "fast_zombie", "spider", "thrower", "elite_zombie", "boss"]
+	var order := ["zombie", "fast_zombie", "spider", "thrower", "shield_zombie", "toxic_spider", "bomb_miner", "elite_zombie", "mid_boss", "final_boss", "boss"]
 	for type in order:
 		var count := int(run_kills_by_type.get(type, 0))
 		if count > 0:
@@ -2595,61 +3421,101 @@ func _enemy_type_label(type: String) -> String:
 			return "거미"
 		"thrower":
 			return "투척 좀비"
+		"shield_zombie":
+			return "방패 좀비"
+		"toxic_spider":
+			return "독 거미"
+		"bomb_miner":
+			return "자폭 광부"
 		"elite_zombie":
 			return "엘리트"
+		"mid_boss":
+			return "중간 보스"
+		"final_boss":
+			return "최종 보스"
 		"boss":
 			return "보스"
 		_:
 			return type
 
 
-func _relic_enemy_density_multiplier() -> float:
-	return 1.0 + 0.15 * float(_relic_count("red_vein_sample"))
+func _contract_enemy_hp_multiplier(kind: String) -> float:
+	var mult := float(pow(1.08, _relic_count("rough_vein")))
+	if kind == "shield_zombie":
+		mult *= float(pow(1.06, _relic_count("cracked_shield_oath")))
+	return mult
 
 
-func _relic_spawn_interval_multiplier() -> float:
-	return max(0.58, 1.0 - 0.08 * float(_relic_count("red_vein_sample")))
+func _contract_enemy_damage_multiplier(kind: String) -> float:
+	var mult := float(pow(1.05, _relic_count("rough_vein")))
+	if kind == "thrower":
+		mult *= float(pow(1.08, _relic_count("sharpened_throwing")))
+	return mult
 
 
-func _relic_enemy_hp_multiplier() -> float:
-	return float(pow(1.10, _relic_count("black_shell")))
+func _contract_enemy_speed_multiplier(kind: String) -> float:
+	if kind == "fast_zombie":
+		return float(pow(1.10, _relic_count("overheated_footsteps")))
+	return 1.0
 
 
-func _relic_enemy_speed_multiplier() -> float:
-	return float(pow(1.08, _relic_count("hungry_lantern")))
+func _contract_thrower_cooldown_multiplier() -> float:
+	return float(pow(0.88, _relic_count("sharpened_throwing")))
 
 
-func _relic_thrower_cooldown_multiplier() -> float:
-	return float(pow(0.86, _relic_count("echoing_stone_heart")))
+func _should_make_contract_elite(kind: String) -> bool:
+	if _is_boss_type(kind) or kind == "elite_zombie":
+		return false
+	var count := _relic_count("chosen_prey")
+	if count <= 0 or wave < 4:
+		return false
+	return randf() < min(0.24, 0.055 * float(count) + 0.025 * float(wave - 4))
 
 
-func _relic_ore_drop_bonus() -> float:
-	return min(0.45, 0.10 * float(_relic_count("red_vein_sample")))
+func _contract_ore_multiplier(enemy: Dictionary) -> float:
+	var mult := 1.0
+	var type := str(enemy.get("type", ""))
+	if type == "fast_zombie":
+		mult += 0.18 * float(_relic_count("overheated_footsteps"))
+	if type == "thrower":
+		mult += 0.18 * float(_relic_count("sharpened_throwing"))
+	if type == "shield_zombie":
+		mult += 0.20 * float(_relic_count("cracked_shield_oath"))
+	if type == "toxic_spider":
+		mult += 0.20 * float(_relic_count("viscous_poison_vein"))
+	if type == "bomb_miner":
+		mult += 0.22 * float(_relic_count("shortened_fuse"))
+	if bool(enemy.get("elite", false)):
+		mult += 0.65 + 0.18 * float(_relic_count("chosen_prey"))
+	if _is_boss_type(type):
+		mult += 0.25 * float(_relic_count("awakened_overseer"))
+	mult += 0.08 * float(_relic_count("rough_vein"))
+	return mult
 
 
 func _relic_clear_ore_multiplier() -> float:
-	return 1.0 + 0.20 * float(_relic_count("spider_egg_fossil"))
+	return 1.0
 
 
 func _relic_shop_discount_multiplier() -> float:
-	return max(0.55, 1.0 - 0.10 * float(_relic_count("black_shell")))
+	return 1.0
 
 
 func _should_spawn_elite_zombie() -> bool:
-	var count := _relic_count("twin_excavation_seal")
+	var count := _relic_count("chosen_prey")
 	if count <= 0 or wave < 2:
 		return false
 	if enemies.size() >= _enemy_cap():
 		return false
 	var chance: float = min(0.22, 0.045 * float(count))
-	if wave >= MAX_ROUNDS:
+	if _round_is_boss(wave):
 		chance *= 0.65
 	return randf() < chance
 
 
 func _trigger_relic_death_hazard(enemy: Dictionary) -> void:
 	var count := _relic_count("unstable_blast_crystal")
-	if count <= 0 or str(enemy.get("type", "")) == "boss":
+	if count <= 0 or _is_boss_type(str(enemy.get("type", ""))):
 		return
 
 	var pos: Vector2 = enemy["pos"]
@@ -2695,6 +3561,7 @@ func _draw() -> void:
 	draw_set_transform(draw_world_offset, 0.0, Vector2.ONE)
 	_draw_ground()
 	_draw_spawn_warnings()
+	_draw_hazard_zones()
 	_draw_pickups()
 	_draw_bullets()
 	_draw_enemy_projectiles()
@@ -2728,7 +3595,7 @@ func _draw_spawn_warnings() -> void:
 		var pack_size := int(warning.get("pack_size", 1))
 		var seed_value := float(warning.get("seed", 0.0))
 		var base_radius := 25.0 + 4.0 * float(pack_size)
-		if kind == "boss":
+		if _is_boss_type(kind):
 			base_radius = 68.0
 		elif kind == "elite_zombie":
 			base_radius = 46.0
@@ -2767,8 +3634,35 @@ func _draw_enemies() -> void:
 		var pos: Vector2 = _enemy_draw_pos(enemy)
 		var radius: float = enemy["radius"]
 		var type := str(enemy.get("type", "zombie"))
+		if bool(enemy.get("elite", false)):
+			draw_arc(pos, radius + 11.0, 0.0, TAU, 48, Color("#e6b85c"), 3.0)
 		if _draw_enemy_asset_sprite(enemy):
 			pass
+		elif type == "shield_zombie":
+			draw_circle(pos, radius, enemy["color"])
+			var front := (Vector2(player.get("pos", pos + Vector2.RIGHT)) - pos).normalized()
+			var left := front.rotated(PI * 0.5)
+			var shield_poly := PackedVector2Array([
+				pos + front * radius * 1.22,
+				pos + left * radius * 0.84,
+				pos - front * radius * 0.10,
+				pos - left * radius * 0.84,
+			])
+			draw_colored_polygon(shield_poly, Color("#c7b08a"))
+			draw_arc(pos, radius + 5.0, front.angle() - 0.85, front.angle() + 0.85, 24, Color("#d8f3ff"), 3.0)
+		elif type == "toxic_spider":
+			for leg in range(4):
+				var angle := -0.95 + float(leg) * 0.64
+				draw_line(pos, pos + Vector2.LEFT.rotated(angle) * radius * 1.65, Color("#30422e"), 2.0)
+				draw_line(pos, pos + Vector2.RIGHT.rotated(-angle) * radius * 1.65, Color("#30422e"), 2.0)
+			draw_circle(pos, radius, enemy["color"])
+			draw_circle(pos, radius * 0.52, Color("#d7f7a1"))
+		elif type == "bomb_miner":
+			var warning_color := Color("#f0643b") if str(enemy.get("bomb_state", "")) == "windup" else Color("#c9823a")
+			draw_circle(pos, radius, enemy["color"])
+			draw_rect(Rect2(pos - Vector2(radius * 0.46, radius * 0.72), Vector2(radius * 0.92, radius * 1.44)), warning_color, false, 3.0)
+			if str(enemy.get("bomb_state", "")) == "windup":
+				draw_arc(pos, radius + 8.0, 0.0, TAU, 32, Color("#f0643b"), 4.0)
 		elif type == "spider":
 			for leg in range(4):
 				var angle := -0.95 + float(leg) * 0.64
@@ -2782,7 +3676,7 @@ func _draw_enemies() -> void:
 			draw_circle(pos, radius, enemy["color"])
 			draw_circle(pos + Vector2(radius * 0.48, -radius * 0.46), radius * 0.34, Color("#c7b08a"))
 			draw_circle(pos + Vector2(-radius * 0.22, -radius * 0.14), radius * 0.24, Color(0, 0, 0, 0.30))
-		elif type == "boss":
+		elif _is_boss_type(type):
 			draw_circle(pos, radius + 5.0, Color("#3f324b"))
 			draw_circle(pos, radius, enemy["color"])
 			draw_arc(pos, radius + 8.0, 0.0, TAU, 72, Color("#c7b08a"), 4.0)
@@ -2811,7 +3705,7 @@ func _draw_enemies() -> void:
 
 
 func _enemy_has_sprite_asset(type: String) -> bool:
-	return type == "zombie" or type == "fast_zombie" or type == "spider" or type == "thrower" or type == "elite_zombie" or type == "boss"
+	return type == "zombie" or type == "fast_zombie" or type == "spider" or type == "thrower" or type == "elite_zombie" or _is_boss_type(type)
 
 
 func _draw_enemy_asset_sprite(enemy: Dictionary) -> bool:
@@ -2832,7 +3726,7 @@ func _draw_enemy_asset_sprite(enemy: Dictionary) -> bool:
 		"elite_zombie":
 			_draw_single_image_enemy_sprite(enemy, zombie_idle_texture, 0.34, 0.92, 5.2, 2.8, 3.4, 0.026, Vector2(36, 7), 42.0)
 			return true
-		"boss":
+		"boss", "mid_boss", "final_boss":
 			_draw_single_image_enemy_sprite(enemy, boss_zombie_texture, 0.44, 1.18, 3.0, 2.0, 2.1, 0.018, Vector2(48, 9), 52.0)
 			return true
 	return false
@@ -2896,7 +3790,7 @@ func _enemy_asset_hp_width(type: String, radius: float) -> float:
 			return 46.0
 		"elite_zombie":
 			return 58.0
-		"boss":
+		"boss", "mid_boss", "final_boss":
 			return 96.0
 	return max(42.0, radius * 2.0)
 
@@ -2911,7 +3805,7 @@ func _enemy_asset_hp_y(type: String, radius: float) -> float:
 			return -47.0
 		"elite_zombie":
 			return -63.0
-		"boss":
+		"boss", "mid_boss", "final_boss":
 			return -92.0
 	return min(-44.0, -radius - 9.0)
 
@@ -3082,6 +3976,31 @@ func _draw_pickups() -> void:
 		draw_colored_polygon(points, item["color"])
 
 
+func _draw_hazard_zones() -> void:
+	for zone in hazard_zones:
+		var pos: Vector2 = zone.get("pos", Vector2.ZERO)
+		var radius := float(zone.get("radius", 60.0))
+		var life := float(zone.get("life", 0.0))
+		var max_life := maxf(0.01, float(zone.get("max_life", 1.0)))
+		var alpha := clampf(life / max_life, 0.0, 1.0)
+		var color: Color = zone.get("color", Color("#93c96d"))
+		color.a = 0.16 + 0.12 * alpha
+		draw_circle(pos, radius, color)
+		color.a = 0.48 * alpha
+		draw_arc(pos, radius, 0.0, TAU, 64, color, 3.0)
+	for enemy in enemies:
+		if not _is_boss_type(str(enemy.get("type", ""))):
+			continue
+		if str(enemy.get("charge_state", "")) != "windup":
+			continue
+		var pos: Vector2 = enemy.get("pos", Vector2.ZERO)
+		var dir: Vector2 = enemy.get("charge_dir", Vector2.RIGHT)
+		var warning := Color("#f0643b")
+		warning.a = 0.46
+		draw_line(pos, pos + dir.normalized() * 260.0, warning, 9.0)
+		draw_arc(pos, float(enemy.get("radius", 42.0)) + 14.0, 0.0, TAU, 72, warning, 4.0)
+
+
 func _draw_sparks() -> void:
 	for spark in sparks:
 		var alpha = clamp(spark["life"] / spark["max_life"], 0.0, 1.0)
@@ -3119,8 +4038,8 @@ func _show_start_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_start(
 		"봉인된 채굴지",
-		"P3 광맥 투기장",
-		"5라운드 동안 유물을 골라 위험을 누적시키고, 상점에서 드릴촉 부품을 붙여 대응하세요.",
+		"P7 광맥 투기장",
+		"10라운드 동안 계약으로 위험을 높이고, 상점에서 드릴촉 부품을 붙여 방패와 독, 폭약, 우두머리에 대응하세요.",
 		"탐사 시작"
 	)
 
@@ -3136,7 +4055,7 @@ func _show_game_over_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_end(
 		"탐사 종료",
-		"P4 런 리포트",
+		"P7 사망 요약",
 		_run_report_text(),
 		"다시 도전",
 		_active_relic_summary()
@@ -3148,7 +4067,7 @@ func _show_victory_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_end(
 		"탐사 완료",
-		"P4 런 리포트",
+		"P7 런 요약",
 		_run_report_text(),
 		"다시 시작",
 		_active_relic_summary()
@@ -3209,7 +4128,7 @@ func _current_state_summary() -> Dictionary:
 		_format_time(max(0.0, wave_timer)),
 	])
 	lines.append("무기: %s" % " / ".join(weapon_lines))
-	lines.append("유물: %s" % _format_relic_counts_for_report())
+	lines.append("계약: %s" % _format_relic_counts_for_report())
 	lines.append("처치 %d · 구매 %d · 리롤 %d" % [run_kill_count, run_purchase_count, run_rerolls])
 	return {"lines": lines}
 
@@ -3234,10 +4153,13 @@ func _choice_meta_text(option: Dictionary, disabled: bool) -> String:
 	if disabled and str(option.get("kind", "")) == "weapon":
 		return "무기 슬롯 또는 강화 한도 초과"
 	if str(option.get("kind", "")) == "relic":
-		return "%s · %s" % [str(option.get("danger", "위험 누적")), str(option.get("reward", "보상 누적"))]
+		var next_level: int = min(3, _relic_count(str(option.get("id", ""))) + 1)
+		return "계약 %s · %s · %s" % [_roman_level(next_level), str(option.get("danger", "위험 누적")), str(option.get("reward_hint", "위험한 광맥일수록 더 많은 광석을 품는다."))]
 	if option.has("cost"):
 		var cost := int(option["cost"])
 		var price_text := "무료" if cost <= 0 else "광석 %d" % cost
+		if option.has("rarity"):
+			price_text = "%s · %s" % [_rarity_label(str(option.get("rarity", "common"))), price_text]
 		if option.has("counter"):
 			return "%s · %s" % [str(option["counter"]), price_text]
 		if cost <= 0:
@@ -3246,6 +4168,26 @@ func _choice_meta_text(option: Dictionary, disabled: bool) -> String:
 	if option.has("tag"):
 		return str(option["tag"])
 	return ""
+
+
+func _rarity_label(rarity: String) -> String:
+	match rarity:
+		"rare":
+			return "레어"
+		"legendary":
+			return "전설"
+		_:
+			return "일반"
+
+
+func _roman_level(level_value: int) -> String:
+	match level_value:
+		1:
+			return "I"
+		2:
+			return "II"
+		_:
+			return "III"
 
 
 func _on_ui_option_selected(option: Dictionary) -> void:
