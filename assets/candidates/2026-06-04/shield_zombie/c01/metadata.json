@@ -1,0 +1,81 @@
+{
+  "asset_id": "enemy_shield_zombie",
+  "candidate_id": "2026-06-04-shield_zombie-c01",
+  "generated_at": "2026-06-04T15:00:39.037151+00:00",
+  "provider": "built-in-imagegen",
+  "model": "built-in",
+  "action": "normalize_single_image_candidate",
+  "prompt_pack": "docs/art/prompt-packs/enemy-single-image.md",
+  "prompt_file": "assets/candidates/2026-06-04/shield_zombie/c01/prompt_used.txt",
+  "prompt": "Use case: stylized-concept\nAsset type: 2D game enemy single-image sprite source for Bro-exile\n\nCreate exactly one original cute-but-grotesque shield zombie miner enemy, centered, designed as a single readable full-frame PNG for runtime bob/scale/flip animation.\n\nStyle and medium:\nOriginal 2D painterly game sprite, thick dark outline, soft chunky shading, compact silhouette, cute exaggerated action toy proportions, mine-survival identity. It should feel compatible with the existing Bro-exile cute mine-zombie family, while remaining an original design. Do not copy Brotato characters, icons, silhouettes, or decorative details.\n\nSubject:\nA squat undead miner creature with a cracked yellow hard hat and headlamp, pale moss-gray face, tiny worried glowing eyes, tattered orange-brown miner vest, stubby boots, and a large improvised front shield made from mine cart scrap and timber. The shield should clearly read as a defensive front-line enemy at 64px, but the character must remain cute and toy-like rather than scary.\n\nColor palette:\nMuted moss gray skin, dark outline, orange-brown vest, yellow helmet, teal ore accent used sparingly, shield in warm gray metal and brown timber. Avoid making the shield or body too yellow so it stays distinct from the player helmet.\n\nComposition and framing:\nOne character only, full body, centered in a 1:1 square, generous padding, no ground shadow, no props outside the character silhouette.\n\nBackground:\nPerfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, floor plane, lighting variation, or reflection.\n\nConstraints:\nNo text, no watermark, no UI frame, no sprite sheet, no multiple poses, no multiple characters, no background scene, no cast shadow.\n",
+  "revised_prompt": "not_available_from_builtin_tool",
+  "source_refs": [
+    "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png",
+    "res://assets/sprites/characters/p1_monsters_runtime_v1/boss_zombie.png"
+  ],
+  "files": {
+    "original_chromakey": "assets/candidates/2026-06-04/shield_zombie/c01/original_chromakey.png",
+    "alpha": "assets/candidates/2026-06-04/shield_zombie/c01/alpha.png",
+    "normalized_256": "assets/candidates/2026-06-04/shield_zombie/c01/normalized_256.png",
+    "preview_64": "assets/candidates/2026-06-04/shield_zombie/c01/preview_64.png",
+    "runtime_preview_metadata": "assets/candidates/2026-06-04/shield_zombie/c01/runtime_preview/metadata.json",
+    "runtime_idle_left_preview_64": "assets/candidates/2026-06-04/shield_zombie/c01/runtime_preview/idle_left_preview_64.png",
+    "runtime_idle_right_preview_64": "assets/candidates/2026-06-04/shield_zombie/c01/runtime_preview/idle_right_preview_64.png",
+    "runtime_move_left_preview_64": "assets/candidates/2026-06-04/shield_zombie/c01/runtime_preview/move_left_preview_64.png",
+    "runtime_move_right_preview_64": "assets/candidates/2026-06-04/shield_zombie/c01/runtime_preview/move_right_preview_64.png"
+  },
+  "normalization": {
+    "source_bbox": [
+      106,
+      138,
+      1137,
+      1054
+    ],
+    "cropped_size": [
+      1031,
+      916
+    ],
+    "cell_size": [
+      256,
+      256
+    ],
+    "target_occupied_size": 224,
+    "scale": 0.21726479146459748,
+    "packed_size": [
+      224,
+      199
+    ],
+    "cell_offset": [
+      16,
+      28
+    ]
+  },
+  "verification": {
+    "hard_gate_passed": true,
+    "hard_gate_failures": [],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "alpha_bbox": [
+      106,
+      138,
+      1137,
+      1054
+    ],
+    "normalized_bbox": [
+      16,
+      28,
+      240,
+      227
+    ],
+    "opaque_pixels": 31123,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "chroma_spill_pixels": 0
+  }
+}

@@ -5,6 +5,7 @@ const MOVE_PERIOD := 0.72
 const IDLE_TEXTURE_PATH := "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
 
 @export var auto_play := true
+@export var texture_path := IDLE_TEXTURE_PATH
 @export var moving := false:
 	set(value):
 		moving = value
@@ -29,7 +30,7 @@ var _shadow_rest_color := Color.BLACK
 
 
 func _ready() -> void:
-	_idle_texture = _load_png_texture(IDLE_TEXTURE_PATH)
+	_idle_texture = _load_png_texture(texture_path)
 	body.texture = _idle_texture
 	_store_rest_pose()
 	_apply_facing_direction()
@@ -59,6 +60,15 @@ func set_moving(enabled: bool) -> void:
 
 func set_faces_right(enabled: bool) -> void:
 	faces_right = enabled
+
+
+func set_texture_path(path: String) -> void:
+	texture_path = path
+	if not is_node_ready():
+		return
+	_idle_texture = _load_png_texture(texture_path)
+	body.texture = _idle_texture
+	_apply_current_pose()
 
 
 func _load_png_texture(path: String) -> Texture2D:

@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "updated_at": "2026-06-04",
+  "notes": [
+    "Daily automation may create candidates, but it must not overwrite accepted assets.",
+    "Brotato references are structural only; do not copy characters, silhouettes, icons, or decorative details."
+  ],
+  "assets": [
+    {
+      "id": "player_helmet_mascot_core",
+      "kind": "player_layered_character",
+      "status": "accepted",
+      "current_asset": "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/core_body.png",
+      "parts_dir": "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts",
+      "harness": "player_asset_harness",
+      "runtime_policy": "layered_parts_runtime_animation",
+      "review_policy": "manual_promotion"
+    },
+    {
+      "id": "enemy_zombie",
+      "kind": "enemy_single_image",
+      "status": "accepted",
+      "current_asset": "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png",
+      "harness": "single_image_enemy_harness",
+      "runtime_policy": "single_image_transform",
+      "review_policy": "manual_promotion"
+    },
+    {
+      "id": "enemy_fast_zombie",
+      "kind": "enemy_single_image",
+      "status": "accepted",
+      "current_asset": "res://assets/sprites/characters/p1_monsters_runtime_v1/fast_zombie.png",
+      "style_anchor_refs": [
+        "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
+      ],
+      "harness": "single_image_enemy_harness",
+      "runtime_policy": "single_image_transform",
+      "review_policy": "manual_promotion"
+    },
+    {
+      "id": "enemy_spider",
+      "kind": "enemy_single_image",
+      "status": "accepted",
+      "current_asset": "res://assets/sprites/characters/p1_monsters_runtime_v1/spider_swarm.png",
+      "harness": "single_image_enemy_harness",
+      "runtime_policy": "single_image_transform",
+      "review_policy": "manual_promotion"
+    },
+    {
+      "id": "enemy_thrower_zombie",
+      "kind": "enemy_single_image",
+      "status": "accepted",
+      "current_asset": "res://assets/sprites/characters/p1_monsters_runtime_v1/thrower_zombie.png",
+      "style_anchor_refs": [
+        "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
+      ],
+      "harness": "single_image_enemy_harness",
+      "runtime_policy": "single_image_transform",
+      "review_policy": "manual_promotion"
+    },
+    {
+      "id": "enemy_boss_zombie",
+      "kind": "enemy_single_image",
+      "status": "accepted",
+      "current_asset": "res://assets/sprites/characters/p1_monsters_runtime_v1/boss_zombie.png",
+      "style_anchor_refs": [
+        "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
+      ],
+      "harness": "single_image_enemy_harness",
+      "runtime_policy": "single_image_transform",
+      "review_policy": "manual_promotion"
+    },
+    {
+      "id": "enemy_shield_zombie",
+      "kind": "enemy_single_image",
+      "status": "candidate",
+      "current_asset": null,
+      "candidate_asset": "assets/candidates/2026-06-04/shield_zombie/c01/normalized_256.png",
+      "style_anchor_refs": [
+        "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png",
+        "res://assets/sprites/characters/p1_monsters_runtime_v1/boss_zombie.png"
+      ],
+      "harness": "single_image_enemy_harness",
+      "runtime_policy": "single_image_transform",
+      "review_policy": "manual_promotion",
+      "notes": "P7 enemy is currently drawn by primitive fallback in scripts/main.gd."
+    },
+    {
+      "id": "enemy_toxic_spider",
+      "kind": "enemy_single_image",
+      "status": "missing",
+      "current_asset": null,
+      "style_anchor_refs": [
+        "res://assets/sprites/characters/p1_monsters_runtime_v1/spider_swarm.png"
+      ],
+      "harness": "single_image_enemy_harness",
+      "runtime_policy": "single_image_transform"
+    },
+    {
+      "id": "enemy_bomb_miner",
+      "kind": "enemy_single_image",
+      "status": "missing",
+      "current_asset": null,
+      "style_anchor_refs": [
+        "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
+      ],
+      "harness": "single_image_enemy_harness",
+      "runtime_policy": "single_image_transform"
+    },
+    {
+      "id": "p8_starter_pickaxe_icon",
+      "kind": "weapon_icon",
+      "status": "missing",
+      "current_asset": null,
+      "notes": "P8 starter weapon icon candidate."
+    },
+    {
+      "id": "p8_starter_nailgun_icon",
+      "kind": "weapon_icon",
+      "status": "missing",
+      "current_asset": null,
+      "notes": "P8 starter weapon icon candidate."
+    },
+    {
+      "id": "p8_starter_lantern_icon",
+      "kind": "weapon_icon",
+      "status": "missing",
+      "current_asset": null,
+      "notes": "P8 starter weapon icon candidate."
+    }
+  ]
+}

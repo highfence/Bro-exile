@@ -4,6 +4,7 @@ const ZombieRigScene := preload("res://scenes/animation/zombie_rig.tscn")
 
 const DEFAULT_ASSET_NAME := "miner_zombie_single_image_runtime_v1"
 const DEFAULT_OUTPUT_ROOT := "/private/tmp/bro-exile-zombie-harness"
+const DEFAULT_SOURCE_FRAME := "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
 const DEFAULT_FRAME_COUNT := 24
 const DEFAULT_CELL_SIZE := 256
 const DEFAULT_PREVIEW_CELL_SIZE := 64
@@ -54,7 +55,7 @@ func _run_harness() -> void:
 	var asset_dir := output_root.path_join(config.asset_name)
 	DirAccess.make_dir_recursive_absolute(asset_dir)
 
-	_setup_source_viewport()
+	_setup_source_viewport(config.source_frame)
 
 	for variant_name in config.variants:
 		if not VARIANT_PRESETS.has(variant_name):
@@ -74,7 +75,7 @@ func _run_harness() -> void:
 	var metadata := {
 		"asset_name": config.asset_name,
 		"source_rig_scene": "res://scenes/animation/zombie_rig.tscn",
-		"source_frame": "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png",
+		"source_frame": config.source_frame,
 		"output_dir": asset_dir,
 		"cell_size": config.cell_size,
 		"preview_cell_size": config.preview_cell_size,
@@ -86,7 +87,7 @@ func _run_harness() -> void:
 		"rig_contract": "single full-frame zombie sprite with engine-side scale, lean, bob, facing flip, and shadow pulse",
 		"animations": [],
 		"notes": [
-			"Single-image zombie harness pass using only the existing zombie idle frame.",
+			"Single-image enemy harness pass using a configurable source frame.",
 			"This follows the lightweight enemy asset direction: one readable enemy image plus runtime motion effects.",
 			"Feedback should focus on silhouette, wobble amount, facing, and move rhythm."
 		]
@@ -112,6 +113,7 @@ func _parse_config() -> Dictionary:
 	var config := {
 		"asset_name": DEFAULT_ASSET_NAME,
 		"output_root": DEFAULT_OUTPUT_ROOT,
+		"source_frame": DEFAULT_SOURCE_FRAME,
 		"frame_count": DEFAULT_FRAME_COUNT,
 		"cell_size": DEFAULT_CELL_SIZE,
 		"preview_cell_size": DEFAULT_PREVIEW_CELL_SIZE,
@@ -123,6 +125,8 @@ func _parse_config() -> Dictionary:
 			config.asset_name = arg.trim_prefix("--asset-name=")
 		elif arg.begins_with("--asset-output="):
 			config.output_root = arg.trim_prefix("--asset-output=")
+		elif arg.begins_with("--source-frame="):
+			config.source_frame = arg.trim_prefix("--source-frame=")
 		elif arg.begins_with("--frame-count="):
 			config.frame_count = int(arg.trim_prefix("--frame-count="))
 		elif arg.begins_with("--cell-size="):
@@ -144,7 +148,7 @@ func _globalize_output_path(path: String) -> String:
 	return path
 
 
-func _setup_source_viewport() -> void:
+func _setup_source_viewport(source_frame: String) -> void:
 	_source_viewport = SubViewport.new()
 	_source_viewport.size = SOURCE_VIEWPORT_SIZE
 	_source_viewport.transparent_bg = true
@@ -157,6 +161,7 @@ func _setup_source_viewport() -> void:
 	_zombie_rig = ZombieRigScene.instantiate()
 	_zombie_rig.name = "HarnessZombieRig"
 	_zombie_rig.auto_play = false
+	_zombie_rig.texture_path = source_frame
 	_zombie_rig.position = SOURCE_RIG_POSITION
 	_source_root.add_child(_zombie_rig)
 

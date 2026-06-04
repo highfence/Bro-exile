@@ -1,0 +1,22 @@
+Use case: stylized-concept
+Asset type: 2D game enemy single-image sprite source for Bro-exile
+
+Create exactly one original cute-but-grotesque shield zombie miner enemy, centered, designed as a single readable full-frame PNG for runtime bob/scale/flip animation.
+
+Style and medium:
+Original 2D painterly game sprite, thick dark outline, soft chunky shading, compact silhouette, cute exaggerated action toy proportions, mine-survival identity. It should feel compatible with the existing Bro-exile cute mine-zombie family, while remaining an original design. Do not copy Brotato characters, icons, silhouettes, or decorative details.
+
+Subject:
+A squat undead miner creature with a cracked yellow hard hat and headlamp, pale moss-gray face, tiny worried glowing eyes, tattered orange-brown miner vest, stubby boots, and a large improvised front shield made from mine cart scrap and timber. The shield should clearly read as a defensive front-line enemy at 64px, but the character must remain cute and toy-like rather than scary.
+
+Color palette:
+Muted moss gray skin, dark outline, orange-brown vest, yellow helmet, teal ore accent used sparingly, shield in warm gray metal and brown timber. Avoid making the shield or body too yellow so it stays distinct from the player helmet.
+
+Composition and framing:
+One character only, full body, centered in a 1:1 square, generous padding, no ground shadow, no props outside the character silhouette.
+
+Background:
+Perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, floor plane, lighting variation, or reflection.
+
+Constraints:
+No text, no watermark, no UI frame, no sprite sheet, no multiple poses, no multiple characters, no background scene, no cast shadow.
