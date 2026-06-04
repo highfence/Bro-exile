@@ -187,6 +187,20 @@ def icon_pickaxe() -> Canvas:
     return c
 
 
+def icon_pickaxe_swing() -> Canvas:
+    c = Canvas(size=160, scale=SCALE)
+    cx, cy, angle = 80, 80, -32
+    line_rotated(c, (76, 30), (76, 135), cx, cy, angle, 15, rgba("#111412"))
+    line_rotated(c, (76, 36), (76, 129), cx, cy, angle, 8, rgba("#7a4b2a"))
+    head = [(30, 52), (74, 33), (135, 40), (144, 56), (81, 58), (45, 74)]
+    edge = [(36, 54), (75, 41), (127, 47), (132, 54), (81, 53), (48, 68)]
+    c.polygon(rotated(head, cx, cy, angle), rgba("#111412"))
+    c.polygon(rotated(edge, cx, cy, angle), rgba("#d8ceb9"))
+    line_rotated(c, (54, 62), (118, 51), cx, cy, angle, 3, rgba("#f5efe3", 150))
+    c.circle(103, 39, 6, rgba("#f2cf66", 150))
+    return c
+
+
 def icon_nailgun() -> Canvas:
     c = Canvas()
     backplate(c, "#d8f3ff")
@@ -230,9 +244,10 @@ def main() -> None:
         "weapon_pickaxe.png": icon_pickaxe(),
         "weapon_nailgun.png": icon_nailgun(),
         "weapon_lantern.png": icon_lantern(),
+        "weapon_pickaxe_swing.png": icon_pickaxe_swing(),
     }
     for name, canvas in icons.items():
-        write_png(OUT_DIR / name, SIZE, SIZE, canvas.downsample_rgba())
+        write_png(OUT_DIR / name, canvas.size, canvas.size, canvas.downsample_rgba())
     print(f"Generated {len(icons)} icons in {OUT_DIR}")
 
 

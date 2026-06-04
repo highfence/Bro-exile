@@ -41,6 +41,7 @@ const P7_BOSS_PATTERNS_CAPTURE_PATH := "/private/tmp/orebound-godot-p7-boss-patt
 const P7_GAME_OVER_SUMMARY_CAPTURE_PATH := "/private/tmp/orebound-godot-p7-game-over-summary.png"
 const P8_WEAPON_SELECT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-p8-weapon-select-ui.png"
 const P8_SHOP_WEAPON_PARTS_CAPTURE_PATH := "/private/tmp/orebound-godot-p8-shop-weapon-parts.png"
+const P8_PICKAXE_SWING_CAPTURE_PATH := "/private/tmp/orebound-godot-p8-pickaxe-swing.png"
 const PLAYER_VISUAL_SCALE := 0.27
 const ZOMBIE_VISUAL_SCALE := 0.25
 const PLAYER_IDLE_PERIOD := 1.32
@@ -57,6 +58,7 @@ const FAST_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v
 const SPIDER_SWARM_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/spider_swarm.png"
 const THROWER_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/thrower_zombie.png"
 const BOSS_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/boss_zombie.png"
+const PICKAXE_SWING_PATH := "res://assets/sprites/items/p8_weapons/weapon_pickaxe_swing.png"
 const CAMERA_FOLLOW_SPEED := 7.5
 const SPAWN_WARNING_DURATION := 0.78
 const BOSS_SPAWN_WARNING_DURATION := 1.18
@@ -141,6 +143,7 @@ var fast_zombie_texture: Texture2D
 var spider_swarm_texture: Texture2D
 var thrower_zombie_texture: Texture2D
 var boss_zombie_texture: Texture2D
+var pickaxe_swing_texture: Texture2D
 
 var stat_rewards := [
 	{"id": "cooldown", "name": "손목 리듬 조정", "desc": "공격 속도가 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
@@ -261,7 +264,7 @@ var weapon_catalog := {
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	smoke_weapon_id = _weapon_arg_from_args(args)
-	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--debug-p8-weapon-routes") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary") or args.has("--capture-p8-weapon-select-ui") or args.has("--capture-p8-shop-weapon-parts"):
+	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--debug-p8-weapon-routes") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary") or args.has("--capture-p8-weapon-select-ui") or args.has("--capture-p8-shop-weapon-parts") or args.has("--capture-p8-pickaxe-swing"):
 		seed(12345)
 	else:
 		randomize()
@@ -304,6 +307,8 @@ func _ready() -> void:
 		_capture_p8_weapon_select_ui_and_quit.call_deferred()
 	elif args.has("--capture-p8-shop-weapon-parts"):
 		_capture_p8_shop_weapon_parts_and_quit.call_deferred()
+	elif args.has("--capture-p8-pickaxe-swing"):
+		_capture_p8_pickaxe_swing_and_quit.call_deferred()
 	elif args.has("--smoke-playtest"):
 		_start_smoke_playtest.call_deferred()
 	elif args.has("--debug-spider-relic-wave2"):
@@ -901,6 +906,38 @@ func _capture_p8_shop_weapon_parts_and_quit() -> void:
 	get_tree().quit()
 
 
+func _capture_p8_pickaxe_swing_and_quit() -> void:
+	_reset_run(false)
+	_equip_weapon_for_run("pickaxe")
+	_hide_overlay()
+	mode = MODE_PLAY
+	wave = 1
+	player["pos"] = WORLD_SIZE * 0.5
+	player["moving"] = false
+	player["facing_right"] = true
+	camera_pos = _clamped_camera_position(player["pos"])
+	enemies.clear()
+	sparks.clear()
+	floating_text.clear()
+	var front := _make_enemy("zombie")
+	front["pos"] = player["pos"] + Vector2(96.0, 0.0)
+	enemies.append(front)
+	var side := _make_enemy("spider")
+	side["pos"] = player["pos"] + Vector2(116.0, 48.0)
+	enemies.append(side)
+	_fire_weapon(weapons[0], front, float(weapons[0]["range"]))
+	for frame in range(2):
+		_update_sparks(1.0 / 60.0)
+		_update_floating_text(1.0 / 60.0)
+	mode = "capture"
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(P8_PICKAXE_SWING_CAPTURE_PATH)
+	get_tree().quit()
+
+
 func _debug_p7_reward_routes_and_quit() -> void:
 	var failures := 0
 	for round_index in range(1, MAX_ROUNDS + 1):
@@ -1299,6 +1336,7 @@ func _load_visual_textures() -> void:
 	spider_swarm_texture = _load_png_texture(SPIDER_SWARM_PATH)
 	thrower_zombie_texture = _load_png_texture(THROWER_ZOMBIE_PATH)
 	boss_zombie_texture = _load_png_texture(BOSS_ZOMBIE_PATH)
+	pickaxe_swing_texture = _load_png_texture(PICKAXE_SWING_PATH)
 
 
 func _load_png_texture(path: String) -> Texture2D:
@@ -2411,9 +2449,19 @@ func _add_hazard_ring(pos: Vector2, radius: float, color: Color, duration: float
 
 
 func _add_pickaxe_swing_feedback(origin: Vector2, direction: Vector2, radius: float, color: Color, hit_count: int) -> void:
-	var end_pos := origin + direction * radius
-	_add_line_spark(origin + direction.rotated(-PI * 0.5) * 18.0, end_pos + direction.rotated(PI * 0.5) * 12.0, color, 0.13, 5.0)
-	_add_line_spark(origin + direction.rotated(PI * 0.5) * 16.0, end_pos + direction.rotated(-PI * 0.5) * 10.0, Color("#f5efe3"), 0.10, 2.0)
+	var max_life := 0.24
+	sparks.append({
+		"type": "pickaxe_swing",
+		"line": false,
+		"pos": origin,
+		"velocity": Vector2.ZERO,
+		"direction": direction,
+		"radius": radius,
+		"life": max_life,
+		"max_life": max_life,
+		"color": color,
+		"hit_count": hit_count,
+	})
 	for i in range(max(3, 5 + hit_count * 2)):
 		var angle := direction.angle() + randf_range(-0.52, 0.52)
 		var distance := randf_range(radius * 0.35, radius)
@@ -4640,10 +4688,43 @@ func _draw_sparks() -> void:
 		color.a = alpha
 		if spark.get("line", false):
 			draw_line(spark["from"], spark["to"], color, float(spark.get("width", 3.0)))
+		elif str(spark.get("type", "")) == "pickaxe_swing":
+			_draw_pickaxe_swing_spark(spark, alpha)
 		elif spark.get("ring", false):
 			draw_arc(spark["pos"], float(spark.get("radius", 30.0)) * (1.0 - alpha * 0.2), 0.0, TAU, 48, color, float(spark.get("width", 3.0)))
 		else:
 			draw_circle(spark["pos"], float(spark.get("size", 3.0)), color)
+
+
+func _draw_pickaxe_swing_spark(spark: Dictionary, alpha: float) -> void:
+	var origin: Vector2 = spark.get("pos", Vector2.ZERO)
+	var direction: Vector2 = Vector2(spark.get("direction", Vector2.RIGHT)).normalized()
+	if direction.length_squared() <= 0.001:
+		direction = Vector2.RIGHT
+	var radius: float = float(spark.get("radius", 120.0))
+	var progress: float = 1.0 - alpha
+	var base_angle: float = direction.angle()
+	var start_angle: float = base_angle - 0.72
+	var end_angle: float = base_angle + 0.62
+	var current_angle: float = lerp(start_angle, end_angle, clampf(progress, 0.0, 1.0))
+	var glow: Color = Color("#f2cf66")
+	glow.a = 0.12 + alpha * 0.16
+	draw_arc(origin, radius * 0.74, start_angle, current_angle, 28, glow, 13.0)
+	var edge: Color = Color("#f5efe3")
+	edge.a = 0.20 + alpha * 0.28
+	draw_arc(origin, radius * 0.82, max(start_angle, current_angle - 0.34), current_angle, 16, edge, 3.2)
+	var sprite_pos: Vector2 = origin + Vector2.RIGHT.rotated(current_angle) * radius * 0.46
+	var sprite_scale: float = 0.78 + 0.08 * clampf(float(spark.get("hit_count", 0)), 0.0, 3.0)
+	var sprite_color: Color = Color.WHITE
+	sprite_color.a = min(1.0, 0.72 + alpha * 0.45)
+	if pickaxe_swing_texture != null:
+		var size := pickaxe_swing_texture.get_size()
+		var shadow_color := Color(0, 0, 0, min(0.58, sprite_color.a * 0.72))
+		draw_set_transform(draw_world_offset + sprite_pos + Vector2(3, 4), current_angle + PI * 0.72, Vector2(sprite_scale, sprite_scale))
+		draw_texture_rect(pickaxe_swing_texture, Rect2(-size * 0.5, size), false, shadow_color)
+		draw_set_transform(draw_world_offset + sprite_pos, current_angle + PI * 0.72, Vector2(sprite_scale, sprite_scale))
+		draw_texture_rect(pickaxe_swing_texture, Rect2(-size * 0.5, size), false, sprite_color)
+		draw_set_transform(draw_world_offset, 0.0, Vector2.ONE)
 
 
 func _draw_floating_text() -> void:
