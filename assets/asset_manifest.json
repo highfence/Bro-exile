@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-06-04",
+  "updated_at": "2026-06-05",
   "notes": [
     "Daily automation may create candidates, but it must not overwrite accepted assets.",
     "Brotato references are structural only; do not copy characters, silhouettes, icons, or decorative details."
@@ -28,14 +28,17 @@
     {
       "id": "enemy_fast_zombie",
       "kind": "enemy_single_image",
-      "status": "accepted",
+      "status": "needs_refresh",
       "current_asset": "res://assets/sprites/characters/p1_monsters_runtime_v1/fast_zombie.png",
+      "candidate_asset": "assets/candidates/2026-06-05/fast_zombie/c01/normalized_256.png",
       "style_anchor_refs": [
-        "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
+        "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png",
+        "res://assets/candidates/2026-06-04/shield_zombie/c01/normalized_256.png"
       ],
       "harness": "single_image_enemy_harness",
       "runtime_policy": "single_image_transform",
-      "review_policy": "manual_promotion"
+      "review_policy": "manual_promotion",
+      "notes": "User requested a stronger replacement candidate because the current asset feels like an untidy basic zombie variant."
     },
     {
       "id": "enemy_spider",
@@ -61,14 +64,17 @@
     {
       "id": "enemy_boss_zombie",
       "kind": "enemy_single_image",
-      "status": "accepted",
+      "status": "needs_refresh",
       "current_asset": "res://assets/sprites/characters/p1_monsters_runtime_v1/boss_zombie.png",
+      "candidate_asset": "assets/candidates/2026-06-05/boss_zombie/c01/normalized_256.png",
       "style_anchor_refs": [
-        "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
+        "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png",
+        "res://assets/candidates/2026-06-04/shield_zombie/c01/normalized_256.png"
       ],
       "harness": "single_image_enemy_harness",
       "runtime_policy": "single_image_transform",
-      "review_policy": "manual_promotion"
+      "review_policy": "manual_promotion",
+      "notes": "User requested a stronger replacement candidate because the current asset feels like an untidy basic zombie variant."
     },
     {
       "id": "enemy_shield_zombie",

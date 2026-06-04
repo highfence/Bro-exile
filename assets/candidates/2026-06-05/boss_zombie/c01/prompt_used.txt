@@ -1,0 +1,26 @@
+Use case: stylized-concept
+Asset type: 2D game enemy single-image sprite source for Bro-exile
+
+Primary request:
+Create exactly one original cute-but-grotesque BOSS ZOMBIE miner enemy, centered, designed as a single readable full-frame PNG for runtime bob/scale/flip animation.
+
+Reference direction:
+Use the visible basic miner zombie and shield zombie assets as style anchors: cute toy-like mine-survival enemy family, thick dark outline, chunky painterly shading, compact readable silhouette, moss-gray undead skin, yellow hard hat language, tiny glowing eyes, orange-brown miner clothing, sparse teal ore accents. Keep it compatible with those references, but make this an original design and not a direct edit or recolor.
+
+Subject:
+A big round boss undead miner creature with a squat heavy body, oversized cracked hard hat, glowing headlamp, broad worried monster face, thick little arms, heavy boots, and mine-boss props integrated into the silhouette. It should look like the leader of the cute mine-zombie family: larger, heavier, and more dangerous, but still toy-like and oddly adorable. Give it a broken ore-studded shoulder guard or chunk of mine cart armor, a heavy belt, and a small cracked pickaxe or ore cluster strapped behind it. The face should be expressive and readable at 64px.
+
+Design priorities:
+Differentiate it from the basic zombie by body mass, boss silhouette, and integrated armor chunks, not by random floating crystals or simple recolor. At 64px it should read as "boss zombie" immediately. It should be wider and heavier than the shield zombie, but avoid covering the whole character with a shield. Keep the outline compact and readable.
+
+Color palette:
+Muted moss-gray skin, dark outline, dusty orange-brown vest, yellow helmet, warm gray metal armor, brown leather belt, sparse teal ore accents. Avoid excessive teal triangles, avoid making the design too busy, and keep it distinct from the player helmet.
+
+Composition and framing:
+One character only, full body, centered in a 1:1 square, generous padding, no ground shadow, no props outside the character silhouette.
+
+Background:
+Perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, floor plane, lighting variation, or reflection.
+
+Constraints:
+No text, no watermark, no UI frame, no sprite sheet, no multiple poses, no multiple characters, no background scene, no cast shadow. Do not copy Brotato characters, icons, silhouettes, or decorative details.

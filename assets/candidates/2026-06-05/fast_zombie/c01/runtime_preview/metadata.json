@@ -1,0 +1,101 @@
+{
+	"animations": [
+		{
+			"faces_right": false,
+			"fps": 10,
+			"frame_count": 8,
+			"frames_dir": null,
+			"moving": false,
+			"name": "idle_left",
+			"period": 1.46,
+			"preview_64": "idle_left_preview_64.png",
+			"sheet": null,
+			"verification": {
+				"adjacent_duplicate_pairs": 0,
+				"loop_alpha_mismatch_pixels": 0,
+				"loop_matches_first_frame": true,
+				"loop_mean_abs_diff_rgba": 0.0
+			}
+		},
+		{
+			"faces_right": true,
+			"fps": 10,
+			"frame_count": 8,
+			"frames_dir": null,
+			"moving": false,
+			"name": "idle_right",
+			"period": 1.46,
+			"preview_64": "idle_right_preview_64.png",
+			"sheet": null,
+			"verification": {
+				"adjacent_duplicate_pairs": 0,
+				"loop_alpha_mismatch_pixels": 0,
+				"loop_matches_first_frame": true,
+				"loop_mean_abs_diff_rgba": 0.0
+			}
+		},
+		{
+			"faces_right": false,
+			"fps": 14,
+			"frame_count": 8,
+			"frames_dir": null,
+			"moving": true,
+			"name": "move_left",
+			"period": 0.72,
+			"preview_64": "move_left_preview_64.png",
+			"sheet": null,
+			"verification": {
+				"adjacent_duplicate_pairs": 0,
+				"loop_alpha_mismatch_pixels": 0,
+				"loop_matches_first_frame": true,
+				"loop_mean_abs_diff_rgba": 0.0
+			}
+		},
+		{
+			"faces_right": true,
+			"fps": 14,
+			"frame_count": 8,
+			"frames_dir": null,
+			"moving": true,
+			"name": "move_right",
+			"period": 0.72,
+			"preview_64": "move_right_preview_64.png",
+			"sheet": null,
+			"verification": {
+				"adjacent_duplicate_pairs": 0,
+				"loop_alpha_mismatch_pixels": 0,
+				"loop_matches_first_frame": true,
+				"loop_mean_abs_diff_rgba": 0.0
+			}
+		}
+	],
+	"asset_name": "fast_zombie_c01",
+	"cell_offset": [
+		16,
+		19
+	],
+	"cell_scale": 0.888888888888889,
+	"cell_size": 256,
+	"frame_count": 8,
+	"notes": [
+		"Single-image enemy harness pass using a configurable source frame.",
+		"This follows the lightweight enemy asset direction: one readable enemy image plus runtime motion effects.",
+		"Only selected 64px runtime previews are copied into this candidate directory; full temporary frame sheets were verification artifacts.",
+		"Feedback should focus on silhouette, wobble amount, facing, and move rhythm."
+	],
+	"output_dir": "/private/tmp/bro-exile-fast-zombie-harness/fast_zombie_c01",
+	"preview_cell_size": 64,
+	"rig_contract": "single full-frame zombie sprite with engine-side scale, lean, bob, facing flip, and shadow pulse",
+	"source_frame": "res://assets/candidates/2026-06-05/fast_zombie/c01/normalized_256.png",
+	"source_global_bbox": [
+		130,
+		136,
+		252,
+		246
+	],
+	"source_rig_scene": "res://scenes/animation/zombie_rig.tscn",
+	"source_viewport_size": [
+		512,
+		512
+	]
+}
