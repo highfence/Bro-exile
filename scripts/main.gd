@@ -39,6 +39,8 @@ const P7_SHOP_RARITY_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-p7-shop-rar
 const P7_CONTRACT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-p7-contract-ui.png"
 const P7_BOSS_PATTERNS_CAPTURE_PATH := "/private/tmp/orebound-godot-p7-boss-patterns.png"
 const P7_GAME_OVER_SUMMARY_CAPTURE_PATH := "/private/tmp/orebound-godot-p7-game-over-summary.png"
+const P8_WEAPON_SELECT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-p8-weapon-select-ui.png"
+const P8_SHOP_WEAPON_PARTS_CAPTURE_PATH := "/private/tmp/orebound-godot-p8-shop-weapon-parts.png"
 const PLAYER_VISUAL_SCALE := 0.27
 const ZOMBIE_VISUAL_SCALE := 0.25
 const PLAYER_IDLE_PERIOD := 1.32
@@ -118,6 +120,7 @@ var hazard_zones: Array = []
 var sparks: Array = []
 var floating_text: Array = []
 var boss_spawned := false
+var selected_weapon_id := ""
 
 var game_ui: CanvasLayer
 var ui_font: Font
@@ -127,6 +130,7 @@ var smoke_playtest := false
 var smoke_elapsed := 0.0
 var smoke_choices_taken := 0
 var smoke_finishing := false
+var smoke_weapon_id := ""
 var player_core_body_texture: Texture2D
 var player_left_glove_texture: Texture2D
 var player_right_glove_texture: Texture2D
@@ -238,8 +242,13 @@ var relic_catalog := [
 	},
 ]
 
+var starter_weapon_ids := ["pickaxe", "nailgun", "lantern"]
+
 var weapon_catalog := {
-	"drill_tip": {"name": "드릴촉 발사기", "fire_type": "bullet", "cooldown": 0.72, "damage": 16.0, "range": 430.0, "speed": 690.0, "color": Color("#d8ceb9"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0, "armor_pierce": 0.0, "knockback": 0.0, "shape": "drill_tip"},
+	"pickaxe": {"name": "곡괭이", "family": "근접", "feel": "짧은 전방 부채꼴 휘두르기", "strength": "보스 딜타임과 가까운 적 정리", "weakness": "포위와 원거리 투척 압박", "fire_type": "pickaxe_slash", "cooldown": 0.82, "damage": 28.0, "range": 124.0, "speed": 0.0, "color": Color("#f2cf66"), "pierce": 0, "projectiles": 1, "spread": 0.28, "splash": 0.0, "armor_pierce": 0.0, "knockback": 16.0, "shape": "pickaxe", "icon": "res://assets/sprites/items/p8_weapons/weapon_pickaxe.png"},
+	"nailgun": {"name": "네일건", "family": "원거리", "feel": "빠른 직선 못 투사체", "strength": "빠른 적과 투척 적 선제 처리", "weakness": "거미떼와 방패 정면", "fire_type": "bullet", "cooldown": 0.46, "damage": 12.0, "range": 520.0, "speed": 920.0, "color": Color("#d8f3ff"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0, "armor_pierce": 0.0, "knockback": 6.0, "shape": "nail", "icon": "res://assets/sprites/items/p8_weapons/weapon_nailgun.png"},
+	"lantern": {"name": "랜턴", "family": "마법/장비", "feel": "쿨다운마다 번지는 주변 빛 펄스", "strength": "거미떼와 밀집 적, 동선 만들기", "weakness": "단일 보스딜과 원거리 투척 적", "fire_type": "lantern_pulse", "cooldown": 1.05, "damage": 13.5, "range": 158.0, "speed": 0.0, "color": Color("#e6b85c"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0, "armor_pierce": 0.0, "knockback": 4.0, "shape": "lantern", "icon": "res://assets/sprites/items/p8_weapons/weapon_lantern.png"},
+	"drill_tip": {"name": "드릴촉 발사기", "family": "legacy/debug", "feel": "기존 직선 드릴촉", "strength": "기존 회귀 검증", "weakness": "D8 일반 스타터 아님", "fire_type": "bullet", "cooldown": 0.72, "damage": 16.0, "range": 430.0, "speed": 690.0, "color": Color("#d8ceb9"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0, "armor_pierce": 0.0, "knockback": 0.0, "shape": "drill_tip", "icon": "res://assets/sprites/items/p2_parts/part_piercing_bit.png"},
 	"spitter": {"name": "광석 분사기", "fire_type": "bullet", "cooldown": 0.62, "damage": 18.0, "range": 470.0, "speed": 640.0, "color": Color("#e6b85c"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0},
 	"flintlock": {"name": "쌍발 화승총", "fire_type": "bullet", "cooldown": 0.54, "damage": 9.0, "range": 390.0, "speed": 760.0, "color": Color("#f0643b"), "pierce": 0, "projectiles": 2, "spread": 0.20, "splash": 0.0},
 	"drill": {"name": "파편 드릴", "fire_type": "bullet", "cooldown": 1.28, "damage": 34.0, "range": 560.0, "speed": 500.0, "color": Color("#93c96d"), "pierce": 3, "projectiles": 1, "spread": 0.0, "splash": 0.0},
@@ -251,7 +260,8 @@ var weapon_catalog := {
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary"):
+	smoke_weapon_id = _weapon_arg_from_args(args)
+	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--debug-p8-weapon-routes") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary") or args.has("--capture-p8-weapon-select-ui") or args.has("--capture-p8-shop-weapon-parts"):
 		seed(12345)
 	else:
 		randomize()
@@ -290,6 +300,10 @@ func _ready() -> void:
 		_capture_p7_boss_patterns_and_quit.call_deferred()
 	elif args.has("--capture-p7-game-over-summary"):
 		_capture_p7_game_over_summary_and_quit.call_deferred()
+	elif args.has("--capture-p8-weapon-select-ui"):
+		_capture_p8_weapon_select_ui_and_quit.call_deferred()
+	elif args.has("--capture-p8-shop-weapon-parts"):
+		_capture_p8_shop_weapon_parts_and_quit.call_deferred()
 	elif args.has("--smoke-playtest"):
 		_start_smoke_playtest.call_deferred()
 	elif args.has("--debug-spider-relic-wave2"):
@@ -312,6 +326,17 @@ func _ready() -> void:
 		_debug_p7_pause_cycle_and_quit.call_deferred()
 	elif args.has("--debug-p7-legendary-aim"):
 		_debug_p7_legendary_aim_and_quit.call_deferred()
+	elif args.has("--debug-p8-weapon-routes"):
+		_debug_p8_weapon_routes_and_quit.call_deferred()
+
+
+func _weapon_arg_from_args(args: PackedStringArray) -> String:
+	for arg in args:
+		if arg.begins_with("--weapon="):
+			var id := arg.get_slice("=", 1)
+			if starter_weapon_ids.has(id):
+				return id
+	return ""
 
 
 func _debug_spider_relic_wave2_and_quit() -> void:
@@ -837,6 +862,45 @@ func _capture_p7_game_over_summary_and_quit() -> void:
 	get_tree().quit()
 
 
+func _capture_p8_weapon_select_ui_and_quit() -> void:
+	_reset_run(false)
+	_open_weapon_select()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(P8_WEAPON_SELECT_UI_CAPTURE_PATH)
+	get_tree().quit()
+
+
+func _capture_p8_shop_weapon_parts_and_quit() -> void:
+	_reset_run(false)
+	_equip_weapon_for_run("lantern")
+	mode = MODE_CHOICE
+	wave = 8
+	rounds_cleared = 7
+	round_ore_earned = 92
+	ore = 190
+	shop_stock = [
+		_shop_item_by_id("lubricated_bearing").duplicate(true),
+		_shop_item_by_id("extended_shaft").duplicate(true),
+		_shop_item_by_id("piercing_bit").duplicate(true),
+		_shop_item_by_id("double_drill_chamber").duplicate(true),
+	]
+	for i in range(shop_stock.size()):
+		shop_stock[i]["stock_id"] = "p8_capture_%d" % i
+		shop_stock[i]["cost"] = _scaled_shop_cost(int(shop_stock[i]["cost"]), str(shop_stock[i].get("rarity", "common")))
+	active_reward_context = {"type": "shop"}
+	pending_reward_chain.clear()
+	_show_shop_overlay()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(P8_SHOP_WEAPON_PARTS_CAPTURE_PATH)
+	get_tree().quit()
+
+
 func _debug_p7_reward_routes_and_quit() -> void:
 	var failures := 0
 	for round_index in range(1, MAX_ROUNDS + 1):
@@ -1116,6 +1180,114 @@ func _debug_p7_legendary_aim_and_quit() -> void:
 	get_tree().quit(1 if bullets.size() < 2 or centerline_count <= 0 else 0)
 
 
+func _debug_p8_weapon_routes_and_quit() -> void:
+	var failures := 0
+	var route_results := PackedStringArray()
+
+	_reset_run(false)
+	_open_weapon_select()
+	var timer_before := wave_timer
+	var spawn_before := spawn_timer
+	_process(0.50)
+	var select_frozen := mode == MODE_CHOICE and weapons.is_empty() and enemies.is_empty() and bullets.is_empty() and absf(wave_timer - timer_before) <= 0.001 and absf(spawn_timer - spawn_before) <= 0.001
+	if not select_frozen:
+		failures += 1
+
+	for id in starter_weapon_ids:
+		_reset_run(false)
+		var option := {"id": id, "kind": "starter_weapon"}
+		_choose_starter_weapon(option)
+		var equipped: bool = weapons.size() == 1 and str(Dictionary(weapons[0]).get("id", "")) == id and selected_weapon_id == id and mode == MODE_PLAY
+		var attack_ok: bool = _debug_p8_probe_weapon_attack(id)
+		var shop_ok: bool = _debug_p8_probe_shop_decoration(id)
+		var legendary_ok: bool = _debug_p8_probe_legendary_interpretation(id)
+		if not equipped or not attack_ok or not shop_ok or not legendary_ok:
+			failures += 1
+		route_results.append("%s equipped=%s attack=%s shop=%s legendary=%s" % [id, str(equipped), str(attack_ok), str(shop_ok), str(legendary_ok)])
+
+	print("DEBUG_P8_WEAPON_ROUTES select_frozen=%s failures=%d routes=%s" % [
+		str(select_frozen),
+		failures,
+		" | ".join(route_results),
+	])
+	get_tree().quit(1 if failures > 0 else 0)
+
+
+func _debug_p8_probe_weapon_attack(id: String) -> bool:
+	mode = MODE_PLAY
+	wave = 1
+	player["pos"] = WORLD_SIZE * 0.5
+	enemies.clear()
+	bullets.clear()
+	hazard_zones.clear()
+	sparks.clear()
+	debug_hurt_events = 0
+	if not _equip_weapon_for_run(id):
+		return false
+	var weapon: Dictionary = weapons[0]
+	match id:
+		"pickaxe":
+			var front := _make_enemy("zombie")
+			front["pos"] = player["pos"] + Vector2(92.0, 0.0)
+			var behind := _make_enemy("zombie")
+			behind["pos"] = player["pos"] + Vector2(-76.0, 0.0)
+			enemies.append(front)
+			enemies.append(behind)
+			var front_hp := float(front["hp"])
+			var behind_hp := float(behind["hp"])
+			_fire_weapon(weapon, front, float(weapon["range"]))
+			return float(front["hp"]) < front_hp and absf(float(behind["hp"]) - behind_hp) <= 0.001 and bullets.is_empty()
+		"nailgun":
+			var target := _make_enemy("fast_zombie")
+			target["pos"] = player["pos"] + Vector2(260.0, 0.0)
+			enemies.append(target)
+			var hp_before := float(target["hp"])
+			_fire_weapon(weapon, target, float(weapon["range"]))
+			var nail_shape := not bullets.is_empty() and str(Dictionary(bullets[0]).get("shape", "")) == "nail"
+			for frame in range(38):
+				_update_bullets(1.0 / 60.0)
+			return nail_shape and float(target["hp"]) < hp_before
+		"lantern":
+			var near := _make_enemy("spider")
+			near["pos"] = player["pos"] + Vector2(72.0, 0.0)
+			var far := _make_enemy("thrower")
+			far["pos"] = player["pos"] + Vector2(260.0, 0.0)
+			enemies.append(near)
+			enemies.append(far)
+			var near_hp := float(near["hp"])
+			var far_hp := float(far["hp"])
+			var hazard_count := hazard_zones.size()
+			_fire_weapon(weapon, near, float(weapon["range"]))
+			return float(near["hp"]) < near_hp and absf(float(far["hp"]) - far_hp) <= 0.001 and hazard_zones.size() == hazard_count
+	return false
+
+
+func _debug_p8_probe_shop_decoration(id: String) -> bool:
+	if not _equip_weapon_for_run(id):
+		return false
+	var piercing := _decorate_shop_option_for_selected_weapon(_shop_item_by_id("piercing_bit"))
+	var double := _decorate_shop_option_for_selected_weapon(_shop_item_by_id("double_drill_chamber"))
+	var original := _shop_item_by_id("piercing_bit")
+	var names_changed := str(piercing.get("name", "")) != str(original.get("name", ""))
+	var icon_reused := str(piercing.get("icon", "")) == _current_weapon_icon()
+	var double_named := not str(double.get("name", "")).contains("드릴")
+	var catalog_preserved := str(original.get("name", "")) == "관통 드릴촉"
+	var public_item := _decorate_shop_option_for_selected_weapon(_shop_item_by_id("lightweight_grip"))
+	var public_item_preserved := str(public_item.get("name", "")) == "경량 손잡이"
+	return names_changed and icon_reused and double_named and catalog_preserved and public_item_preserved
+
+
+func _debug_p8_probe_legendary_interpretation(id: String) -> bool:
+	if not _equip_weapon_for_run(id):
+		return false
+	var item := _decorate_shop_option_for_selected_weapon(_shop_item_by_id("double_drill_chamber"))
+	_apply_weapon_part_stats(item.get("weapon_stats", {}), str(item.get("name", "")))
+	if weapons.is_empty():
+		return false
+	var weapon: Dictionary = weapons[0]
+	return int(weapon.get("projectiles", 1)) >= 2 and int(weapon.get("level", 1)) >= 2
+
+
 func _load_visual_textures() -> void:
 	player_core_body_texture = _load_png_texture(PLAYER_CORE_BODY_PATH)
 	player_left_glove_texture = _load_png_texture(PLAYER_LEFT_GLOVE_PATH)
@@ -1251,7 +1423,9 @@ func _reset_run(start_playing: bool) -> void:
 	sparks.clear()
 	floating_text.clear()
 	boss_spawned = false
-	_add_weapon("drill_tip")
+	selected_weapon_id = ""
+	if start_playing:
+		_equip_weapon_for_run("drill_tip")
 	_render_weapons()
 
 
@@ -1415,7 +1589,15 @@ func _choose_smoke_option() -> void:
 		return
 
 	var selected: Dictionary = {}
+	if active_choice_method == "_choose_starter_weapon":
+		var desired_weapon := smoke_weapon_id if not smoke_weapon_id.is_empty() else "pickaxe"
+		for option in active_choice_options:
+			if str(option.get("id", "")) == desired_weapon:
+				selected = option
+				break
 	for option in active_choice_options:
+		if not selected.is_empty():
+			break
 		var cost := int(option.get("cost", 0))
 		if ore >= cost and not _choice_option_disabled(option):
 			selected = option
@@ -1923,6 +2105,10 @@ func _fire_weapon(weapon: Dictionary, target: Dictionary, effective_range: float
 			_fire_arc(weapon, effective_range)
 		"slash":
 			_fire_slash(weapon, effective_range)
+		"pickaxe_slash":
+			_fire_pickaxe_slash(weapon, target, effective_range)
+		"lantern_pulse":
+			_fire_lantern_pulse(weapon, effective_range)
 		"explosive":
 			_fire_projectiles(weapon, target, effective_range, true)
 		_:
@@ -1943,7 +2129,9 @@ func _fire_projectiles(weapon: Dictionary, target: Dictionary, effective_range: 
 		var offset := _projectile_spread_offset(i, projectile_count, spread, center_projectile)
 		var direction := Vector2.RIGHT.rotated(base_angle + offset)
 		var bullet_radius := 5.0
-		if explosive:
+		if str(weapon.get("shape", "")) == "nail":
+			bullet_radius = 3.5
+		elif explosive:
 			bullet_radius = 8.0
 		elif weapon["id"] == "drill":
 			bullet_radius = 7.0
@@ -2029,6 +2217,86 @@ func _fire_slash(weapon: Dictionary, effective_range: float) -> void:
 		})
 	if count == 0:
 		_add_spark(player["pos"], weapon["color"], 4)
+
+
+func _fire_pickaxe_slash(weapon: Dictionary, target: Dictionary, effective_range: float) -> void:
+	var origin: Vector2 = player["pos"]
+	var base_direction: Vector2 = (Vector2(target["pos"]) - origin).normalized()
+	if base_direction.length_squared() <= 0.001:
+		base_direction = Vector2.RIGHT
+	var swing_count: int = max(1, int(weapon.get("projectiles", 1)))
+	var pierce_count: int = max(0, int(weapon.get("pierce", 0)))
+	var spread := float(weapon.get("spread", 0.24))
+	var half_angle := 0.48
+	var armor_pierce := float(weapon.get("armor_pierce", 0.0))
+	var splash_radius := float(weapon.get("splash", 0.0))
+	for swing in range(swing_count):
+		var direction := base_direction.rotated(_projectile_spread_offset(swing, swing_count, spread, true))
+		var hit_count := 0
+		var candidates := []
+		for enemy in enemies:
+			if float(enemy.get("hp", 0.0)) <= 0.0 or _enemy_is_emerging(enemy):
+				continue
+			var to_enemy: Vector2 = Vector2(enemy["pos"]) - origin
+			var distance := to_enemy.length()
+			if distance > effective_range + float(enemy.get("radius", 0.0)):
+				continue
+			if absf(direction.angle_to(to_enemy.normalized())) > half_angle:
+				continue
+			candidates.append({"enemy": enemy, "distance": distance})
+		candidates.sort_custom(func(a, b): return float(a["distance"]) < float(b["distance"]))
+		var max_hits: int = 4 + pierce_count
+		for candidate in candidates:
+			if hit_count >= max_hits:
+				break
+			var enemy: Dictionary = candidate["enemy"]
+			var push_dir: Vector2 = (Vector2(enemy["pos"]) - origin).normalized()
+			_hurt_enemy(enemy, weapon["damage"] * damage_multiplier, enemy["pos"], armor_pierce, push_dir, "pierce" if pierce_count > 0 else "slash")
+			if splash_radius > 0.0:
+				_damage_enemy_splash(Vector2(enemy["pos"]), splash_radius, weapon["damage"] * damage_multiplier * 0.42, armor_pierce, push_dir)
+			hit_count += 1
+		_add_pickaxe_swing_feedback(origin, direction, effective_range, Color(weapon.get("color", Color("#f2cf66"))), hit_count)
+
+
+func _fire_lantern_pulse(weapon: Dictionary, effective_range: float) -> void:
+	var origin: Vector2 = player["pos"]
+	var pulse_count: int = max(1, int(weapon.get("projectiles", 1)))
+	var pierce_count: int = max(0, int(weapon.get("pierce", 0)))
+	var armor_pierce := float(weapon.get("armor_pierce", 0.0))
+	var splash_radius := float(weapon.get("splash", 0.0))
+	for pulse_index in range(pulse_count):
+		var radius := effective_range + float(pulse_index) * 34.0
+		var damage_scale := 1.0 if pulse_index == 0 else 0.72
+		var hit_count := 0
+		for enemy in enemies:
+			if float(enemy.get("hp", 0.0)) <= 0.0 or _enemy_is_emerging(enemy):
+				continue
+			var enemy_pos: Vector2 = enemy["pos"]
+			if origin.distance_to(enemy_pos) > radius + float(enemy.get("radius", 0.0)):
+				continue
+			var push_dir := (enemy_pos - origin).normalized()
+			_hurt_enemy(enemy, weapon["damage"] * damage_multiplier * damage_scale, enemy_pos, armor_pierce, push_dir, "pierce" if pierce_count > 0 else "lantern")
+			if splash_radius > 0.0:
+				_damage_enemy_splash(enemy_pos, splash_radius, weapon["damage"] * damage_multiplier * 0.36, armor_pierce, push_dir)
+			hit_count += 1
+		_add_lantern_pulse_feedback(origin, radius, Color(weapon.get("color", Color("#e6b85c"))), pulse_index, hit_count)
+
+
+func _damage_enemy_splash(pos: Vector2, radius: float, damage: float, armor_pierce: float, direct_push: Vector2) -> void:
+	if radius <= 0.0:
+		return
+	for enemy in enemies:
+		if float(enemy.get("hp", 0.0)) <= 0.0 or _enemy_is_emerging(enemy):
+			continue
+		var enemy_pos: Vector2 = enemy["pos"]
+		var distance := pos.distance_to(enemy_pos)
+		if distance <= radius:
+			var falloff: float = 1.0 - min(0.45, distance / radius * 0.45)
+			var splash_push := (enemy_pos - pos).normalized()
+			if splash_push.length_squared() <= 0.001:
+				splash_push = direct_push
+			_hurt_enemy(enemy, damage * falloff, enemy_pos, armor_pierce, splash_push, "splash")
+	_add_hazard_ring(pos, radius, Color("#f0643b"), 0.18)
 
 
 func _update_bullets(delta: float) -> void:
@@ -2140,6 +2408,50 @@ func _add_hazard_ring(pos: Vector2, radius: float, color: Color, duration: float
 		"ring": true,
 		"width": 4.0,
 	})
+
+
+func _add_pickaxe_swing_feedback(origin: Vector2, direction: Vector2, radius: float, color: Color, hit_count: int) -> void:
+	var end_pos := origin + direction * radius
+	_add_line_spark(origin + direction.rotated(-PI * 0.5) * 18.0, end_pos + direction.rotated(PI * 0.5) * 12.0, color, 0.13, 5.0)
+	_add_line_spark(origin + direction.rotated(PI * 0.5) * 16.0, end_pos + direction.rotated(-PI * 0.5) * 10.0, Color("#f5efe3"), 0.10, 2.0)
+	for i in range(max(3, 5 + hit_count * 2)):
+		var angle := direction.angle() + randf_range(-0.52, 0.52)
+		var distance := randf_range(radius * 0.35, radius)
+		sparks.append({
+			"line": false,
+			"pos": origin + Vector2.RIGHT.rotated(angle) * distance,
+			"velocity": Vector2.RIGHT.rotated(angle) * randf_range(32.0, 110.0),
+			"life": randf_range(0.12, 0.24),
+			"max_life": 0.24,
+			"color": color,
+		})
+
+
+func _add_lantern_pulse_feedback(origin: Vector2, radius: float, color: Color, pulse_index: int, hit_count: int) -> void:
+	var ring_color := color
+	ring_color.a = 0.72 if pulse_index == 0 else 0.52
+	sparks.append({
+		"line": false,
+		"pos": origin,
+		"velocity": Vector2.ZERO,
+		"life": 0.34,
+		"max_life": 0.34,
+		"color": ring_color,
+		"radius": radius,
+		"ring": true,
+		"width": 5.0 if pulse_index == 0 else 3.2,
+	})
+	for i in range(8 + hit_count * 2):
+		var angle := TAU * float(i) / float(max(1, 8 + hit_count * 2))
+		var spark_pos := origin + Vector2.RIGHT.rotated(angle) * randf_range(radius * 0.18, radius * 0.84)
+		sparks.append({
+			"line": false,
+			"pos": spark_pos,
+			"velocity": Vector2.RIGHT.rotated(angle) * randf_range(20.0, 90.0),
+			"life": randf_range(0.18, 0.32),
+			"max_life": 0.32,
+			"color": color,
+		})
 
 
 func _explode_bullet(bullet: Dictionary, pos: Vector2, direct_hit_id: int = -1) -> void:
@@ -2584,6 +2896,8 @@ func _hit_feedback_color(feedback: String) -> Color:
 			return Color("#f0643b")
 		"arc":
 			return Color("#6cc3c0")
+		"lantern":
+			return Color("#e6b85c")
 		"slash":
 			return Color("#f2cf66")
 		_:
@@ -2601,6 +2915,8 @@ func _hit_feedback_text(damage: float, feedback: String) -> String:
 			return "직격 %d" % amount
 		"splash":
 			return "폭발 %d" % amount
+		"lantern":
+			return "빛 %d" % amount
 		_:
 			return str(amount)
 
@@ -2617,6 +2933,8 @@ func _hit_knockback_amount(feedback: String) -> float:
 			return 32.0
 		"arc":
 			return 26.0
+		"lantern":
+			return 22.0
 		"slash":
 			return 38.0
 		_:
@@ -2775,6 +3093,8 @@ func _can_add_weapon(id: String) -> bool:
 
 
 func _add_weapon(id: String) -> bool:
+	if not weapon_catalog.has(id):
+		return false
 	for weapon in weapons:
 		if weapon["id"] == id:
 			if int(weapon["level"]) >= MAX_WEAPON_LEVEL:
@@ -2792,6 +3112,9 @@ func _add_weapon(id: String) -> bool:
 	weapons.append({
 		"id": id,
 		"name": template["name"],
+		"family": template.get("family", ""),
+		"feel": template.get("feel", ""),
+		"icon": template.get("icon", ""),
 		"fire_type": template["fire_type"],
 		"level": 1,
 		"cooldown": template["cooldown"],
@@ -2810,6 +3133,35 @@ func _add_weapon(id: String) -> bool:
 		"color": template["color"],
 	})
 	return true
+
+
+func _equip_weapon_for_run(id: String) -> bool:
+	weapons.clear()
+	if not _add_weapon(id):
+		return false
+	selected_weapon_id = id
+	_render_weapons()
+	return true
+
+
+func _starter_weapon_options() -> Array:
+	var options: Array = []
+	for id in starter_weapon_ids:
+		var weapon: Dictionary = weapon_catalog[id]
+		options.append({
+			"id": id,
+			"kind": "starter_weapon",
+			"name": str(weapon.get("name", "")),
+			"desc": "%s\n강점: %s\n약점: %s" % [
+				str(weapon.get("feel", "")),
+				str(weapon.get("strength", "")),
+				str(weapon.get("weakness", "")),
+			],
+			"tag": "%s 계열" % str(weapon.get("family", "")),
+			"icon": str(weapon.get("icon", "")),
+			"cost": 0,
+		})
+	return options
 
 
 func _add_spark(pos: Vector2, color: Color, count: int) -> void:
@@ -3145,12 +3497,75 @@ func _open_shop() -> void:
 
 
 func _show_shop_overlay() -> void:
-	var options := shop_stock.duplicate(true)
+	var options := _decorate_shop_options_for_selected_weapon(shop_stock)
 	options.append({"id": "reroll", "kind": "command", "name": "재고 새로고침", "desc": "상점 선택지를 다시 뽑습니다.", "cost": reroll_cost})
 	var next_text := "다음 보상" if not pending_reward_chain.is_empty() else "다음 라운드"
 	options.append({"id": "next_round", "kind": "command", "name": next_text, "desc": _next_reward_or_round_desc(), "cost": 0})
 	var title := "최종 준비 상점 - 광석 %d" % ore if str(active_reward_context.get("type", "")) == "final_shop" else "상점 - 광석 %d" % ore
 	_show_choice_overlay(_reward_eyebrow_text(), title, options, "_choose_shop_option")
+
+
+func _decorate_shop_options_for_selected_weapon(options: Array) -> Array:
+	var decorated: Array = []
+	for option in options:
+		decorated.append(_decorate_shop_option_for_selected_weapon(option))
+	return decorated
+
+
+func _decorate_shop_option_for_selected_weapon(option: Dictionary) -> Dictionary:
+	var copy := option.duplicate(true)
+	if str(copy.get("kind", "")) != "part":
+		return copy
+	var weapon_id := _current_weapon_id()
+	if weapon_id.is_empty():
+		return copy
+	var decorations := _weapon_shop_decorations(weapon_id)
+	var item_id := str(copy.get("id", ""))
+	if decorations.has(item_id):
+		var decoration: Dictionary = decorations[item_id]
+		copy["name"] = str(decoration.get("name", copy.get("name", "")))
+		copy["desc"] = str(decoration.get("desc", copy.get("desc", "")))
+		copy["counter"] = str(decoration.get("counter", copy.get("counter", "")))
+		copy["icon"] = _current_weapon_icon()
+	return copy
+
+
+func _weapon_shop_decorations(weapon_id: String) -> Dictionary:
+	match weapon_id:
+		"pickaxe":
+			return {
+				"lubricated_bearing": {"name": "손목 축 윤활", "desc": "곡괭이 휘두름 쿨다운이 줄어듭니다. 짧은 딜타임을 더 자주 엽니다.", "counter": "근접 회전율"},
+				"extended_shaft": {"name": "긴 곡괭이 자루", "desc": "휘두름 사거리 소폭 증가. 방패와 폭약 앞에서 반 걸음 여유를 만듭니다.", "counter": "근접 거리"},
+				"reinforced_bit": {"name": "강화 곡괭이날", "desc": "곡괭이 피해량 소폭 증가. 보스와 단단한 적을 더 빨리 깎습니다.", "counter": "근접 피해"},
+				"piercing_bit": {"name": "쐐기 곡괭이날", "desc": "휘두름의 관통 판정이 강해집니다. 방패 라인 측면과 뭉친 적을 찢습니다.", "counter": "측면 돌파"},
+				"explosive_core": {"name": "충격 폭약 머리", "desc": "곡괭이 명중 지점에 작은 폭발을 붙입니다. 붙은 무리를 한 번에 흔듭니다.", "counter": "근접 광역"},
+				"armor_shredding_blade": {"name": "장갑 파쇄 곡괭이", "desc": "방어 관통 +3. 방패 좀비와 보스의 단단한 표면을 더 잘 깹니다.", "counter": "방어 관통"},
+				"recoil_spring": {"name": "반동 손잡이", "desc": "휘두름 넉백 강화. 붙은 적과 자폭 광부를 한 박자 밀어냅니다.", "counter": "접근 차단"},
+				"double_drill_chamber": {"name": "쌍날 곡괭이 머리", "desc": "보조 휘두름을 추가합니다. 피해는 조금 보정되지만 타격 횟수가 늘어납니다.", "counter": "타격 횟수 +1"},
+			}
+		"nailgun":
+			return {
+				"lubricated_bearing": {"name": "급속 못 방아쇠", "desc": "네일건 발사 간격이 줄어듭니다. 빠른 적을 더 빨리 끊습니다.", "counter": "원거리 연사"},
+				"extended_shaft": {"name": "긴 압축 레일", "desc": "못 사거리와 탄속이 소폭 증가합니다. 투척 적을 먼저 찌릅니다.", "counter": "거리 확보"},
+				"reinforced_bit": {"name": "강화 강철 못", "desc": "못 피해량 소폭 증가. 단일 대상을 안정적으로 정리합니다.", "counter": "직선 피해"},
+				"piercing_bit": {"name": "관통 못 탄창", "desc": "못 관통 +1. 방패 라인 뒤쪽과 일렬 적을 노립니다.", "counter": "직선 관통"},
+				"explosive_core": {"name": "폭약 못심", "desc": "못 명중 지점에 작은 폭발을 붙입니다. 부족한 무리 대응을 보완합니다.", "counter": "밀집 적 대응"},
+				"armor_shredding_blade": {"name": "장갑 파쇄 못", "desc": "방어 관통 +3. 방패 정면과 보스 방어를 더 잘 뚫습니다.", "counter": "방어 관통"},
+				"recoil_spring": {"name": "고압 반동 스프링", "desc": "넉백 강화와 탄속 증가. 돌진 위협을 거리 밖으로 밀어냅니다.", "counter": "돌진 대응"},
+				"double_drill_chamber": {"name": "쌍열 못 탄창", "desc": "못 한 발을 추가로 발사합니다. 피해는 조금 보정되지만 공격 레인이 늘어납니다.", "counter": "못 한 발 +1"},
+			}
+		"lantern":
+			return {
+				"lubricated_bearing": {"name": "빠른 심지 조절기", "desc": "랜턴 펄스 쿨다운이 줄어듭니다. 주변 압박을 더 자주 비웁니다.", "counter": "펄스 회전율"},
+				"extended_shaft": {"name": "확산 렌즈", "desc": "빛 펄스 반경이 소폭 증가합니다. 동선을 더 넓게 확보합니다.", "counter": "영역 확보"},
+				"reinforced_bit": {"name": "밝은 심지", "desc": "빛 펄스 피해량 소폭 증가. 몰려든 적을 더 안정적으로 태웁니다.", "counter": "영역 피해"},
+				"piercing_bit": {"name": "집중 렌즈", "desc": "빛이 방어 틈을 파고듭니다. 방패 라인과 밀집 적 대응을 보완합니다.", "counter": "빛 관통"},
+				"explosive_core": {"name": "불꽃 기름통", "desc": "펄스 명중 지점에 작은 불꽃 폭발을 붙입니다. 뭉친 적에게 강해집니다.", "counter": "밀집 적 대응"},
+				"armor_shredding_blade": {"name": "백열 렌즈", "desc": "방어 관통 +3. 단단한 적에게 빛 피해가 더 잘 들어갑니다.", "counter": "방어 관통"},
+				"recoil_spring": {"name": "파동 반사판", "desc": "펄스 넉백이 강해집니다. 주변으로 붙은 적을 밀어냅니다.", "counter": "접근 차단"},
+				"double_drill_chamber": {"name": "쌍심지 랜턴", "desc": "두 번째 빛 고리를 추가합니다. 피해는 조금 보정되지만 펄스 횟수가 늘어납니다.", "counter": "펄스 +1"},
+			}
+	return {}
 
 
 func _roll_shop_stock(avoid_ids: Array = []) -> Array:
@@ -3417,6 +3832,21 @@ func _apply_item_stats(stats: Dictionary) -> void:
 		hp_regen += float(stats["regen_add"])
 
 
+func _current_weapon_id() -> String:
+	if not selected_weapon_id.is_empty():
+		return selected_weapon_id
+	if not weapons.is_empty():
+		return str(Dictionary(weapons[0]).get("id", ""))
+	return ""
+
+
+func _current_weapon_icon() -> String:
+	var id := _current_weapon_id()
+	if id.is_empty() or not weapon_catalog.has(id):
+		return ""
+	return str(Dictionary(weapon_catalog[id]).get("icon", ""))
+
+
 func _remove_shop_stock(item: Dictionary) -> void:
 	var stock_id := str(item.get("stock_id", ""))
 	for i in range(shop_stock.size() - 1, -1, -1):
@@ -3526,6 +3956,7 @@ func _run_result_label() -> String:
 func _run_report_lines() -> PackedStringArray:
 	var lines := PackedStringArray()
 	lines.append("결과 %s / 도달 라운드 %d/%d / 생존 %s" % [_run_result_label(), wave, MAX_ROUNDS, _format_time(elapsed)])
+	lines.append("선택 무기: %s" % _selected_weapon_report_text())
 	lines.append("광석 획득 %d / 사용 %d / 보유 %d / 리롤 %d" % [run_ore_collected, run_ore_spent, ore, run_rerolls])
 	lines.append("구매 %d회 / 희귀·전설: %s" % [run_purchase_count, _format_name_counts(run_rare_legendary_purchase_names, "없음")])
 	lines.append("계약: %s" % _format_relic_counts_for_report())
@@ -3536,6 +3967,14 @@ func _run_report_lines() -> PackedStringArray:
 		"처치" if run_boss_defeated else "미처치",
 	])
 	return lines
+
+
+func _selected_weapon_report_text() -> String:
+	var id := _current_weapon_id()
+	if id.is_empty() or not weapon_catalog.has(id):
+		return "없음"
+	var weapon: Dictionary = weapon_catalog[id]
+	return "%s · %s" % [str(weapon.get("name", id)), str(weapon.get("family", ""))]
 
 
 func _run_report_text() -> String:
@@ -4077,12 +4516,31 @@ func _draw_bullets() -> void:
 	for bullet in bullets:
 		if str(bullet.get("shape", "round")) == "drill_tip":
 			_draw_drill_tip_bullet(bullet)
+		elif str(bullet.get("shape", "round")) == "nail":
+			_draw_nail_bullet(bullet)
 		else:
 			if bool(bullet.get("splash_feedback", false)):
 				var splash_color := Color("#f0643b")
 				splash_color.a = 0.20
 				draw_circle(bullet["pos"], float(bullet["radius"]) * 2.3, splash_color)
 			draw_circle(bullet["pos"], bullet["radius"], bullet["color"])
+
+
+func _draw_nail_bullet(bullet: Dictionary) -> void:
+	var pos: Vector2 = bullet["pos"]
+	var velocity: Vector2 = bullet["velocity"]
+	var direction := velocity.normalized()
+	if direction.length_squared() <= 0.001:
+		direction = Vector2.RIGHT
+	var side := direction.rotated(PI * 0.5)
+	var radius: float = bullet["radius"]
+	var head := pos + direction * radius * 2.8
+	var tail := pos - direction * radius * 4.4
+	draw_line(tail, head, Color("#111412"), radius * 2.0)
+	draw_line(tail + side * 0.5, head - direction * radius * 0.4, bullet["color"], radius * 1.05)
+	draw_line(pos - direction * radius * 8.0, pos - direction * radius * 2.0, Color(0.86, 0.97, 0.94, 0.24), 2.0)
+	draw_circle(head, radius * 0.72, Color("#f5efe3"))
+	draw_circle(tail, radius * 0.92, Color("#6e7d83"))
 
 
 func _draw_drill_tip_bullet(bullet: Dictionary) -> void:
@@ -4212,8 +4670,8 @@ func _show_start_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_start(
 		"봉인된 채굴지",
-		"P7 광맥 투기장",
-		"10라운드 동안 계약으로 위험을 높이고, 상점에서 드릴촉 부품을 붙여 방패와 독, 폭약, 우두머리에 대응하세요.",
+		"M1-D8 무기 검증",
+		"10라운드 광맥에 들어가기 전에 곡괭이, 네일건, 랜턴 중 하나를 고르세요. 선택 전에는 타이머와 스폰이 멈춰 있습니다.",
 		"탐사 시작"
 	)
 
@@ -4229,7 +4687,7 @@ func _show_game_over_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_end(
 		"탐사 종료",
-		"P7 사망 요약",
+		"M1-D8 사망 요약",
 		_run_report_text(),
 		"다시 도전",
 		_active_relic_summary()
@@ -4241,7 +4699,7 @@ func _show_victory_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_end(
 		"탐사 완료",
-		"P7 런 요약",
+		"M1-D8 런 요약",
 		_run_report_text(),
 		"다시 시작",
 		_active_relic_summary()
@@ -4249,8 +4707,35 @@ func _show_victory_overlay() -> void:
 
 
 func _start_run() -> void:
-	_reset_run(true)
+	_reset_run(false)
+	_open_weapon_select()
+
+
+func _open_weapon_select() -> void:
+	mode = MODE_CHOICE
+	wave = 1
+	wave_timer = _round_duration(wave)
+	spawn_timer = 0.0
+	enemies.clear()
+	bullets.clear()
+	_show_choice_overlay("R1 진입 전", "스타터 무기 선택", _starter_weapon_options(), "_choose_starter_weapon")
+
+
+func _choose_starter_weapon(option: Dictionary) -> void:
+	if str(option.get("kind", "")) != "starter_weapon":
+		return
+	var id := str(option.get("id", ""))
+	if not starter_weapon_ids.has(id):
+		return
+	if not _equip_weapon_for_run(id):
+		return
 	_hide_overlay()
+	mode = MODE_PLAY
+	wave = 1
+	wave_timer = _round_duration(wave)
+	spawn_timer = 0.0
+	round_ore_earned = 0
+	boss_spawned = false
 
 
 func _hide_overlay() -> void:
@@ -4304,7 +4789,15 @@ func _current_state_summary() -> Dictionary:
 	lines.append("무기: %s" % " / ".join(weapon_lines))
 	lines.append("계약: %s" % _format_relic_counts_for_report())
 	lines.append("처치 %d · 구매 %d · 리롤 %d" % [run_kill_count, run_purchase_count, run_rerolls])
-	return {"lines": lines}
+	var weapon_label := "현재 무기 없음"
+	if not weapons.is_empty():
+		var weapon: Dictionary = weapons[0]
+		weapon_label = "%s · %s · %s" % [
+			str(weapon.get("name", "무기")),
+			str(weapon.get("family", "")),
+			str(weapon.get("feel", "")),
+		]
+	return {"lines": lines, "weapon_icon": _current_weapon_icon(), "weapon_label": weapon_label}
 
 
 func _format_time(seconds: float) -> String:
@@ -4326,6 +4819,8 @@ func _decorate_choice_options(options: Array) -> Array:
 func _choice_meta_text(option: Dictionary, disabled: bool) -> String:
 	if disabled and str(option.get("kind", "")) == "weapon":
 		return "무기 슬롯 또는 강화 한도 초과"
+	if str(option.get("kind", "")) == "starter_weapon":
+		return str(option.get("tag", "스타터 무기"))
 	if str(option.get("kind", "")) == "relic":
 		var next_level: int = min(3, _relic_count(str(option.get("id", ""))) + 1)
 		return "계약 %s · %s · %s" % [_roman_level(next_level), str(option.get("danger", "위험 누적")), str(option.get("reward_hint", "위험한 광맥일수록 더 많은 광석을 품는다."))]

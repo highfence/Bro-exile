@@ -83,16 +83,25 @@ func render_weapons(weapons: Array, damage_multiplier: float) -> void:
 
 	for weapon in weapons:
 		var card := PanelContainer.new()
-		card.custom_minimum_size = Vector2(138, 42)
+		card.custom_minimum_size = Vector2(188, 42)
 		card.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.12, 0.13, 0.11, 0.88), OreUITheme.LINE, 8, 1))
 		weapon_box.add_child(card)
 
-		var margin := _margin(10, 8, 10, 7)
+		var margin := _margin(7, 6, 10, 6)
 		card.add_child(margin)
+
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		margin.add_child(row)
+
+		var icon_path := str(Dictionary(weapon).get("icon", ""))
+		if not icon_path.is_empty():
+			row.add_child(_make_plain_icon(icon_path, 32))
 
 		var box := VBoxContainer.new()
 		box.add_theme_constant_override("separation", 2)
-		margin.add_child(box)
+		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(box)
 
 		var title := _make_label(str(weapon["name"]), 12, OreUITheme.INK)
 		title.clip_text = true
@@ -145,6 +154,8 @@ func show_choice(eyebrow: String, title: String, options: Array, relics: Array =
 	var card_height: int = 142 if tall else 126
 	if _options_are_contracts(options):
 		card_height = 158
+	if _options_are_starter_weapons(options):
+		card_height = 190
 	_prepare_overlay(Vector2(900, 0), OreUITheme.PANEL_STRONG)
 	overlay_box.add_child(_make_label(eyebrow, 14, OreUITheme.ORE))
 	overlay_box.add_child(_make_label(title, 34, OreUITheme.INK))
@@ -169,6 +180,13 @@ func show_choice(eyebrow: String, title: String, options: Array, relics: Array =
 func _options_are_contracts(options: Array) -> bool:
 	for option in options:
 		if str(Dictionary(option).get("kind", "")) == "relic":
+			return true
+	return false
+
+
+func _options_are_starter_weapons(options: Array) -> bool:
+	for option in options:
+		if str(Dictionary(option).get("kind", "")) == "starter_weapon":
 			return true
 	return false
 
@@ -416,6 +434,19 @@ func _make_state_summary_panel(state_summary: Dictionary) -> Control:
 	box.add_theme_constant_override("separation", 5)
 	margin.add_child(box)
 
+	if state_summary.has("weapon_icon"):
+		var weapon_row := HBoxContainer.new()
+		weapon_row.add_theme_constant_override("separation", 8)
+		weapon_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var icon_path := str(state_summary.get("weapon_icon", ""))
+		if not icon_path.is_empty():
+			weapon_row.add_child(_make_plain_icon(icon_path, 34))
+		var weapon_label := _make_label(str(state_summary.get("weapon_label", "현재 무기")), 13, OreUITheme.INK)
+		weapon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		weapon_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		weapon_row.add_child(weapon_label)
+		box.add_child(weapon_row)
+
 	var lines: PackedStringArray = state_summary.get("lines", PackedStringArray())
 	for i in range(lines.size()):
 		var color := OreUITheme.INK if i == 0 else OreUITheme.MUTED
@@ -425,6 +456,26 @@ func _make_state_summary_panel(state_summary: Dictionary) -> Control:
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		box.add_child(label)
 	return panel
+
+
+func _make_plain_icon(icon_path: String, size: int) -> Control:
+	var frame := PanelContainer.new()
+	frame.custom_minimum_size = Vector2(size, size)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.08, 0.09, 0.075, 0.80), Color(0.36, 0.33, 0.25, 0.74), 7, 1))
+
+	var margin := _margin(3, 3, 3, 3)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_child(margin)
+
+	var icon := TextureRect.new()
+	icon.texture = _load_png_texture(icon_path)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.custom_minimum_size = Vector2(size - 6, size - 6)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_child(icon)
+	return frame
 
 
 func _make_relic_icon(relic: Dictionary, size: int) -> Control:
@@ -543,7 +594,12 @@ func _make_option_card(option: Dictionary, min_height: int) -> Control:
 
 	var desc := _make_label(str(option.get("desc", "")), 13, desc_color)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.custom_minimum_size = Vector2(0, 48 if min_height > 120 else 32)
+	var desc_height := 32
+	if min_height > 170:
+		desc_height = 88
+	elif min_height > 120:
+		desc_height = 48
+	desc.custom_minimum_size = Vector2(0, desc_height)
 	desc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	desc.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	box.add_child(desc)
