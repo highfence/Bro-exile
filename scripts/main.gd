@@ -51,10 +51,11 @@ const PLAYER_RIGHT_GLOVE_PATH := "res://assets/sprites/characters/player_helmet_
 const PLAYER_LEFT_BOOT_PATH := "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/left_boot.png"
 const PLAYER_RIGHT_BOOT_PATH := "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/right_boot.png"
 const ZOMBIE_IDLE_PATH := "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
-const FAST_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/fast_zombie.png"
+const FAST_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v2/fast_zombie.png"
 const SPIDER_SWARM_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/spider_swarm.png"
 const THROWER_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/thrower_zombie.png"
-const BOSS_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v1/boss_zombie.png"
+const SHIELD_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v2/shield_zombie.png"
+const BOSS_ZOMBIE_PATH := "res://assets/sprites/characters/p1_monsters_runtime_v2/boss_zombie.png"
 const CAMERA_FOLLOW_SPEED := 7.5
 const SPAWN_WARNING_DURATION := 0.78
 const BOSS_SPAWN_WARNING_DURATION := 1.18
@@ -136,6 +137,7 @@ var zombie_idle_texture: Texture2D
 var fast_zombie_texture: Texture2D
 var spider_swarm_texture: Texture2D
 var thrower_zombie_texture: Texture2D
+var shield_zombie_texture: Texture2D
 var boss_zombie_texture: Texture2D
 
 var stat_rewards := [
@@ -729,7 +731,8 @@ func _capture_monster_roster_and_quit() -> void:
 		{"type": "fast_zombie", "offset": Vector2(-190, -90)},
 		{"type": "spider", "offset": Vector2(-55, -90)},
 		{"type": "thrower", "offset": Vector2(100, -90)},
-		{"type": "boss", "offset": Vector2(300, -65)},
+		{"type": "shield_zombie", "offset": Vector2(250, -86)},
+		{"type": "boss", "offset": Vector2(430, -65)},
 	]
 	for item in roster:
 		var enemy := _make_enemy(item["type"])
@@ -1126,6 +1129,7 @@ func _load_visual_textures() -> void:
 	fast_zombie_texture = _load_png_texture(FAST_ZOMBIE_PATH)
 	spider_swarm_texture = _load_png_texture(SPIDER_SWARM_PATH)
 	thrower_zombie_texture = _load_png_texture(THROWER_ZOMBIE_PATH)
+	shield_zombie_texture = _load_png_texture(SHIELD_ZOMBIE_PATH)
 	boss_zombie_texture = _load_png_texture(BOSS_ZOMBIE_PATH)
 
 
@@ -3879,42 +3883,41 @@ func _draw_elite_marker(pos: Vector2, radius: float, type: String) -> void:
 
 
 func _enemy_has_sprite_asset(type: String) -> bool:
-	return type == "zombie" or type == "fast_zombie" or type == "spider" or type == "thrower" or type == "elite_zombie" or _is_boss_type(type)
+	return type == "zombie" or type == "fast_zombie" or type == "spider" or type == "thrower" or type == "shield_zombie" or type == "elite_zombie" or _is_boss_type(type)
 
 
 func _draw_enemy_asset_sprite(enemy: Dictionary) -> bool:
 	var type := str(enemy.get("type", "zombie"))
 	match type:
 		"zombie":
-			_draw_single_image_enemy_sprite(enemy, zombie_idle_texture, ZOMBIE_VISUAL_SCALE, ZOMBIE_MOVE_PERIOD, 6.5, 3.4, 5.2, 0.038, Vector2(25, 5), 29.0)
+			_draw_profiled_enemy_sprite(enemy, zombie_idle_texture, ZOMBIE_VISUAL_SCALE, "shamble", Vector2(25, 5), 29.0)
 			return true
 		"fast_zombie":
-			_draw_single_image_enemy_sprite(enemy, fast_zombie_texture, 0.225, 0.46, 8.5, 5.2, 7.0, 0.058, Vector2(23, 4.5), 28.0)
+			_draw_profiled_enemy_sprite(enemy, fast_zombie_texture, 0.225, "sprint", Vector2(23, 4.5), 28.0)
 			return true
 		"spider":
-			_draw_single_image_enemy_sprite(enemy, spider_swarm_texture, 0.175, 0.42, 3.2, 2.0, 3.0, 0.028, Vector2(20, 4), 20.0)
+			_draw_profiled_enemy_sprite(enemy, spider_swarm_texture, 0.175, "skitter", Vector2(20, 4), 20.0)
 			return true
 		"thrower":
-			_draw_single_image_enemy_sprite(enemy, thrower_zombie_texture, 0.265, 0.88, 4.5, 2.2, 3.2, 0.024, Vector2(27, 5), 30.0)
+			_draw_profiled_enemy_sprite(enemy, thrower_zombie_texture, 0.265, "throw", Vector2(27, 5), 30.0)
+			return true
+		"shield_zombie":
+			_draw_profiled_enemy_sprite(enemy, shield_zombie_texture, 0.285, "brace", Vector2(34, 6), 34.0)
 			return true
 		"elite_zombie":
-			_draw_single_image_enemy_sprite(enemy, zombie_idle_texture, 0.34, 0.92, 5.2, 2.8, 3.4, 0.026, Vector2(36, 7), 42.0)
+			_draw_profiled_enemy_sprite(enemy, zombie_idle_texture, 0.34, "heavy", Vector2(36, 7), 42.0)
 			return true
 		"boss", "mid_boss", "final_boss":
-			_draw_single_image_enemy_sprite(enemy, boss_zombie_texture, 0.44, 1.18, 3.0, 2.0, 2.1, 0.018, Vector2(48, 9), 52.0)
+			_draw_profiled_enemy_sprite(enemy, boss_zombie_texture, 0.44, "heavy", Vector2(48, 9), 52.0)
 			return true
 	return false
 
 
-func _draw_single_image_enemy_sprite(
+func _draw_profiled_enemy_sprite(
 	enemy: Dictionary,
 	texture: Texture2D,
 	base_scale: float,
-	period: float,
-	lateral_amount: float,
-	hop_amount: float,
-	rotation_amount: float,
-	squash_amount: float,
+	motion_profile: String,
 	shadow_size: Vector2,
 	shadow_y: float
 ) -> void:
@@ -3922,14 +3925,9 @@ func _draw_single_image_enemy_sprite(
 	var pos := _enemy_draw_pos(enemy)
 	var faces_right := player.has("pos") and float(player["pos"].x) > ground_pos.x
 	var sign := 1.0 if faces_right else -1.0
+	var period := _enemy_motion_period(motion_profile)
 	var phase := fposmod(elapsed + float(enemy["id"]) * 0.11, period) / period * TAU
-	var step := sin(phase)
-	var hop := absf(step)
-	var drag := cos(phase)
-	var lurch := sin(phase + PI * 0.22)
-	var local_pos := Vector2(lateral_amount * drag, -hop_amount * hop + 1.2 * lurch)
-	var local_rot := deg_to_rad(-rotation_amount * drag + 1.4 * lurch)
-	var local_scale := Vector2(1.0 + squash_amount * hop, 1.0 - squash_amount * 1.16 * hop)
+	var pose := _enemy_motion_pose(motion_profile, phase)
 	var hp: float = enemy["hp"]
 	var max_hp: float = enemy["max_hp"]
 	var flash: float = 1.0 - clamp(hp / max_hp, 0.0, 1.0)
@@ -3939,8 +3937,102 @@ func _draw_single_image_enemy_sprite(
 		var hit_color: Color = enemy.get("hit_flash_color", Color("#f5efe3"))
 		modulate = modulate.lerp(hit_color, hit_flash * 0.54)
 
-	_draw_ellipse_shadow(ground_pos + Vector2(0, shadow_y), shadow_size + Vector2(4.0 * hop, 1.5 * hop), Color(0, 0, 0, 0.18))
-	_draw_sprite_part(texture, pos, local_pos, sign, local_rot, local_scale, base_scale, modulate)
+	_draw_ellipse_shadow(
+		ground_pos + Vector2(0, shadow_y + float(pose.shadow_y_offset)),
+		shadow_size * Vector2(pose.shadow_scale_x, pose.shadow_scale_y),
+		Color(0, 0, 0, float(pose.shadow_alpha))
+	)
+	_draw_sprite_part(texture, pos, pose.local_pos, sign, pose.local_rot, pose.local_scale, base_scale, modulate)
+
+
+func _enemy_motion_period(profile: String) -> float:
+	match profile:
+		"sprint":
+			return 0.42
+		"brace":
+			return 0.92
+		"heavy":
+			return 1.24
+		"skitter":
+			return 0.36
+		"throw":
+			return 0.88
+	return 0.82
+
+
+func _enemy_motion_pose(profile: String, phase: float) -> Dictionary:
+	var step := sin(phase)
+	var drag := cos(phase)
+	var lift := (1.0 - cos(phase)) * 0.5
+	var double_step := sin(phase * 2.0)
+
+	match profile:
+		"sprint":
+			var foot := absf(double_step)
+			var push := maxf(0.0, drag)
+			return {
+				"local_pos": Vector2(2.4 + 1.8 * push - 0.7 * maxf(0.0, -drag), -1.15 * foot + 0.35 * double_step),
+				"local_rot": deg_to_rad(-5.0 + 1.5 * step),
+				"local_scale": Vector2(1.0 + 0.014 * foot, 1.0 - 0.013 * foot),
+				"shadow_scale_x": 1.05 + 0.065 * push,
+				"shadow_scale_y": 1.00 + 0.018 * push,
+				"shadow_alpha": 0.18 + 0.035 * push,
+				"shadow_y_offset": 0.0
+			}
+		"brace":
+			var press := (1.0 - cos(phase + PI * 0.16)) * 0.5
+			return {
+				"local_pos": Vector2(1.0 + 1.8 * press, -0.45 * press + 0.25 * double_step),
+				"local_rot": deg_to_rad(-0.9 + 0.55 * step),
+				"local_scale": Vector2(1.0 + 0.010 * press, 1.0 - 0.006 * press),
+				"shadow_scale_x": 1.04 + 0.050 * press,
+				"shadow_scale_y": 1.01 + 0.010 * press,
+				"shadow_alpha": 0.19 + 0.030 * press,
+				"shadow_y_offset": 0.0
+			}
+		"heavy":
+			var stomp := pow(lift, 2.0)
+			return {
+				"local_pos": Vector2(0.45 * step, 1.05 * stomp - 0.25 * (1.0 - lift)),
+				"local_rot": deg_to_rad(0.65 * step),
+				"local_scale": Vector2(1.0 + 0.018 * stomp, 1.0 - 0.016 * stomp),
+				"shadow_scale_x": 1.03 + 0.080 * stomp,
+				"shadow_scale_y": 1.00 + 0.024 * stomp,
+				"shadow_alpha": 0.20 + 0.050 * stomp,
+				"shadow_y_offset": 0.0
+			}
+		"skitter":
+			var skitter := absf(double_step)
+			return {
+				"local_pos": Vector2(1.15 * double_step + 0.35 * drag, -0.28 * skitter),
+				"local_rot": deg_to_rad(0.85 * double_step),
+				"local_scale": Vector2(1.0 + 0.006 * skitter, 1.0 - 0.005 * skitter),
+				"shadow_scale_x": 1.04 + 0.025 * skitter,
+				"shadow_scale_y": 1.00,
+				"shadow_alpha": 0.18 + 0.020 * skitter,
+				"shadow_y_offset": 0.0
+			}
+		"throw":
+			return {
+				"local_pos": Vector2(1.15 * drag, -0.65 * lift + 0.35 * double_step),
+				"local_rot": deg_to_rad(-1.25 * drag + 0.55 * double_step),
+				"local_scale": Vector2(1.0 + 0.008 * lift, 1.0 - 0.007 * lift),
+				"shadow_scale_x": 1.03 + 0.025 * lift,
+				"shadow_scale_y": 1.00 + 0.010 * lift,
+				"shadow_alpha": 0.18 + 0.020 * (1.0 - lift),
+				"shadow_y_offset": 0.0
+			}
+
+	var limp := maxf(0.0, step)
+	return {
+		"local_pos": Vector2(2.2 * drag + 0.45 * double_step, -1.35 * limp + 0.35 * sin(phase + PI * 0.35)),
+		"local_rot": deg_to_rad(-2.25 * drag + 0.45 * double_step),
+		"local_scale": Vector2(1.0 + 0.014 * limp, 1.0 - 0.011 * limp),
+		"shadow_scale_x": 1.02 + 0.030 * limp,
+		"shadow_scale_y": 1.00 + 0.010 * limp,
+		"shadow_alpha": 0.18 + 0.020 * limp,
+		"shadow_y_offset": 0.0
+	}
 
 
 func _enemy_draw_pos(enemy: Dictionary) -> Vector2:
@@ -3962,6 +4054,8 @@ func _enemy_asset_hp_width(type: String, radius: float) -> float:
 			return 32.0
 		"thrower":
 			return 46.0
+		"shield_zombie":
+			return 56.0
 		"elite_zombie":
 			return 58.0
 		"boss", "mid_boss", "final_boss":
@@ -3977,6 +4071,8 @@ func _enemy_asset_hp_y(type: String, radius: float) -> float:
 			return -31.0
 		"thrower":
 			return -47.0
+		"shield_zombie":
+			return -58.0
 		"elite_zombie":
 			return -63.0
 		"boss", "mid_boss", "final_boss":

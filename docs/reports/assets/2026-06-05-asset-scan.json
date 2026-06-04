@@ -1,7 +1,7 @@
 {
   "script": "scripts/main.gd",
-  "total_refs": 30,
-  "unique_refs": 24,
+  "total_refs": 31,
+  "unique_refs": 25,
   "repeated_refs": [
     {
       "path": "res://assets/sprites/items/p2_parts/part_carbide_tip.png",
@@ -30,19 +30,23 @@
       "count": 1
     },
     {
-      "path": "res://assets/sprites/characters/p1_monsters_runtime_v1/boss_zombie.png",
-      "count": 1
-    },
-    {
-      "path": "res://assets/sprites/characters/p1_monsters_runtime_v1/fast_zombie.png",
-      "count": 1
-    },
-    {
       "path": "res://assets/sprites/characters/p1_monsters_runtime_v1/spider_swarm.png",
       "count": 1
     },
     {
       "path": "res://assets/sprites/characters/p1_monsters_runtime_v1/thrower_zombie.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/p1_monsters_runtime_v2/boss_zombie.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/p1_monsters_runtime_v2/fast_zombie.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/p1_monsters_runtime_v2/shield_zombie.png",
       "count": 1
     },
     {

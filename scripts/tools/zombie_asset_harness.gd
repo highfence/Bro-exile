@@ -5,6 +5,7 @@ const ZombieRigScene := preload("res://scenes/animation/zombie_rig.tscn")
 const DEFAULT_ASSET_NAME := "miner_zombie_single_image_runtime_v1"
 const DEFAULT_OUTPUT_ROOT := "/private/tmp/bro-exile-zombie-harness"
 const DEFAULT_SOURCE_FRAME := "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png"
+const DEFAULT_MOTION_PROFILE := "legacy"
 const DEFAULT_FRAME_COUNT := 24
 const DEFAULT_CELL_SIZE := 256
 const DEFAULT_PREVIEW_CELL_SIZE := 64
@@ -40,6 +41,8 @@ var _source_root: Node2D
 var _zombie_rig
 var _source_frames_by_variant := {}
 var _source_loop_frames_by_variant := {}
+var _legacy_frames_by_variant := {}
+var _legacy_loop_frames_by_variant := {}
 var _global_source_bbox := Rect2i()
 var _cell_scale := 1.0
 var _cell_offset := Vector2i.ZERO
@@ -55,7 +58,20 @@ func _run_harness() -> void:
 	var asset_dir := output_root.path_join(config.asset_name)
 	DirAccess.make_dir_recursive_absolute(asset_dir)
 
-	_setup_source_viewport(config.source_frame)
+	_setup_source_viewport(config.source_frame, config.motion_profile)
+
+	if config.compare_legacy:
+		_zombie_rig.set_texture_path(config.legacy_source_frame)
+		_zombie_rig.set_motion_profile("legacy")
+		for variant_name in config.variants:
+			if not VARIANT_PRESETS.has(variant_name):
+				push_error("Unknown zombie asset harness variant: %s" % variant_name)
+				continue
+			_legacy_frames_by_variant[variant_name] = await _capture_variant_source_frames(variant_name, config.frame_count)
+			_legacy_loop_frames_by_variant[variant_name] = await _capture_variant_loop_frame(variant_name)
+
+	_zombie_rig.set_texture_path(config.source_frame)
+	_zombie_rig.set_motion_profile(config.motion_profile)
 
 	for variant_name in config.variants:
 		if not VARIANT_PRESETS.has(variant_name):
@@ -76,6 +92,9 @@ func _run_harness() -> void:
 		"asset_name": config.asset_name,
 		"source_rig_scene": "res://scenes/animation/zombie_rig.tscn",
 		"source_frame": config.source_frame,
+		"motion_profile": config.motion_profile,
+		"compare_legacy": config.compare_legacy,
+		"legacy_source_frame": config.legacy_source_frame if config.compare_legacy else null,
 		"output_dir": asset_dir,
 		"cell_size": config.cell_size,
 		"preview_cell_size": config.preview_cell_size,
@@ -86,9 +105,11 @@ func _run_harness() -> void:
 		"cell_offset": [_cell_offset.x, _cell_offset.y],
 		"rig_contract": "single full-frame zombie sprite with engine-side scale, lean, bob, facing flip, and shadow pulse",
 		"animations": [],
+		"comparisons": [],
 		"notes": [
-			"Single-image enemy harness pass using a configurable source frame.",
+			"Single-image enemy harness pass using a configurable source frame and motion profile.",
 			"This follows the lightweight enemy asset direction: one readable enemy image plus runtime motion effects.",
+			"Optional comparison previews stack legacy motion above the requested profile.",
 			"Feedback should focus on silhouette, wobble amount, facing, and move rhythm."
 		]
 	}
@@ -104,6 +125,16 @@ func _run_harness() -> void:
 			config.preview_cell_size
 		))
 
+	if config.compare_legacy:
+		metadata.comparisons = _write_comparison_outputs(
+			asset_dir,
+			config.variants,
+			config.frame_count,
+			config.cell_size,
+			config.preview_cell_size,
+			config.motion_profile
+		)
+
 	_write_json(asset_dir.path_join("metadata.json"), metadata)
 	print("ZOMBIE_ASSET_HARNESS_DONE path=%s variants=%s" % [asset_dir, config.variants])
 	get_tree().quit()
@@ -114,6 +145,9 @@ func _parse_config() -> Dictionary:
 		"asset_name": DEFAULT_ASSET_NAME,
 		"output_root": DEFAULT_OUTPUT_ROOT,
 		"source_frame": DEFAULT_SOURCE_FRAME,
+		"legacy_source_frame": DEFAULT_SOURCE_FRAME,
+		"motion_profile": DEFAULT_MOTION_PROFILE,
+		"compare_legacy": false,
 		"frame_count": DEFAULT_FRAME_COUNT,
 		"cell_size": DEFAULT_CELL_SIZE,
 		"preview_cell_size": DEFAULT_PREVIEW_CELL_SIZE,
@@ -127,6 +161,12 @@ func _parse_config() -> Dictionary:
 			config.output_root = arg.trim_prefix("--asset-output=")
 		elif arg.begins_with("--source-frame="):
 			config.source_frame = arg.trim_prefix("--source-frame=")
+		elif arg.begins_with("--legacy-source-frame="):
+			config.legacy_source_frame = arg.trim_prefix("--legacy-source-frame=")
+		elif arg.begins_with("--motion-profile="):
+			config.motion_profile = arg.trim_prefix("--motion-profile=")
+		elif arg == "--compare-legacy":
+			config.compare_legacy = true
 		elif arg.begins_with("--frame-count="):
 			config.frame_count = int(arg.trim_prefix("--frame-count="))
 		elif arg.begins_with("--cell-size="):
@@ -139,6 +179,8 @@ func _parse_config() -> Dictionary:
 	config.frame_count = maxi(2, config.frame_count)
 	config.cell_size = maxi(32, config.cell_size)
 	config.preview_cell_size = maxi(16, config.preview_cell_size)
+	if str(config.legacy_source_frame).is_empty():
+		config.legacy_source_frame = config.source_frame
 	return config
 
 
@@ -148,7 +190,7 @@ func _globalize_output_path(path: String) -> String:
 	return path
 
 
-func _setup_source_viewport(source_frame: String) -> void:
+func _setup_source_viewport(source_frame: String, motion_profile: String) -> void:
 	_source_viewport = SubViewport.new()
 	_source_viewport.size = SOURCE_VIEWPORT_SIZE
 	_source_viewport.transparent_bg = true
@@ -162,6 +204,7 @@ func _setup_source_viewport(source_frame: String) -> void:
 	_zombie_rig.name = "HarnessZombieRig"
 	_zombie_rig.auto_play = false
 	_zombie_rig.texture_path = source_frame
+	_zombie_rig.motion_profile = motion_profile
 	_zombie_rig.position = SOURCE_RIG_POSITION
 	_source_root.add_child(_zombie_rig)
 
@@ -203,18 +246,23 @@ func _calculate_global_bbox(variant_names: Array) -> Rect2i:
 	var max_x := 0
 	var max_y := 0
 
-	for variant_name in variant_names:
-		if not _source_frames_by_variant.has(variant_name):
-			continue
-		for image in _source_frames_by_variant[variant_name]:
-			var bbox := _calculate_alpha_bbox(image)
-			if bbox.size == Vector2i.ZERO:
+	var frame_sets := [_source_frames_by_variant]
+	if not _legacy_frames_by_variant.is_empty():
+		frame_sets.append(_legacy_frames_by_variant)
+
+	for frames_by_variant in frame_sets:
+		for variant_name in variant_names:
+			if not frames_by_variant.has(variant_name):
 				continue
-			has_pixels = true
-			min_x = mini(min_x, bbox.position.x)
-			min_y = mini(min_y, bbox.position.y)
-			max_x = maxi(max_x, bbox.position.x + bbox.size.x)
-			max_y = maxi(max_y, bbox.position.y + bbox.size.y)
+			for image in frames_by_variant[variant_name]:
+				var bbox := _calculate_alpha_bbox(image)
+				if bbox.size == Vector2i.ZERO:
+					continue
+				has_pixels = true
+				min_x = mini(min_x, bbox.position.x)
+				min_y = mini(min_y, bbox.position.y)
+				max_x = maxi(max_x, bbox.position.x + bbox.size.x)
+				max_y = maxi(max_y, bbox.position.y + bbox.size.y)
 
 	if not has_pixels:
 		return Rect2i()
@@ -301,6 +349,7 @@ func _write_variant_outputs(
 		"moving": preset.moving,
 		"faces_right": preset.faces_right,
 		"fps": preset.fps,
+		"motion_profile": _zombie_rig.motion_profile,
 		"period": _zombie_rig.get_current_period(),
 		"frame_count": frame_count,
 		"frames_dir": "%s/frames" % variant_name,
@@ -315,6 +364,52 @@ func _write_variant_outputs(
 	}
 	_write_json(variant_dir.path_join("metadata.json"), metadata)
 	return metadata
+
+
+func _write_comparison_outputs(
+	asset_dir: String,
+	variant_names: Array,
+	frame_count: int,
+	cell_size: int,
+	preview_cell_size: int,
+	motion_profile: String
+) -> Array:
+	var comparison_dir := asset_dir.path_join("comparison")
+	DirAccess.make_dir_recursive_absolute(comparison_dir)
+	var comparisons := []
+
+	for variant_name in variant_names:
+		if not _legacy_frames_by_variant.has(variant_name) or not _source_frames_by_variant.has(variant_name):
+			continue
+
+		var legacy_cells := []
+		var profile_cells := []
+		for frame_index in range(frame_count):
+			legacy_cells.append(_pack_source_frame_to_cell(_legacy_frames_by_variant[variant_name][frame_index], cell_size))
+			profile_cells.append(_pack_source_frame_to_cell(_source_frames_by_variant[variant_name][frame_index], cell_size))
+
+		var legacy_preview := _make_horizontal_sheet(legacy_cells, cell_size)
+		legacy_preview.resize(frame_count * preview_cell_size, preview_cell_size, Image.INTERPOLATE_LANCZOS)
+
+		var profile_preview := _make_horizontal_sheet(profile_cells, cell_size)
+		profile_preview.resize(frame_count * preview_cell_size, preview_cell_size, Image.INTERPOLATE_LANCZOS)
+
+		var comparison := Image.create(frame_count * preview_cell_size, preview_cell_size * 2, false, Image.FORMAT_RGBA8)
+		comparison.fill(Color(0, 0, 0, 0))
+		comparison.blit_rect(legacy_preview, Rect2i(Vector2i.ZERO, legacy_preview.get_size()), Vector2i.ZERO)
+		comparison.blit_rect(profile_preview, Rect2i(Vector2i.ZERO, profile_preview.get_size()), Vector2i(0, preview_cell_size))
+
+		var file_name := "%s_legacy_vs_%s_%d_preview.png" % [variant_name, motion_profile, preview_cell_size]
+		comparison.save_png(comparison_dir.path_join(file_name))
+		comparisons.append({
+			"name": variant_name,
+			"legacy_motion_profile": "legacy",
+			"new_motion_profile": motion_profile,
+			"preview_64": "comparison/%s" % file_name,
+			"layout": "top row legacy, bottom row new profile"
+		})
+
+	return comparisons
 
 
 func _pack_source_frame_to_cell(source_image: Image, cell_size: int) -> Image:
