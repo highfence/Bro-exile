@@ -6,3 +6,4 @@ assets/reference/
 *.translation
 export_presets.cfg
 .worktrees
+.superpowers/
