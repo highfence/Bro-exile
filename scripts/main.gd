@@ -160,7 +160,7 @@ var shop_catalog := [
 	{"id": "explosive_core", "kind": "part", "rarity": "rare", "name": "폭약 코어", "desc": "명중 지점에 작은 폭발을 붙입니다. 거미떼와 밀집 적 대응책입니다.", "cost": 38, "counter": "밀집 적 대응", "counters": [7, 8], "icon": "res://assets/sprites/items/p2_parts/part_shatter_charge.png", "weapon_stats": {"splash_add": 44.0, "damage_mult": 0.96}},
 	{"id": "armor_shredding_blade", "kind": "part", "rarity": "rare", "name": "장갑 파쇄날", "desc": "방어 관통 +3. 방패 좀비와 보스 방어를 뚫습니다.", "cost": 40, "counter": "방어 관통", "counters": [5, 10], "icon": "res://assets/sprites/items/p2_parts/part_carbide_tip.png", "weapon_stats": {"armor_pierce_add": 3.0, "damage_mult": 1.05}},
 	{"id": "recoil_spring", "kind": "part", "rarity": "rare", "name": "반동 스프링", "desc": "넉백 강화와 탄속 증가. 자폭 광부와 빠른 좀비를 밀어냅니다.", "cost": 35, "counter": "돌진 대응", "counters": [8, 9], "icon": "res://assets/sprites/items/p2_parts/part_rapid_trigger.png", "weapon_stats": {"knockback_add": 42.0, "speed_mult": 1.10}},
-	{"id": "double_drill_chamber", "kind": "part", "rarity": "legendary", "unique": true, "name": "쌍열 드릴 챔버", "desc": "드릴촉을 한 발 더 발사합니다. 피해는 조금 보정되지만 빌드 방향을 크게 바꿉니다.", "cost": 76, "counter": "전설 변수", "icon": "res://assets/sprites/items/p2_parts/part_piercing_bit.png", "weapon_stats": {"projectiles_add": 1.0, "spread_add": 0.16, "damage_mult": 0.88}},
+	{"id": "double_drill_chamber", "kind": "part", "rarity": "legendary", "unique": true, "name": "쌍열 드릴 챔버", "desc": "드릴촉을 한 발 더 발사합니다. 피해는 조금 보정되지만 빌드 방향을 크게 바꿉니다.", "cost": 76, "counter": "전설 변수", "icon": "res://assets/sprites/items/p2_parts/part_piercing_bit.png", "weapon_stats": {"projectiles_add": 1.0, "spread_add": 0.16, "damage_mult": 0.88, "center_projectile": true}},
 ]
 
 var relic_catalog := [
@@ -251,7 +251,7 @@ var weapon_catalog := {
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary"):
+	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary"):
 		seed(12345)
 	else:
 		randomize()
@@ -306,6 +306,12 @@ func _ready() -> void:
 		_debug_p7_relic_contracts_and_quit.call_deferred()
 	elif args.has("--debug-p7-boss-patterns"):
 		_debug_p7_boss_patterns_and_quit.call_deferred()
+	elif args.has("--debug-p7-elite-marker"):
+		_debug_p7_elite_marker_and_quit.call_deferred()
+	elif args.has("--debug-p7-pause-cycle"):
+		_debug_p7_pause_cycle_and_quit.call_deferred()
+	elif args.has("--debug-p7-legendary-aim"):
+		_debug_p7_legendary_aim_and_quit.call_deferred()
 
 
 func _debug_spider_relic_wave2_and_quit() -> void:
@@ -943,6 +949,173 @@ func _debug_p7_boss_patterns_and_quit() -> void:
 	get_tree().quit(1 if mid_state != "windup" or not has_projectiles else 0)
 
 
+func _debug_p7_elite_marker_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_PLAY
+	elapsed = 7.4
+	player["pos"] = Vector2(560.0, 360.0)
+	camera_pos = _clamped_camera_position(player["pos"])
+	enemies.clear()
+	var elite := _make_enemy("shield_zombie")
+	elite["pos"] = Vector2(740.0, 360.0)
+	elite["elite"] = true
+	elite["hit_flash"] = 0.0
+	enemies.append(elite)
+
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	var screen_pos: Vector2 = Vector2(elite["pos"]) - _camera_origin()
+	var ring_radius := float(elite["radius"]) + 11.0
+	var sample_angles := [0.0, PI * 0.25, PI * 0.75, PI, PI * 1.25, PI * 1.75]
+	var body_ring_pixels := 0
+	for angle in sample_angles:
+		var sample: Vector2 = screen_pos + Vector2.RIGHT.rotated(float(angle)) * ring_radius
+		for ox in range(-2, 3):
+			for oy in range(-2, 3):
+				var pixel_pos := Vector2i(int(round(sample.x)) + ox, int(round(sample.y)) + oy)
+				if pixel_pos.x < 0 or pixel_pos.y < 0 or pixel_pos.x >= image.get_width() or pixel_pos.y >= image.get_height():
+					continue
+				if _is_elite_body_ring_pixel(image.get_pixelv(pixel_pos)):
+					body_ring_pixels += 1
+	print("DEBUG_P7_ELITE_MARKER body_ring_pixels=%d expected=0" % body_ring_pixels)
+	get_tree().quit(1 if body_ring_pixels > 0 else 0)
+
+
+func _is_elite_body_ring_pixel(color: Color) -> bool:
+	return color.a > 0.35 and color.r > 0.72 and color.g > 0.52 and color.g < 0.84 and color.b > 0.20 and color.b < 0.48
+
+
+func _debug_p7_pause_cycle_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_PLAY
+	_set_paused(true)
+	await get_tree().process_frame
+	var first_pause_visible: bool = paused and game_ui.pause_banner.visible
+	var first_pause_centered := _pause_overlay_centered()
+	var resume_button := _find_button_by_text(game_ui.pause_box, "계속")
+	if resume_button != null:
+		resume_button.grab_focus()
+		resume_button.emit_signal("pressed")
+	else:
+		game_ui.resume_requested.emit()
+	await get_tree().process_frame
+	var resumed: bool = not paused and not game_ui.pause_banner.visible
+	var pause_focus_released: bool = get_viewport().gui_get_focus_owner() == null
+	var elapsed_before_update := elapsed
+	_update_game(0.10)
+	var game_advanced_after_resume := elapsed > elapsed_before_update
+
+	var event := InputEventAction.new()
+	event.action = "pause"
+	event.pressed = true
+	_input(event)
+	await get_tree().process_frame
+	var second_pause_visible: bool = paused and game_ui.pause_banner.visible
+	var second_pause_centered := _pause_overlay_centered()
+	game_ui.hide_pause()
+	_process(0.016)
+	var hidden_pause_recovers: bool = paused and game_ui.pause_banner.visible
+	_input(event)
+	var second_resume_visible: bool = not paused and not game_ui.pause_banner.visible
+
+	mode = MODE_PLAY
+	wave = 1
+	wave_timer = 0.0
+	pending_reward_chain.clear()
+	_set_paused(true)
+	game_ui.hide_pause()
+	_finish_round()
+	var round_reward_visible: bool = mode == MODE_CHOICE and not paused and game_ui.overlay.visible and not game_ui.pause_banner.visible
+
+	print("DEBUG_P7_PAUSE_CYCLE first=%s first_centered=%s resumed=%s focus_released=%s advanced=%s second_pause=%s second_centered=%s hidden_recovers=%s second_resume=%s round_reward=%s %s" % [
+		str(first_pause_visible),
+		str(first_pause_centered),
+		str(resumed),
+		str(pause_focus_released),
+		str(game_advanced_after_resume),
+		str(second_pause_visible),
+		str(second_pause_centered),
+		str(hidden_pause_recovers),
+		str(second_resume_visible),
+		str(round_reward_visible),
+		_pause_overlay_rect_debug(),
+	])
+	get_tree().quit(1 if not first_pause_visible or not first_pause_centered or not resumed or not pause_focus_released or not game_advanced_after_resume or not second_pause_visible or not second_pause_centered or not hidden_pause_recovers or not second_resume_visible or not round_reward_visible else 0)
+
+
+func _find_button_by_text(root_node: Node, text: String) -> Button:
+	if root_node is Button and str(root_node.text) == text:
+		return root_node
+	for child in root_node.get_children():
+		var found := _find_button_by_text(child, text)
+		if found != null:
+			return found
+	return null
+
+
+func _pause_overlay_centered() -> bool:
+	if game_ui == null or game_ui.pause_box == null:
+		return false
+	var rect: Rect2 = game_ui.pause_box.get_global_rect()
+	if rect.size.x <= 1.0 or rect.size.y <= 1.0:
+		return false
+	var center: Vector2 = rect.get_center()
+	var viewport_size := Vector2(get_viewport().get_visible_rect().size)
+	var expected := viewport_size * 0.5
+	return absf(center.x - expected.x) <= 80.0 and absf(center.y - expected.y) <= 80.0
+
+
+func _pause_overlay_rect_debug() -> String:
+	if game_ui == null or game_ui.pause_box == null:
+		return "missing"
+	var rect: Rect2 = game_ui.pause_box.get_global_rect()
+	var viewport_size := Vector2(get_viewport().get_visible_rect().size)
+	return "rect_pos=%s rect_size=%s center=%s expected=%s" % [
+		str(rect.position),
+		str(rect.size),
+		str(rect.get_center()),
+		str(viewport_size * 0.5),
+	]
+
+
+func _debug_p7_legendary_aim_and_quit() -> void:
+	_reset_run(true)
+	_hide_overlay()
+	mode = MODE_PLAY
+	player["pos"] = Vector2(640.0, 640.0)
+	enemies.clear()
+	bullets.clear()
+	var target := _make_enemy("spider")
+	target["pos"] = Vector2(900.0, 640.0)
+	enemies.append(target)
+
+	var item := _shop_item_by_id("double_drill_chamber")
+	_apply_weapon_part_stats(item.get("weapon_stats", {}), str(item.get("name", "")))
+	var weapon: Dictionary = weapons[0]
+	_fire_projectiles(weapon, target, 520.0, false)
+
+	var centerline_count := 0
+	var angle_text := PackedStringArray()
+	for bullet in bullets:
+		var velocity: Vector2 = bullet.get("velocity", Vector2.ZERO)
+		if velocity.length_squared() <= 0.0:
+			continue
+		var direction := velocity.normalized()
+		angle_text.append("%.3f" % rad_to_deg(direction.angle()))
+		if absf(direction.angle_to(Vector2.RIGHT)) <= 0.001:
+			centerline_count += 1
+	print("DEBUG_P7_LEGENDARY_AIM bullets=%d centerline=%d angles=%s" % [
+		bullets.size(),
+		centerline_count,
+		", ".join(angle_text),
+	])
+	get_tree().quit(1 if bullets.size() < 2 or centerline_count <= 0 else 0)
+
+
 func _load_visual_textures() -> void:
 	player_core_body_texture = _load_png_texture(PLAYER_CORE_BODY_PATH)
 	player_left_glove_texture = _load_png_texture(PLAYER_LEFT_GLOVE_PATH)
@@ -966,6 +1139,8 @@ func _load_png_texture(path: String) -> Texture2D:
 
 
 func _process(delta: float) -> void:
+	if mode == MODE_PLAY and paused:
+		_ensure_pause_overlay_visible()
 	if mode == MODE_PLAY and not paused:
 		_update_game(delta)
 	if smoke_playtest:
@@ -974,9 +1149,16 @@ func _process(delta: float) -> void:
 	_update_hud()
 
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause") and mode == MODE_PLAY:
 		_set_paused(not paused)
+		get_viewport().set_input_as_handled()
+		return
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if paused:
+		return
 	if event.is_action_pressed("dash") and mode == MODE_PLAY and dash_cooldown <= 0.0:
 		player["dash_time"] = 0.16
 		dash_cooldown = 1.7
@@ -990,6 +1172,13 @@ func _set_paused(value: bool) -> void:
 		game_ui.show_pause(_current_state_summary(), _active_relic_summary())
 	else:
 		game_ui.hide_pause()
+
+
+func _ensure_pause_overlay_visible() -> void:
+	if game_ui == null:
+		return
+	if not game_ui.pause_banner.visible:
+		game_ui.show_pause(_current_state_summary(), _active_relic_summary())
 
 
 func _reset_run(start_playing: bool) -> void:
@@ -1748,11 +1937,10 @@ func _fire_projectiles(weapon: Dictionary, target: Dictionary, effective_range: 
 	var pierce_count := int(weapon.get("pierce", 0))
 	var splash_radius := float(weapon.get("splash", 0.0))
 	var armor_pierce := float(weapon.get("armor_pierce", 0.0))
+	var center_projectile := bool(weapon.get("center_projectile", false))
 	var has_rapid_feedback := _weapon_has_mod(weapon, "급속 방아쇠")
 	for i in range(projectile_count):
-		var offset := 0.0
-		if projectile_count > 1:
-			offset = lerp(-spread, spread, float(i) / float(projectile_count - 1))
+		var offset := _projectile_spread_offset(i, projectile_count, spread, center_projectile)
 		var direction := Vector2.RIGHT.rotated(base_angle + offset)
 		var bullet_radius := 5.0
 		if explosive:
@@ -1779,6 +1967,18 @@ func _fire_projectiles(weapon: Dictionary, target: Dictionary, effective_range: 
 			"hit_ids": [],
 		})
 		_add_muzzle_feedback(origin, direction, weapon, has_rapid_feedback)
+
+
+func _projectile_spread_offset(index: int, projectile_count: int, spread: float, center_projectile: bool) -> float:
+	if projectile_count <= 1 or spread <= 0.0:
+		return 0.0
+	if not center_projectile:
+		return lerp(-spread, spread, float(index) / float(projectile_count - 1))
+	if index == 0:
+		return 0.0
+	var lane := int(ceil(float(index) / 2.0))
+	var side := 1.0 if index % 2 == 1 else -1.0
+	return spread * float(lane) * side
 
 
 func _fire_arc(weapon: Dictionary, effective_range: float) -> void:
@@ -2660,6 +2860,7 @@ func _choose_reward(reward: Dictionary) -> void:
 func _finish_round() -> void:
 	if mode != MODE_PLAY:
 		return
+	_set_paused(false)
 	rounds_cleared += 1
 	_collect_leftover_ore()
 	_award_round_clear_ore()
@@ -3182,6 +3383,8 @@ func _apply_weapon_part_stats(stats: Dictionary, part_name: String) -> void:
 		weapon["projectiles"] = int(weapon["projectiles"]) + int(stats["projectiles_add"])
 	if stats.has("spread_add"):
 		weapon["spread"] = float(weapon["spread"]) + float(stats["spread_add"])
+	if stats.has("center_projectile"):
+		weapon["center_projectile"] = bool(stats["center_projectile"])
 	if stats.has("splash_add"):
 		weapon["splash"] = float(weapon.get("splash", 0.0)) + float(stats["splash_add"])
 	if stats.has("armor_pierce_add"):
@@ -3580,8 +3783,6 @@ func _draw_enemies() -> void:
 		var pos: Vector2 = _enemy_draw_pos(enemy)
 		var radius: float = enemy["radius"]
 		var type := str(enemy.get("type", "zombie"))
-		if bool(enemy.get("elite", false)):
-			draw_arc(pos, radius + 11.0, 0.0, TAU, 48, Color("#e6b85c"), 3.0)
 		if _draw_enemy_asset_sprite(enemy):
 			pass
 		elif type == "shield_zombie":
@@ -3630,6 +3831,8 @@ func _draw_enemies() -> void:
 		else:
 			draw_circle(pos, radius, enemy["color"])
 			draw_circle(pos + Vector2(-radius * 0.25, -radius * 0.2), radius * 0.35, Color(0, 0, 0, 0.28))
+		if bool(enemy.get("elite", false)):
+			_draw_elite_marker(pos, radius, type)
 		var hit_flash: float = clamp(float(enemy.get("hit_flash", 0.0)), 0.0, 1.0)
 		if hit_flash > 0.0:
 			var flash_color: Color = enemy.get("hit_flash_color", Color("#f5efe3"))
@@ -3648,6 +3851,31 @@ func _draw_enemies() -> void:
 			hp_color = Color(enemy.get("hit_flash_color", Color("#d8f3ff")))
 		draw_rect(Rect2(pos + Vector2(-hp_width * 0.5, hp_y), Vector2(hp_width, 4)), Color("#111412"), true)
 		draw_rect(Rect2(pos + Vector2(-hp_width * 0.5, hp_y), Vector2(hp_width * hp_ratio, 4)), hp_color, true)
+
+
+func _draw_elite_marker(pos: Vector2, radius: float, type: String) -> void:
+	var hp_y := -radius - 9.0
+	if _enemy_has_sprite_asset(type):
+		hp_y = _enemy_asset_hp_y(type, radius)
+	var marker_pos := pos + Vector2(radius * 0.82, hp_y - 10.0)
+	var outer := PackedVector2Array([
+		marker_pos + Vector2(0, -8),
+		marker_pos + Vector2(8, 0),
+		marker_pos + Vector2(0, 8),
+		marker_pos + Vector2(-8, 0),
+	])
+	var inner := PackedVector2Array([
+		marker_pos + Vector2(0, -5),
+		marker_pos + Vector2(5, 0),
+		marker_pos + Vector2(0, 5),
+		marker_pos + Vector2(-5, 0),
+	])
+	draw_colored_polygon(outer, Color("#111412"))
+	draw_colored_polygon(inner, Color("#e6b85c"))
+	var baseline_y := radius + 9.0
+	var line_color := Color("#e6b85c")
+	line_color.a = 0.78
+	draw_line(pos + Vector2(-radius * 0.58, baseline_y), pos + Vector2(radius * 0.58, baseline_y), line_color, 3.0)
 
 
 func _enemy_has_sprite_asset(type: String) -> bool:

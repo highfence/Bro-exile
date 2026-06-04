@@ -405,6 +405,7 @@ func _make_relic_strip(relics: Array, title: String) -> Control:
 
 func _make_state_summary_panel(state_summary: Dictionary) -> Control:
 	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(560, 0)
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.08, 0.09, 0.075, 0.62), Color(0.34, 0.31, 0.24, 0.58), 8, 1))
 
@@ -420,7 +421,8 @@ func _make_state_summary_panel(state_summary: Dictionary) -> Control:
 		var color := OreUITheme.INK if i == 0 else OreUITheme.MUTED
 		var label := _make_label(lines[i], 13, color)
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		label.custom_minimum_size = Vector2(0, 20)
+		label.custom_minimum_size = Vector2(520, 20)
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		box.add_child(label)
 	return panel
 
