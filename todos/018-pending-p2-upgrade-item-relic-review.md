@@ -2,11 +2,15 @@
 status: pending
 priority: p2
 issue_id: "018"
-tags: [p8, shop, items, relics, design]
-dependencies: []
+tags: [m1, d8, shop, items, relics, design]
+dependencies: ["019", "021"]
+milestone: M1
+delivery: D8
+chain: design
+quest_title: "M1-D8 강화/아이템/유물 목록 재검토"
 ---
 
-# 강화 목록, 아이템 목록, 유물 목록 재검토
+# 018. M1-D8 강화 목록, 아이템 목록, 유물 목록 재검토
 
 P8 무기 정체성 검증 이후, 무기별 강화 목록과 기존 상점 아이템/유물 목록을 한 번에 재검토한다.
 

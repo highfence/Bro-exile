@@ -2,13 +2,15 @@
 status: complete
 priority: p1
 issue_id: "005"
-tags: [prototype, p1, enemies, wave-director, godot, quest]
+tags: [prototype, m1, d1, enemies, wave-director, godot, quest]
 dependencies: ["004"]
+milestone: M1
+delivery: D1
 chain: combat
-quest_title: "적 아키타입과 웨이브 패턴"
+quest_title: "M1-D1 적 아키타입과 웨이브 패턴"
 ---
 
-# 005. 적 아키타입과 웨이브 패턴
+# 005. M1-D1 적 아키타입과 웨이브 패턴
 
 ## Quest Card
 

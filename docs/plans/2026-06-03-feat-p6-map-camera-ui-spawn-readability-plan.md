@@ -3,7 +3,7 @@ title: "feat: P6 맵/카메라/UI/스폰 가독성 개선"
 type: feat
 status: complete
 date: 2026-06-03
-origin: todos/016-complete-p6-map-camera-ui-spawn-readability.md
+origin: todos/016-complete-p1-m1-d6-map-camera-ui-spawn-readability.md
 related_origins:
   - docs/plans/2026-06-03-feat-p4-p5-prototype-validation-plan.md
   - docs/architecture/2026-05-31-godot-ui-system.md
@@ -19,9 +19,9 @@ P6에서는 viewport를 유지하되 월드를 `2048x2048` 정사각형으로 �
 
 ## Origin Decisions
 
-- P6 목표 카드에서 월드 크기를 `2048x2048`, viewport를 `1280x720`으로 유지하기로 결정했다. (see origin: `todos/016-complete-p6-map-camera-ui-spawn-readability.md`)
-- 전투 UI는 계속 많은 정보를 띄우기보다 몹 가림을 줄이고, 선택/상점/일시정지 화면에서 상세 상태를 보여주기로 했다. (see origin: `todos/016-complete-p6-map-camera-ui-spawn-readability.md`)
-- 스폰은 화면 밖 즉시 등장 대신 화면 안 예고 후 등장으로 바꾼다. 이 예고는 흙 들썩임/균열/먼지 느낌의 애니메이션이어야 한다. (see origin: `todos/016-complete-p6-map-camera-ui-spawn-readability.md`)
+- P6 목표 카드에서 월드 크기를 `2048x2048`, viewport를 `1280x720`으로 유지하기로 결정했다. (see origin: `todos/016-complete-p1-m1-d6-map-camera-ui-spawn-readability.md`)
+- 전투 UI는 계속 많은 정보를 띄우기보다 몹 가림을 줄이고, 선택/상점/일시정지 화면에서 상세 상태를 보여주기로 했다. (see origin: `todos/016-complete-p1-m1-d6-map-camera-ui-spawn-readability.md`)
+- 스폰은 화면 밖 즉시 등장 대신 화면 안 예고 후 등장으로 바꾼다. 이 예고는 흙 들썩임/균열/먼지 느낌의 애니메이션이어야 한다. (see origin: `todos/016-complete-p1-m1-d6-map-camera-ui-spawn-readability.md`)
 
 ## Local Research Findings
 
@@ -33,7 +33,7 @@ P6에서는 viewport를 유지하되 월드를 `2048x2048` 정사각형으로 �
 - 현재 `_draw()`는 `Node2D` 커스텀 드로잉으로 게임 월드를 그리고, `GameUI`는 `CanvasLayer` 위에서 HUD/overlay를 그린다.
 - `scripts/ui/game_ui.gd`는 상단 HUD, 하단 무기 HUD, 하단 유물 HUD, choice/end overlay, pause banner를 소유한다.
 - P4/P5 이후 검증 커맨드는 `--smoke-playtest`, `--debug-spider-relic-wave2`, `--debug-boss-pierce-splash`, `--capture-run-report-ui`, `--capture-combat-feedback`가 있다.
-- P6 목표 카드 파일은 `todos/016-complete-p6-map-camera-ui-spawn-readability.md`다.
+- P6 목표 카드 파일은 `todos/016-complete-p1-m1-d6-map-camera-ui-spawn-readability.md`다.
 
 ### Institutional Learnings
 
@@ -201,7 +201,7 @@ P6 첫 패스에서는 수동 카메라 오프셋을 추천한다.
 #### Phase 1: Plan/Quest Hygiene
 
 - `docs/plans/2026-06-03-feat-p6-map-camera-ui-spawn-readability-plan.md` 작성
-- `todos/016-complete-p6-map-camera-ui-spawn-readability.md`와 `todos/README.md`를 plan과 맞춘다.
+- `todos/016-complete-p1-m1-d6-map-camera-ui-spawn-readability.md`와 `todos/README.md`를 plan과 맞춘다.
 
 Success:
 
@@ -405,7 +405,7 @@ Mitigations:
 
 ## Sources & References
 
-- Origin quest: `todos/016-complete-p6-map-camera-ui-spawn-readability.md`
+- Origin quest: `todos/016-complete-p1-m1-d6-map-camera-ui-spawn-readability.md`
 - P4/P5 plan: `docs/plans/2026-06-03-feat-p4-p5-prototype-validation-plan.md`
 - UI architecture: `docs/architecture/2026-05-31-godot-ui-system.md`
 - UI rendering learning: `docs/solutions/ui-bugs/invisible-godot-ui-text-GodotPort-20260522.md`

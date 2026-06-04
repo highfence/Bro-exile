@@ -2,13 +2,15 @@
 status: ready
 priority: p1
 issue_id: "003"
-tags: [prototype, combat, readability, godot, quest]
-dependencies: []
+tags: [prototype, m1, d8, combat, readability, godot, quest]
+dependencies: ["019"]
+milestone: M1
+delivery: D8
 chain: combat
-quest_title: "전투 가독성 스냅샷"
+quest_title: "M1-D8 전투 가독성 스냅샷"
 ---
 
-# 003. 전투 가독성 스냅샷
+# 003. M1-D8 전투 가독성 스냅샷
 
 ## Quest Card
 

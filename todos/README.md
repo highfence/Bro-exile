@@ -2,145 +2,110 @@
 
 이 대시보드는 Bro-exile 프로토타입을 검증 가능한 사이드 퀘스트로 쪼개서 보는 현황판이다. 각 퀘스트는 “무엇을 만들까”보다 “무엇을 확인할까”를 먼저 적는다.
 
-## P1 메인 퀘스트
+## 표기 규칙
 
-**라운드 5까지 플레이 가능한 전투 게임을 만든다.**
-
-P1은 보상, 계약 카드, 장기 빌드 선택을 검증하는 단계가 아니다. 라운드마다 새 몹 패턴이 추가되고, 이전 몹이 누적되며, 마지막에는 방어력 높은 보스 좀비를 잡고 플레이테스트 1회가 끝나는 구조를 만든다.
-
-P1에서는 라운드 사이 플레이어 체력을 완전히 회복한다. 지금은 회복 자원 관리가 아니라 각 라운드의 적 패턴이 읽히는지를 검증한다.
-
-## P2 메인 퀘스트
-
-**스테이지마다 상점에서 플레이어를 강화한다.**
-
-P2는 P1의 전투 루프 위에 첫 성장 루프를 붙이는 단계다. 라운드 1-4가 끝나면 체력을 완전히 회복하고 상점 씬으로 이동해, 광석으로 무기/아이템/회복을 구매하거나 리롤한 뒤 다음 라운드로 넘어간다.
-
-## P3 메인 퀘스트
-
-**광산에서 캐낸 유물로 누적 위험/보상을 선택한다.**
-
-P3는 P2의 상점 강화 루프 앞에 유물 계약 선택을 붙이는 단계다. 라운드를 클리어하면 유물 후보 3개 중 하나를 고르고, 선택한 유물의 위험과 보상이 런 끝까지 누적된다. 같은 유물은 중복 선택 가능하며, 선택한 유물은 전투 HUD와 상점 화면에서 아이콘으로 확인할 수 있어야 한다.
-
-## P4 메인 퀘스트
-
-**플레이테스트 결과를 종료 화면과 debug 출력에서 바로 복기한다.**
-
-P4는 P3 루프를 반복 검증 가능한 상태로 만드는 단계다. 승리/패배 화면과 smoke/debug 출력에서 결과, 도달 라운드, 생존 시간, 광석 흐름, 리롤, 구매 부품, 유물, 적 처치 수, 보스 피해/처치 여부를 같은 형식으로 확인한다.
-
-## P5 메인 퀘스트
-
-**상점 부품과 유물 대응이 전투 화면에서 체감되게 만든다.**
-
-P5는 새 성장 시스템을 늘리기보다 관통, 폭발, 방어 관통, 공속, 사거리, 이동 속도 같은 선택이 전투에서 다르게 읽히는지를 검증한다. P4 런 리포트를 이용해 어떤 빌드로 어떤 위험을 감당했는지 기록한다.
-
-## P6 메인 퀘스트
-
-**넓은 광산과 읽기 쉬운 전투 화면을 만든다.**
-
-P6는 화면과 같은 크기였던 맵을 `2048x2048` 정사각형 월드로 확장하고, 플레이어를 따라가는 카메라를 붙이는 단계다. 전투 중에는 하단 HUD를 제거하거나 최소화해 몹이 가려지지 않게 하고, 유물 선택/상점/일시정지 화면에서 현재 상태를 확인한다. 적은 화면 밖에서 갑자기 나오지 않고, 화면 안에서 흙이 들썩이는 스폰 예고 후 땅 아래에서 위로 등장한다.
-
-## P7 메인 퀘스트
-
-**10라운드 위협/경제 루프를 만든다.**
-
-P7은 10라운드 한 사이클에서 난이도, 상점 rarity, 계약, 중간/최종 보스, 사망 복기 루프를 검증하는 단계다. 첫 블라인드 플레이는 보통 6-8R에서 막히되, 실패가 억울함보다 “다음에는 더 갈 수 있겠다”는 학습으로 남아야 한다. P7에서는 영구 성장 시스템을 구현하지 않는다.
-
-## M1-D8 메인 퀘스트
-
-**시작 무기 선택이 플레이 감각을 바꾸는지 검증한다.**
-
-M1-D8은 10라운드 루프 시작 전에 곡괭이, 네일건, 랜턴 중 하나를 고르게 하고, 선택한 무기 하나만 들고 R1을 시작하는 단계다. 상점은 기존 효과 풀을 유지하되 선택 무기에 맞는 강화 이름/설명으로 보여주며, 드릴촉은 일반 스타터에서 제외한다.
-
-## P1 라운드 이미지
-
-| 라운드 | 주연 몹 | 플레이어에게 요구하는 것 |
-| --- | --- | --- |
-| 1 | 기본 좀비 | 기본 이동, 거리 유지, 자동 공격 감각 |
-| 2 | 빠른 좀비 | 더 빠른 거리 조절과 회피 |
-| 3 | 거미떼 | 무리 압박 대응, 포위 회피 |
-| 4 | 돌 던지는 좀비 | 원거리 투사체 회피, 우선 처치 판단 |
-| 5 | 방어력 높은 보스 좀비 | 긴 교전, 보스 집중, 누적 압박 버티기 |
-
-## P1 기본 규칙
-
-| 항목 | 결정 |
+| 표기 | 의미 |
 | --- | --- |
-| 라운드 수 | 5라운드 |
-| 라운드 사이 보상 | P1에서는 신경 쓰지 않음 |
-| 라운드 사이 회복 | 체력 완전 회복 |
-| 실패 조건 | 플레이어 HP 0 |
-| 성공 조건 | 라운드 5 보스 처치 |
+| `M1` | 첫 번째 큰 마일스톤: 플레이 가능한 roguelike 전투/성장 프로토타입 |
+| `D1`, `D2`... | M1 안의 검증 단위. 기존에 `P1`, `P2`처럼 불렀던 프로토타입 진행 단계를 옮긴 이름 |
+| `priority: p1/p2/p3` | todo 시스템의 실제 우선순위. `p1`은 핵심 경로, `p2`는 중요하지만 보류 가능, `p3`는 나중에 해도 되는 작업 |
 
-## 오늘의 추천 루트
+과거 Work Log 안의 `P1`, `P2` 표현은 당시 대화의 역사 기록으로 남긴다. 현재 대시보드와 새 todo는 `M1-D*`를 기준으로 읽는다.
 
-| 순서 | 퀘스트 | 이유 |
-| --- | --- | --- |
-| 1 | [플레이테스트 렌즈 세우기](001-ready-p1-playtest-lens.md) | P1을 “재미있나?”가 아니라 “플레이 가능한가?”로 판단한다. |
-| 2 | [전투 가독성 스냅샷](003-ready-p1-combat-readability-snapshot.md) | 새 적 패턴을 넣기 전에 현재 화면이 읽히는지 확인한다. |
-| 3 | [P1 5라운드 플레이어블 루프](004-complete-p1-p1-five-round-playable-loop.md) | P1의 실제 끝점을 만들었다. |
-| 4 | [적 아키타입과 웨이브 패턴](005-complete-p1-enemy-archetypes-and-wave-patterns.md) | 라운드마다 다른 요구를 만들었다. |
-| 5 | [보스 좀비와 테스트 종료](007-complete-p1-boss-zombie-and-test-ending.md) | 라운드 5를 명확한 결산으로 만들었다. |
-| 6 | [P4 런 리포트와 디버그 하네스](014-complete-p4-run-report-and-debug-harness.md) | 플레이테스트 결과를 화면/콘솔에서 복기할 수 있게 됐다. |
-| 7 | [P5 빌드 체감과 전투 가독성](015-complete-p5-build-feedback-and-combat-readability.md) | 선택한 부품이 전투에서 다르게 느껴지는지 검증했다. |
-| 8 | [P6 넓은 광산과 전투 화면 정리](016-complete-p6-map-camera-ui-spawn-readability.md) | 넓은 맵, 카메라, 덜 가리는 UI, 스폰 예고를 검증했다. |
-| 9 | [P7 10라운드 위협/경제 재정비](017-complete-p7-ten-round-threat-economy.md) | 10라운드, rarity 상점, 계약, 보스, 사망 복기를 검증했다. |
-| 10 | [M1-D8 무기 정체성 검증 루프](019-complete-p1-m1-d8-weapon-identity.md) | 시작 무기별 플레이 감각 차이를 검증했다. |
+## M1 목표
+
+**한 판의 실패와 학습, 성장 선택이 성립하는 플레이어블 roguelike 프로토타입을 만든다.**
+
+M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고, 배우고, 다음 런에서 더 나아갈 수 있는 게임”을 검증한다. D1-D8에서 기본 전투, 상점, 계약, 10라운드 위협 루프, 무기 정체성을 만들었다. D9에서는 캐릭터 3종과 빌드 아키타입 매트릭스를 정리하고, D10에서는 숙련도별 자동 시뮬레이션 계기판을 만든다. D11에서 다중 화폐 경제를 세분화한다.
+
+## M1 진행도
+
+| 단위 | 상태 | 퀘스트 | 검증 질문 |
+| --- | --- | --- | --- |
+| D1 | complete | [5라운드 플레이어블 루프](004-complete-p1-m1-d1-five-round-playable-loop.md) | 짧은 한 판이 시작과 끝을 가지는가? |
+| D1 | complete | [적 아키타입과 웨이브 패턴](005-complete-p1-enemy-archetypes-and-wave-patterns.md) | 라운드마다 다른 전투 요구가 생기는가? |
+| D1 | complete | [보스 좀비와 테스트 종료](007-complete-p1-boss-zombie-and-test-ending.md) | 테스트 종료 지점이 명확한가? |
+| D2 | complete | [상점 강화 루프](012-complete-p1-m1-d2-upgrade-shop-loop.md) | 라운드 사이 강화가 다음 전투에서 체감되는가? |
+| D3 | complete | [유물 계약 루프](013-complete-p1-m1-d3-relic-contract-loop.md) | 위험/보상 선택이 상점 대응과 연결되는가? |
+| D4 | complete | [런 리포트와 디버그 하네스](014-complete-p1-m1-d4-run-report-and-debug-harness.md) | 한 판 결과를 바로 복기할 수 있는가? |
+| D5 | complete | [빌드 체감과 전투 가독성](015-complete-p1-m1-d5-build-feedback-and-combat-readability.md) | 산 부품이 전투 화면에서 다르게 보이는가? |
+| D6 | complete | [넓은 광산과 전투 화면 정리](016-complete-p1-m1-d6-map-camera-ui-spawn-readability.md) | 공간, UI, 스폰 예고가 답답함을 줄이는가? |
+| D7 | complete | [10라운드 위협/경제 재정비](017-complete-p1-m1-d7-ten-round-threat-economy.md) | 10라운드 실패/학습 루프가 성립하는가? |
+| D8 | complete | [무기 정체성 루프](019-complete-p1-m1-d8-weapon-identity.md) | 곡괭이/네일건/랜턴이 다른 플레이 결정을 만드는가? |
+| D9 | pending | [캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) | 캐릭터별로 여러 아키타입과 교차 시너지를 만들 수 있는가? |
+| D10 | pending | [숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) | 플레이어 수준별 자동 검증으로 난이도 변화를 읽을 수 있는가? |
+| D11 | pending | [다중 화폐 경제](020-pending-p2-m1-d11-multi-currency-economy.md) | 리롤/능력/강화 자원을 나누면 선택이 깊어지는가? |
+
+## 지금 큐
+
+| 추천 순서 | 상태 | 퀘스트 | 이유 |
+| --- | --- | --- | --- |
+| 1 | ready | [M1-D8 전투 가독성 스냅샷](003-ready-p1-combat-readability-snapshot.md) | 새 무기 3종이 들어온 뒤 전투 화면이 읽히는지 확인한다. |
+| 2 | pending | [M1-D9 캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) | 아이템/유물/화폐를 늘리기 전에 캐릭터별 빌드 생태계를 정리한다. |
+| 3 | pending, blocked by 021 | [M1-D10 숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) | 디자인 변경 전후 난이도를 숙련도별 기준선으로 비교한다. |
+| 4 | pending, blocked by 021 | [M1-D8 강화/아이템/유물 목록 재검토](018-pending-p2-upgrade-item-relic-review.md) | 캐릭터별 아키타입 기준으로 상점/아이템/유물 목록을 다시 정리한다. |
+| 5 | pending | [상점/보상 선택감 정리](011-pending-p2-shop-and-reward-choice-pass.md) | D8 이후 상점 선택이 무기 방향을 밀어주는지 다듬는다. |
+| 6 | pending, blocked by 021/022/018 | [M1-D11 다중 화폐 경제](020-pending-p2-m1-d11-multi-currency-economy.md) | D9/D10과 목록 재검토 이후 경제를 세분화한다. |
+
+## 보류 큐
+
+| ID | 상태 | 우선순위 | 퀘스트 | 메모 |
+| --- | --- | --- | --- | --- |
+| 001 | ready | p1 | [M1-D1 플레이테스트 렌즈 세우기](001-ready-p1-playtest-lens.md) | 오래된 기준표. 필요하면 10라운드/D8 기준으로 갱신한다. |
+| 002 | ready | p1 | [M1-D1 핵심 루프 기준표](002-ready-p1-core-loop-scorecard.md) | keep/adjust/cut 기준으로 재활용 가능하다. |
+| 006 | ready | p2 | [광산 정체성 에셋 패스](006-ready-p2-mining-identity-asset-pass.md) | 현재 에셋 하네스 작업과 이어질 수 있다. |
+| 010 | pending | p2 | [시체 폭발 팩 클리어](010-pending-p2-corpse-explosion-pack-clear.md) | 전투 손맛 개선 후보. 아이템 재검토와 함께 봐도 된다. |
+
+## 흡수 완료
+
+| ID | 상태 | 퀘스트 | 흡수된 위치 |
+| --- | --- | --- | --- |
+| 008 | complete | [런 리포트](008-complete-p2-run-report.md) | M1-D4 |
+| 009 | complete | [계약 카드 첫 프로토타입](009-complete-p2-contract-card-first-prototype.md) | M1-D3, M1-D7 |
 
 ## 한눈에 보기
 
-| ID | 우선순위 | 상태 | 체인 | 퀘스트 | 완료 보상 |
+| ID | 우선순위 | 상태 | M/D | 체인 | 퀘스트 |
 | --- | --- | --- | --- | --- | --- |
-| 001 | P1 | ready | 검증 | [플레이테스트 렌즈 세우기](001-ready-p1-playtest-lens.md) | P1 판단 기준이 생긴다. |
-| 002 | P1 | ready | 기획 | [핵심 루프 기준표](002-ready-p1-core-loop-scorecard.md) | 5라운드 루프의 keep/adjust/cut 기준이 생긴다. |
-| 003 | P1 | ready | 전투 | [전투 가독성 스냅샷](003-ready-p1-combat-readability-snapshot.md) | 새 패턴을 넣기 전 화면 기준점이 생긴다. |
-| 004 | P1 | complete | P1 | [P1 5라운드 플레이어블 루프](004-complete-p1-p1-five-round-playable-loop.md) | 라운드 5까지 플레이 가능한 뼈대가 생겼다. |
-| 005 | P1 | complete | 전투 | [적 아키타입과 웨이브 패턴](005-complete-p1-enemy-archetypes-and-wave-patterns.md) | 각 라운드의 새 전투 요구가 생겼다. |
-| 006 | P2 | ready | 아트 | [광산 정체성 에셋 패스](006-ready-p2-mining-identity-asset-pass.md) | 게임의 얼굴이 화면에 생긴다. |
-| 007 | P1 | complete | P1 | [보스 좀비와 테스트 종료](007-complete-p1-boss-zombie-and-test-ending.md) | P1 플레이테스트의 명확한 끝점이 생겼다. |
-| 008 | P2 | ready | 검증 | [런 리포트](008-ready-p2-run-report.md) | 플레이테스트 후 판단 자료가 남는다. |
-| 009 | P2 | pending | 위험/보상 | [계약 카드 첫 프로토타입](009-pending-p2-contract-card-first-prototype.md) | P1 이후 위험 선택의 재미를 검증한다. |
-| 010 | P2 | pending | 전투 | [시체 폭발 팩 클리어](010-pending-p2-corpse-explosion-pack-clear.md) | 강해졌다는 순간을 전투에서 만든다. |
-| 011 | P2 | pending | 선택 | [상점/보상 선택감 정리](011-pending-p2-shop-and-reward-choice-pass.md) | 보상이 빌드 방향을 밀어준다. |
-| 012 | P2 | complete | P2 | [P2 상점 강화 루프](012-complete-p1-p2-upgrade-shop-loop.md) | 라운드 사이 강화 루프가 생겼다. |
-| 013 | P3 | complete | P3 | [P3 유물 계약 루프](013-complete-p3-relic-contract-loop.md) | 위험/보상을 직접 고르는 누적 유물 루프가 생겼다. |
-| 014 | P4 | complete | 검증 | [P4 런 리포트와 디버그 하네스](014-complete-p4-run-report-and-debug-harness.md) | 플레이테스트 결과가 화면/콘솔 리포트로 남는다. |
-| 015 | P5 | complete | P5 | [P5 빌드 체감과 전투 가독성](015-complete-p5-build-feedback-and-combat-readability.md) | 선택한 부품이 전투에서 다르게 느껴지는지 검증했다. |
-| 016 | P6 | complete | P6 | [P6 넓은 광산과 전투 화면 정리](016-complete-p6-map-camera-ui-spawn-readability.md) | 공간, UI, 스폰 예고가 전투 답답함을 줄인다. |
-| 017 | P7 | complete | P7 | [P7 10라운드 위협/경제 재정비](017-complete-p7-ten-round-threat-economy.md) | 실패/학습을 위한 10라운드 위협과 경제 루프가 생겼다. |
-| 019 | P1 | complete | M1-D8 | [M1-D8 무기 정체성 검증 루프](019-complete-p1-m1-d8-weapon-identity.md) | 곡괭이, 네일건, 랜턴의 스타터 선택 루프를 검증했다. |
-
-## 체인별 보기
-
-| 체인 | 지금 확인할 질문 | 관련 퀘스트 |
-| --- | --- | --- |
-| P1 | 5라운드까지 플레이 가능한가? | 004, 007 완료 |
-| 검증 | 플레이테스트 후 다음 액션을 정할 수 있는가? | 001, 002, 008 |
-| 전투 | 새 적 패턴이 서로 다른 행동을 요구하는가? | 003, 005 |
-| 아트 | 작은 화면에서 플레이어/적/픽업이 즉시 구분되는가? | 006 |
-| 이후 | 보상/계약/빌드 선택을 언제 붙일 것인가? | 009, 010, 011 |
-| P2 | 라운드 사이 강화가 다음 전투에서 체감되는가? | 012 완료 |
-| P3 | 누적 위험/보상 유물을 고른 뒤 상점 대응 선택이 더 재미있어지는가? | 013 완료 |
-| P4 | 한 판의 선택/경제/전투 결과를 바로 복기할 수 있는가? | 014 완료 |
-| P5 | 구매한 부품과 유물 대응이 전투에서 다르게 느껴지는가? | 015 완료 |
-| P6 | 넓은 맵과 덜 가리는 UI, 예고 스폰으로 전투가 덜 답답한가? | 016 완료 |
-| P7 | 10라운드 위협/경제/계약/보스/사망 복기 루프가 작동하는가? | 017 완료 |
-| M1-D8 | 시작 무기 선택이 플레이 감각과 상점 강화 표현을 바꾸는가? | 019 완료 |
+| 001 | p1 | ready | M1-D1 | validation | [플레이테스트 렌즈](001-ready-p1-playtest-lens.md) |
+| 002 | p1 | ready | M1-D1 | design | [핵심 루프 기준표](002-ready-p1-core-loop-scorecard.md) |
+| 003 | p1 | ready | M1-D8 | combat | [전투 가독성 스냅샷](003-ready-p1-combat-readability-snapshot.md) |
+| 004 | p1 | complete | M1-D1 | core-loop | [5라운드 플레이어블 루프](004-complete-p1-m1-d1-five-round-playable-loop.md) |
+| 005 | p1 | complete | M1-D1 | combat | [적 아키타입과 웨이브 패턴](005-complete-p1-enemy-archetypes-and-wave-patterns.md) |
+| 006 | p2 | ready | M1-backlog | art | [광산 정체성 에셋 패스](006-ready-p2-mining-identity-asset-pass.md) |
+| 007 | p1 | complete | M1-D1 | boss | [보스 좀비와 테스트 종료](007-complete-p1-boss-zombie-and-test-ending.md) |
+| 008 | p2 | complete | M1-backlog | validation | [런 리포트](008-complete-p2-run-report.md) |
+| 009 | p2 | complete | M1-superseded | risk-reward | [계약 카드 첫 프로토타입](009-complete-p2-contract-card-first-prototype.md) |
+| 010 | p2 | pending | M1-backlog | combat | [시체 폭발 팩 클리어](010-pending-p2-corpse-explosion-pack-clear.md) |
+| 011 | p2 | pending | M1-D8 | choice | [상점/보상 선택감 정리](011-pending-p2-shop-and-reward-choice-pass.md) |
+| 012 | p1 | complete | M1-D2 | shop | [상점 강화 루프](012-complete-p1-m1-d2-upgrade-shop-loop.md) |
+| 013 | p1 | complete | M1-D3 | risk-reward | [유물 계약 루프](013-complete-p1-m1-d3-relic-contract-loop.md) |
+| 014 | p1 | complete | M1-D4 | validation | [런 리포트와 디버그 하네스](014-complete-p1-m1-d4-run-report-and-debug-harness.md) |
+| 015 | p1 | complete | M1-D5 | combat-readability | [빌드 체감과 전투 가독성](015-complete-p1-m1-d5-build-feedback-and-combat-readability.md) |
+| 016 | p1 | complete | M1-D6 | map-ui | [넓은 광산과 전투 화면 정리](016-complete-p1-m1-d6-map-camera-ui-spawn-readability.md) |
+| 017 | p1 | complete | M1-D7 | threat-economy | [10라운드 위협/경제 재정비](017-complete-p1-m1-d7-ten-round-threat-economy.md) |
+| 018 | p2 | pending | M1-D8 | design | [강화/아이템/유물 목록 재검토](018-pending-p2-upgrade-item-relic-review.md) |
+| 019 | p1 | complete | M1-D8 | weapon-identity | [무기 정체성 루프](019-complete-p1-m1-d8-weapon-identity.md) |
+| 020 | p2 | pending | M1-D11 | economy | [다중 화폐 경제](020-pending-p2-m1-d11-multi-currency-economy.md) |
+| 021 | p1 | pending | M1-D9 | buildcraft | [캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) |
+| 022 | p1 | pending | M1-D10 | validation | [숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) |
 
 ## 상태 규칙
 
-- `ready`: 바로 시작해도 되는 퀘스트.
-- `pending`: 방향 확인이나 우선순위 결정이 필요한 퀘스트.
-- `complete`: 통과 조건을 확인했고 Work Log에 결과가 남은 퀘스트.
+- `ready`: 승인됐고 시작할 수 있는 퀘스트. dependencies가 남아 있으면 선행 퀘스트 완료 뒤 시작한다.
+- `pending`: 방향 확인, 우선순위 결정, 또는 세부 명세가 필요한 퀘스트.
+- `complete`: 통과 조건을 확인했거나 뒤 마일스톤에 흡수되어 Work Log에 결과가 남은 퀘스트.
 
-## P1 플레이테스트 메모
+## 플레이테스트 메모
 
 ```text
 날짜:
+무기:
 도달 라운드:
-가장 잘 읽힌 적 패턴:
-가장 흐렸던 적 패턴:
-가장 강했던 순간:
+가장 잘 읽힌 적/위협:
+가장 흐렸던 적/위협:
+상점에서 고른 핵심 선택:
+이번 런에서 배운 점:
 다음 수정:
 판정: keep / adjust / cut
 ```

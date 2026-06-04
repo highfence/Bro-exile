@@ -1,14 +1,16 @@
 ---
 status: complete
-priority: p2
+priority: p1
 issue_id: "012"
-tags: [prototype, p2, shop, upgrades, godot, quest]
+tags: [prototype, m1, d2, shop, upgrades, godot, quest]
 dependencies: ["004", "005", "007"]
-chain: p2
-quest_title: "P2 상점 강화 루프"
+milestone: M1
+delivery: D2
+chain: shop
+quest_title: "M1-D2 상점 강화 루프"
 ---
 
-# 012. P2 상점 강화 루프
+# 012. M1-D2 상점 강화 루프
 
 ## Quest Card
 

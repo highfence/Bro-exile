@@ -1,11 +1,13 @@
 ---
-status: pending
+status: complete
 priority: p2
 issue_id: "009"
-tags: [prototype, contract, risk-reward, godot, quest]
+tags: [prototype, m1, contract, risk-reward, godot, quest]
 dependencies: ["004", "007"]
+milestone: M1
+delivery: superseded
 chain: risk-reward
-quest_title: "계약 카드 첫 프로토타입"
+quest_title: "계약 카드 첫 프로토타입 (M1-D3/M1-D7에서 흡수됨)"
 ---
 
 # 009. 계약 카드 첫 프로토타입
@@ -81,3 +83,14 @@ A로 시작한다. 계약은 다음 웨이브에만 적용하고, 첫 카테고�
 **Learnings:**
 - 기존 선택 UI가 있어서 계약 카드 첫 실험은 UI보다 게임 상태 적용이 핵심이다.
 - P1에서는 보상/계약보다 플레이 가능한 전투 루프가 먼저다.
+
+### 2026-06-05 - M1-D3/M1-D7 흡수 처리
+
+**By:** Codex
+
+**Actions:**
+- 이 todo의 핵심 질문이 M1-D3 유물 계약 루프와 M1-D7 계약/위협 경제 재정비에서 해결되어 complete로 정리했다.
+- 남은 계약 재설계 이슈는 M1-D8 이후 아이템/유물 재검토와 M1-D9 경제 세분화에서 다룬다.
+
+**Learnings:**
+- 계약 카드는 별도 첫 프로토타입보다, 위험 품질과 상점 보상을 연결하는 누적 계약 구조로 발전했다.

@@ -2,8 +2,10 @@
 status: pending
 priority: p2
 issue_id: "011"
-tags: [prototype, shop, rewards, buildcraft, quest]
-dependencies: ["004", "007", "009"]
+tags: [prototype, m1, d8, shop, rewards, buildcraft, quest]
+dependencies: ["019"]
+milestone: M1
+delivery: D8
 chain: choice
 quest_title: "상점/보상 선택감 정리"
 ---

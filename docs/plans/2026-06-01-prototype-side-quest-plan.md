@@ -79,7 +79,7 @@ P1에서 전투 루프가 성립한 뒤, 상점/보상/계약 카드가 빌드 �
 
 관련 퀘스트:
 
-- `009-pending-p2-contract-card-first-prototype.md`
+- `009-complete-p2-contract-card-first-prototype.md`
 - `010-pending-p2-corpse-explosion-pack-clear.md`
 - `011-pending-p2-shop-and-reward-choice-pass.md`
 

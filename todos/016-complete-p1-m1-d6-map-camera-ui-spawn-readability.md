@@ -1,14 +1,16 @@
 ---
 status: complete
-priority: p6
+priority: p1
 issue_id: "016"
-tags: [prototype, p6, map, camera, ui, spawn, readability, godot, quest]
+tags: [prototype, m1, d6, map, camera, ui, spawn, readability, godot, quest]
 dependencies: ["015"]
-chain: p6
-quest_title: "P6 넓은 광산과 전투 화면 정리"
+milestone: M1
+delivery: D6
+chain: map-ui
+quest_title: "M1-D6 넓은 광산과 전투 화면 정리"
 ---
 
-# 016. P6 넓은 광산과 전투 화면 정리
+# 016. M1-D6 넓은 광산과 전투 화면 정리
 
 ## Quest Card
 

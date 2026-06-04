@@ -39,7 +39,7 @@ P3 브레인스토밍은 유물을 “숨은 디버프”로 만들지 않고 HU
 - Godot 프로젝트의 핵심 게임 상태와 선택 처리 흐름은 `scripts/main.gd`에 있다.
 - UI 렌더링은 `scripts/ui/game_ui.gd`의 `show_choice`, `show_end`, `update_hud`, `render_relics` 패턴을 따른다.
 - P3 이후 이미 존재하는 검증 커맨드는 `--smoke-playtest`, `--debug-spider-relic-wave2`, `--debug-boss-pierce-splash`이다.
-- `todos/008-ready-p2-run-report.md`는 P4의 직접적인 선행 퀘스트다. 종료 화면 요약 확장과 smoke 출력 강화를 권장한다.
+- `todos/008-complete-p2-run-report.md`는 P4의 직접적인 선행 퀘스트다. 종료 화면 요약 확장과 smoke 출력 강화를 권장한다.
 - `todos/011-pending-p2-shop-and-reward-choice-pass.md`는 P5의 직접적인 선행 퀘스트다. 상점/보상 선택지가 빌드 방향을 만든다는 느낌을 강화하자는 내용이다.
 - 계획 문서는 한글로 작성하고, 기획/리뷰/README성 문서는 한국어를 기본으로 한다는 프로젝트 규칙이 `AGENTS.md`에 있다.
 
@@ -70,7 +70,7 @@ P3 루프를 반복 테스트 가능한 상태로 만든다. 플레이테스트 
 2. 승리/패배 overlay에 P3 런 리포트를 보여준다.
 3. smoke/debug 출력에 동일한 요약 값을 넣는다.
 4. P3에서 발견한 고위험 조합을 headless 디버그 시나리오로 유지한다.
-5. `todos/014-complete-p4-run-report-and-debug-harness.md`를 생성하고 대시보드에 연결했다.
+5. `todos/014-complete-p1-m1-d4-run-report-and-debug-harness.md`를 생성하고 대시보드에 연결했다.
 
 ### Suggested Metrics
 
@@ -120,7 +120,7 @@ P3 루프를 반복 테스트 가능한 상태로 만든다. 플레이테스트 
 2. 관통/폭발/방어 관통/공속/사거리 효과의 시각 차이를 만든다.
 3. 보스와 엘리트에게 피격 피드백을 더 강하게 준다.
 4. 거미팩, 엘리트 좀비, 투척 좀비의 위험 신호를 더 빨리 읽히게 한다.
-5. `todos/015-complete-p5-build-feedback-and-combat-readability.md`를 생성하고 대시보드에 연결했다.
+5. `todos/015-complete-p1-m1-d5-build-feedback-and-combat-readability.md`를 생성하고 대시보드에 연결했다.
 
 ### Priority Feedback Targets
 
@@ -202,7 +202,7 @@ P3 루프를 반복 테스트 가능한 상태로 만든다. 플레이테스트 
 
 ### Phase 1: P4 Quest Setup
 
-- `todos/014-complete-p4-run-report-and-debug-harness.md` 생성
+- `todos/014-complete-p1-m1-d4-run-report-and-debug-harness.md` 생성
 - `todos/README.md`에 P4 메인 퀘스트 추가
 - P4 acceptance criteria를 대시보드에 연결
 
@@ -224,7 +224,7 @@ Success:
 
 ### Phase 3: P5 Quest Setup
 
-- `todos/015-complete-p5-build-feedback-and-combat-readability.md` 생성
+- `todos/015-complete-p1-m1-d5-build-feedback-and-combat-readability.md` 생성
 - `todos/README.md`에 P5 메인 퀘스트 추가
 - P4 통계가 P5 검증에 어떻게 쓰이는지 명시
 
@@ -320,7 +320,7 @@ P5:
   - 퀘스트는 기능보다 검증 질문 중심으로 쪼갠다.
   - Markdown 대시보드를 기준 화면으로 둔다.
   - 플레이테스트 결과를 쌓아 두는 형식이 필요하다.
-- Existing quest: `todos/008-ready-p2-run-report.md`
+- Existing quest: `todos/008-complete-p2-run-report.md`
   - 종료 화면 요약과 smoke 출력 강화가 P4의 직접 기반이다.
 - Existing quest: `todos/011-pending-p2-shop-and-reward-choice-pass.md`
   - 빌드 방향과 위험 대응 체감이 P5의 직접 기반이다.

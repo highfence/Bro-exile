@@ -1,14 +1,16 @@
 ---
 status: complete
-priority: p3
+priority: p1
 issue_id: "013"
-tags: [prototype, p3, relics, contracts, risk-reward, godot, quest]
+tags: [prototype, m1, d3, relics, contracts, risk-reward, godot, quest]
 dependencies: ["012"]
-chain: p3
-quest_title: "P3 유물 계약 루프"
+milestone: M1
+delivery: D3
+chain: risk-reward
+quest_title: "M1-D3 유물 계약 루프"
 ---
 
-# 013. P3 유물 계약 루프
+# 013. M1-D3 유물 계약 루프
 
 ## Quest Card
 

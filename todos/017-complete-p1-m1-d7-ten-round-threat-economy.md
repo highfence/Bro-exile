@@ -1,14 +1,16 @@
 ---
 status: complete
-priority: p7
+priority: p1
 issue_id: "017"
-tags: [prototype, p7, threat, economy, contracts, boss, godot, quest]
+tags: [prototype, m1, d7, threat, economy, contracts, boss, godot, quest]
 dependencies: ["016"]
-chain: p7
-quest_title: "P7 10라운드 위협/경제 재정비"
+milestone: M1
+delivery: D7
+chain: threat-economy
+quest_title: "M1-D7 10라운드 위협/경제 재정비"
 ---
 
-# 017. P7 10라운드 위협/경제 재정비
+# 017. M1-D7 10라운드 위협/경제 재정비
 
 ## Quest Card
 

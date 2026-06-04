@@ -2,8 +2,10 @@
 status: ready
 priority: p2
 issue_id: "006"
-tags: [prototype, art, readability, godot, quest]
+tags: [prototype, m1, art, readability, godot, quest]
 dependencies: ["003"]
+milestone: M1
+delivery: backlog
 chain: art
 quest_title: "광산 정체성 에셋 패스"
 ---

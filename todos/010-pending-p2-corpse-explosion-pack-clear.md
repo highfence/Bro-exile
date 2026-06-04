@@ -2,8 +2,10 @@
 status: pending
 priority: p2
 issue_id: "010"
-tags: [prototype, combat, pack-clear, item, quest]
+tags: [prototype, m1, combat, pack-clear, item, quest]
 dependencies: ["004", "005"]
+milestone: M1
+delivery: backlog
 chain: combat
 quest_title: "시체 폭발 팩 클리어"
 ---

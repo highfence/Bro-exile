@@ -1,14 +1,16 @@
 ---
 status: complete
-priority: p4
+priority: p1
 issue_id: "014"
-tags: [prototype, p4, playtest, metrics, debug, godot, quest]
+tags: [prototype, m1, d4, playtest, metrics, debug, godot, quest]
 dependencies: ["013"]
+milestone: M1
+delivery: D4
 chain: validation
-quest_title: "P4 런 리포트와 디버그 하네스"
+quest_title: "M1-D4 런 리포트와 디버그 하네스"
 ---
 
-# 014. P4 런 리포트와 디버그 하네스
+# 014. M1-D4 런 리포트와 디버그 하네스
 
 ## Quest Card
 

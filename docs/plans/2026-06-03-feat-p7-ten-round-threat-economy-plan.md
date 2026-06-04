@@ -119,7 +119,7 @@ P7은 다음 다섯 축을 동시에 조정한다.
 
 ### Phase 1: Plan, Quest, Worker Setup
 
-- `todos/017-ready-p7-ten-round-threat-economy.md` 생성.
+- `todos/017-complete-p1-m1-d7-ten-round-threat-economy.md` 생성.
 - `todos/README.md`에 P7 메인 퀘스트와 dashboard row 추가.
 - worker thread는 새 worktree/branch에서 진행한다.
 - worker prompt는 이 plan을 origin으로 삼고, 디자인 체크포인트가 나오면 현재 기획 스레드에 질문하도록 지시한다.

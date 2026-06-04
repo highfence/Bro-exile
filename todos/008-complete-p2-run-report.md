@@ -1,11 +1,13 @@
 ---
-status: ready
+status: complete
 priority: p2
 issue_id: "008"
-tags: [prototype, playtest, metrics, godot, quest]
+tags: [prototype, m1, validation, metrics, godot, quest]
 dependencies: ["001", "004", "007"]
+milestone: M1
+delivery: backlog
 chain: validation
-quest_title: "런 리포트"
+quest_title: "런 리포트 (M1-D4에서 흡수됨)"
 ---
 
 # 008. 런 리포트
@@ -80,3 +82,14 @@ A로 시작하고, `--smoke-playtest`에는 B의 아주 작은 텍스트 출력�
 
 **Learnings:**
 - 대시보드는 최종적으로 UI가 될 수 있지만, 지금은 기록 가능한 결과가 먼저다.
+
+### 2026-06-05 - M1-D4 흡수 처리
+
+**By:** Codex
+
+**Actions:**
+- 이 todo의 목적이 `014. M1-D4 런 리포트와 디버그 하네스`에서 구현되어 complete로 정리했다.
+- P 표기 충돌을 피하기 위해 대시보드에서는 M1-D4 완료 항목으로 추적한다.
+
+**Learnings:**
+- 과거 검증 todo가 실제 마일스톤에서 해결된 경우, pending/ready로 남기기보다 흡수 완료로 정리해야 큐가 선명해진다.

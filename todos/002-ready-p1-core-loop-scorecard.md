@@ -2,13 +2,15 @@
 status: ready
 priority: p1
 issue_id: "002"
-tags: [prototype, design, core-loop, quest]
+tags: [prototype, m1, d1, design, core-loop, quest]
 dependencies: []
+milestone: M1
+delivery: D1
 chain: design
-quest_title: "핵심 루프 기준표"
+quest_title: "M1-D1 핵심 루프 기준표"
 ---
 
-# 002. 핵심 루프 기준표
+# 002. M1-D1 핵심 루프 기준표
 
 ## Quest Card
 

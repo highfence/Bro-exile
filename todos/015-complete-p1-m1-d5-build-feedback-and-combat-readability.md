@@ -1,14 +1,16 @@
 ---
 status: complete
-priority: p5
+priority: p1
 issue_id: "015"
-tags: [prototype, p5, combat, feedback, readability, vfx, godot, quest]
+tags: [prototype, m1, d5, combat, feedback, readability, vfx, godot, quest]
 dependencies: ["014"]
-chain: p5
-quest_title: "P5 빌드 체감과 전투 가독성"
+milestone: M1
+delivery: D5
+chain: combat-readability
+quest_title: "M1-D5 빌드 체감과 전투 가독성"
 ---
 
-# 015. P5 빌드 체감과 전투 가독성
+# 015. M1-D5 빌드 체감과 전투 가독성
 
 ## Quest Card
 

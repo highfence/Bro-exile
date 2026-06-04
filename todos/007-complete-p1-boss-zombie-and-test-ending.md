@@ -2,13 +2,15 @@
 status: complete
 priority: p1
 issue_id: "007"
-tags: [prototype, p1, boss, ending, godot, quest]
+tags: [prototype, m1, d1, boss, ending, godot, quest]
 dependencies: ["004", "005"]
-chain: p1
-quest_title: "보스 좀비와 테스트 종료"
+milestone: M1
+delivery: D1
+chain: boss
+quest_title: "M1-D1 보스 좀비와 테스트 종료"
 ---
 
-# 007. 보스 좀비와 테스트 종료
+# 007. M1-D1 보스 좀비와 테스트 종료
 
 ## Quest Card
 

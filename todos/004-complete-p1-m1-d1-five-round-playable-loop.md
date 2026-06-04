@@ -2,13 +2,15 @@
 status: complete
 priority: p1
 issue_id: "004"
-tags: [prototype, p1, playable-loop, godot, quest]
+tags: [prototype, m1, d1, playable-loop, godot, quest]
 dependencies: ["001", "003"]
-chain: p1
-quest_title: "P1 5라운드 플레이어블 루프"
+milestone: M1
+delivery: D1
+chain: core-loop
+quest_title: "M1-D1 5라운드 플레이어블 루프"
 ---
 
-# 004. P1 5라운드 플레이어블 루프
+# 004. M1-D1 5라운드 플레이어블 루프
 
 ## Quest Card
 

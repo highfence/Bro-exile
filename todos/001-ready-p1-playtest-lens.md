@@ -2,13 +2,15 @@
 status: ready
 priority: p1
 issue_id: "001"
-tags: [prototype, playtest, validation, quest]
+tags: [prototype, m1, d1, playtest, validation, quest]
 dependencies: []
+milestone: M1
+delivery: D1
 chain: validation
-quest_title: "플레이테스트 렌즈 세우기"
+quest_title: "M1-D1 플레이테스트 렌즈 세우기"
 ---
 
-# 001. 플레이테스트 렌즈 세우기
+# 001. M1-D1 플레이테스트 렌즈 세우기
 
 ## Quest Card
 
