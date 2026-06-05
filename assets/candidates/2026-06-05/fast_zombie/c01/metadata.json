@@ -1,0 +1,81 @@
+{
+  "asset_id": "enemy_fast_zombie",
+  "candidate_id": "2026-06-05-fast_zombie-c01",
+  "generated_at": "2026-06-04T15:12:05.090644+00:00",
+  "provider": "built-in-imagegen",
+  "model": "built-in",
+  "action": "normalize_single_image_candidate",
+  "prompt_pack": "docs/art/prompt-packs/enemy-single-image.md",
+  "prompt_file": "assets/candidates/2026-06-05/fast_zombie/c01/prompt_used.txt",
+  "prompt": "Use case: stylized-concept\nAsset type: 2D game enemy single-image sprite source for Bro-exile\n\nPrimary request:\nCreate exactly one original cute-but-grotesque FAST ZOMBIE miner enemy, centered, designed as a single readable full-frame PNG for runtime bob/scale/flip animation.\n\nReference direction:\nUse the visible basic miner zombie and shield zombie assets as style anchors: cute toy-like mine-survival enemy family, thick dark outline, chunky painterly shading, compact readable silhouette, moss-gray undead skin, yellow hard hat language, tiny glowing eyes, orange-brown miner clothing, sparse teal ore accents. Keep it compatible with those references, but make this an original design and not a direct edit or recolor.\n\nSubject:\nA small frantic sprinting undead miner creature, visibly faster than the basic zombie. It has a slightly crouched forward-leaning pose, narrowed eager glowing eyes, open worried mouth, cracked yellow helmet tilted backward, a torn short miner vest, small boots, one tiny pickaxe or ore shard strapped behind it, and motion-readable body language built into the silhouette. Its arms and legs should feel stubby and toy-like, but the whole body should imply quick darting movement even as a single static sprite.\n\nDesign priorities:\nDifferentiate it from the current basic zombie by body shape and pose, not by adding random speed lines. At 64px it should read as \"fast chaser zombie\" immediately. Keep the silhouette smaller and sharper than the shield zombie, with a diagonal forward lean and one foot lifted or tucked, but no separate external motion effects.\n\nColor palette:\nMuted moss-gray skin, dark outline, dusty orange-brown vest, yellow hard hat, small teal ore accent. Avoid bright orange speed triangles, avoid making it too yellow, and keep it distinct from the player helmet.\n\nComposition and framing:\nOne character only, full body, centered in a 1:1 square, generous padding, no ground shadow, no props outside the character silhouette.\n\nBackground:\nPerfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, floor plane, lighting variation, or reflection.\n\nConstraints:\nNo text, no watermark, no UI frame, no sprite sheet, no multiple poses, no multiple characters, no background scene, no cast shadow. Do not copy Brotato characters, icons, silhouettes, or decorative details.\n",
+  "revised_prompt": "not_available_from_builtin_tool",
+  "source_refs": [
+    "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png",
+    "res://assets/candidates/2026-06-04/shield_zombie/c01/normalized_256.png"
+  ],
+  "files": {
+    "original_chromakey": "assets/candidates/2026-06-05/fast_zombie/c01/original_chromakey.png",
+    "alpha": "assets/candidates/2026-06-05/fast_zombie/c01/alpha.png",
+    "normalized_256": "assets/candidates/2026-06-05/fast_zombie/c01/normalized_256.png",
+    "preview_64": "assets/candidates/2026-06-05/fast_zombie/c01/preview_64.png",
+    "runtime_preview_metadata": "assets/candidates/2026-06-05/fast_zombie/c01/runtime_preview/metadata.json",
+    "runtime_idle_left_preview_64": "assets/candidates/2026-06-05/fast_zombie/c01/runtime_preview/idle_left_preview_64.png",
+    "runtime_idle_right_preview_64": "assets/candidates/2026-06-05/fast_zombie/c01/runtime_preview/idle_right_preview_64.png",
+    "runtime_move_left_preview_64": "assets/candidates/2026-06-05/fast_zombie/c01/runtime_preview/move_left_preview_64.png",
+    "runtime_move_right_preview_64": "assets/candidates/2026-06-05/fast_zombie/c01/runtime_preview/move_right_preview_64.png"
+  },
+  "normalization": {
+    "source_bbox": [
+      230,
+      220,
+      1004,
+      1000
+    ],
+    "cropped_size": [
+      774,
+      780
+    ],
+    "cell_size": [
+      256,
+      256
+    ],
+    "target_occupied_size": 224,
+    "scale": 0.28717948717948716,
+    "packed_size": [
+      222,
+      224
+    ],
+    "cell_offset": [
+      17,
+      16
+    ]
+  },
+  "verification": {
+    "hard_gate_passed": true,
+    "hard_gate_failures": [],
+    "source_size": [
+      1254,
+      1254
+    ],
+    "alpha_bbox": [
+      230,
+      220,
+      1004,
+      1000
+    ],
+    "normalized_bbox": [
+      17,
+      16,
+      239,
+      240
+    ],
+    "opaque_pixels": 31354,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "chroma_spill_pixels": 0
+  }
+}

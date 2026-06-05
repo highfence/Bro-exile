@@ -1,0 +1,129 @@
+{
+  "script": "scripts/main.gd",
+  "total_refs": 31,
+  "unique_refs": 25,
+  "repeated_refs": [
+    {
+      "path": "res://assets/sprites/items/p2_parts/part_carbide_tip.png",
+      "count": 3
+    },
+    {
+      "path": "res://assets/sprites/items/p2_parts/part_piercing_bit.png",
+      "count": 2
+    },
+    {
+      "path": "res://assets/sprites/items/p2_parts/part_rapid_trigger.png",
+      "count": 2
+    },
+    {
+      "path": "res://assets/sprites/items/p2_parts/part_rations.png",
+      "count": 2
+    },
+    {
+      "path": "res://assets/sprites/items/p3_relics/relic_unstable_blast_crystal.png",
+      "count": 2
+    }
+  ],
+  "refs": [
+    {
+      "path": "res://assets/sprites/characters/miner_zombie_v1/zombie_idle.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/p1_monsters_runtime_v1/spider_swarm.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/p1_monsters_runtime_v1/thrower_zombie.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/p1_monsters_runtime_v2/boss_zombie.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/p1_monsters_runtime_v2/fast_zombie.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/p1_monsters_runtime_v2/shield_zombie.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/core_body.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/left_boot.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/left_glove.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/right_boot.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/characters/player_helmet_mascot_semilayered_gloves_v1/parts/right_glove.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/items/p2_parts/part_carbide_tip.png",
+      "count": 3
+    },
+    {
+      "path": "res://assets/sprites/items/p2_parts/part_long_barrel.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/items/p2_parts/part_piercing_bit.png",
+      "count": 2
+    },
+    {
+      "path": "res://assets/sprites/items/p2_parts/part_rapid_trigger.png",
+      "count": 2
+    },
+    {
+      "path": "res://assets/sprites/items/p2_parts/part_rations.png",
+      "count": 2
+    },
+    {
+      "path": "res://assets/sprites/items/p2_parts/part_shatter_charge.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/items/p2_parts/part_spring_boots.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/items/p3_relics/relic_black_shell.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/items/p3_relics/relic_echoing_stone_heart.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/items/p3_relics/relic_hungry_lantern.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/items/p3_relics/relic_red_vein_sample.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/items/p3_relics/relic_spider_egg_fossil.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/items/p3_relics/relic_twin_excavation_seal.png",
+      "count": 1
+    },
+    {
+      "path": "res://assets/sprites/items/p3_relics/relic_unstable_blast_crystal.png",
+      "count": 2
+    }
+  ]
+}

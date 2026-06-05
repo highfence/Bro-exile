@@ -1,0 +1,33 @@
+{
+  "source_style_references": [
+    "assets/sprites/characters/miner_zombie_v1/zombie_idle.png",
+    "assets/candidates/2026-06-04/shield_zombie/c01/normalized_256.png"
+  ],
+  "style": "single full-frame monster PNGs for profile-driven runtime transform animation",
+  "cell_size": [
+    256,
+    256
+  ],
+  "monsters": {
+    "fast_zombie": {
+      "file": "fast_zombie.png",
+      "candidate_source": "assets/candidates/2026-06-05/fast_zombie/c01/normalized_256.png",
+      "motion_profile": "sprint"
+    },
+    "shield_zombie": {
+      "file": "shield_zombie.png",
+      "candidate_source": "assets/candidates/2026-06-04/shield_zombie/c01/normalized_256.png",
+      "motion_profile": "brace"
+    },
+    "boss": {
+      "file": "boss_zombie.png",
+      "candidate_source": "assets/candidates/2026-06-05/boss_zombie/c01/normalized_256.png",
+      "motion_profile": "heavy"
+    }
+  },
+  "notes": [
+    "Prototype runtime v2 assets promoted from reviewed candidates.",
+    "Existing p1_monsters_runtime_v1 assets are preserved for baseline comparison.",
+    "Motion is controlled by code-side enemy motion profiles rather than generated frame-by-frame sheets."
+  ]
+}

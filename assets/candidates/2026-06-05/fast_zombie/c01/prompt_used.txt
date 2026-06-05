@@ -1,0 +1,26 @@
+Use case: stylized-concept
+Asset type: 2D game enemy single-image sprite source for Bro-exile
+
+Primary request:
+Create exactly one original cute-but-grotesque FAST ZOMBIE miner enemy, centered, designed as a single readable full-frame PNG for runtime bob/scale/flip animation.
+
+Reference direction:
+Use the visible basic miner zombie and shield zombie assets as style anchors: cute toy-like mine-survival enemy family, thick dark outline, chunky painterly shading, compact readable silhouette, moss-gray undead skin, yellow hard hat language, tiny glowing eyes, orange-brown miner clothing, sparse teal ore accents. Keep it compatible with those references, but make this an original design and not a direct edit or recolor.
+
+Subject:
+A small frantic sprinting undead miner creature, visibly faster than the basic zombie. It has a slightly crouched forward-leaning pose, narrowed eager glowing eyes, open worried mouth, cracked yellow helmet tilted backward, a torn short miner vest, small boots, one tiny pickaxe or ore shard strapped behind it, and motion-readable body language built into the silhouette. Its arms and legs should feel stubby and toy-like, but the whole body should imply quick darting movement even as a single static sprite.
+
+Design priorities:
+Differentiate it from the current basic zombie by body shape and pose, not by adding random speed lines. At 64px it should read as "fast chaser zombie" immediately. Keep the silhouette smaller and sharper than the shield zombie, with a diagonal forward lean and one foot lifted or tucked, but no separate external motion effects.
+
+Color palette:
+Muted moss-gray skin, dark outline, dusty orange-brown vest, yellow hard hat, small teal ore accent. Avoid bright orange speed triangles, avoid making it too yellow, and keep it distinct from the player helmet.
+
+Composition and framing:
+One character only, full body, centered in a 1:1 square, generous padding, no ground shadow, no props outside the character silhouette.
+
+Background:
+Perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, floor plane, lighting variation, or reflection.
+
+Constraints:
+No text, no watermark, no UI frame, no sprite sheet, no multiple poses, no multiple characters, no background scene, no cast shadow. Do not copy Brotato characters, icons, silhouettes, or decorative details.
