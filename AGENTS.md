@@ -44,3 +44,9 @@ Tool mapping:
   ```
   캡처 결과는 `/private/tmp/orebound-godot-ui.png`에 저장된다.
 - 레거시 브라우저 프로토타입은 `index.html`을 브라우저에서 직접 열어 실행할 수 있다.
+
+## Asset Workflow Context
+
+- 에셋 제작, 캐릭터 애니메이션, 몬스터 이미지, prompt pack, asset harness, 후보 promotion 작업은 먼저 `.codex/skills/bro-exile-asset-workflow/SKILL.md`를 연다.
+- Skill discovery를 사용할 수 없는 에이전트는 `docs/art/agent-asset-workflow.md`를 읽고 `python3 scripts/tools/asset_workflow_context.py --format markdown`를 실행한다.
+- 자동 생성 에셋은 실사용 경로에 바로 덮어쓰지 않는다. 후보 생성, normalization, 64px preview, Godot harness, stage capture, 사용자 승인 후 promotion 순서를 따른다.

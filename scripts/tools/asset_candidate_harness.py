@@ -11,11 +11,25 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from PIL import Image
-
 
 ROOT = Path(__file__).resolve().parents[2]
 ASSET_REF_RE = re.compile(r'res://assets/[^"\s]+')
+Image = None
+
+
+def require_pillow_image_module():
+    global Image
+    if Image is not None:
+        return Image
+    try:
+        from PIL import Image as pillow_image
+    except ModuleNotFoundError as exc:
+        raise SystemExit(
+            "Pillow is required for normalize-single-image. "
+            "Install Pillow or run with the project's bundled Python environment."
+        ) from exc
+    Image = pillow_image
+    return Image
 
 
 def parse_hex_color(value: str) -> tuple[int, int, int]:
@@ -223,6 +237,8 @@ def relative_or_absolute(path: Path) -> str:
 
 
 def command_normalize_single_image(args: argparse.Namespace) -> int:
+    require_pillow_image_module()
+
     input_path = Path(args.input)
     if not input_path.is_absolute():
         input_path = ROOT / input_path

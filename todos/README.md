@@ -96,6 +96,13 @@ M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고
 - `pending`: 방향 확인, 우선순위 결정, 또는 세부 명세가 필요한 퀘스트.
 - `complete`: 통과 조건을 확인했거나 뒤 마일스톤에 흡수되어 Work Log에 결과가 남은 퀘스트.
 
+## 에이전트 운영 연동
+
+- 장기 운영은 [반자동 에이전트 운영 팀](../docs/operations/2026-06-05-agent-team-operating-model.md)을 따른다.
+- `todos/README.md`는 메인 Producer가 읽는 기본 queue다.
+- 개별 todo의 `Work Log`는 Planner, Developer, Asset 에이전트의 handoff 기록 장소로 사용한다.
+- `owner_lane`, `active_thread`, `worktree`, `blocked_questions`, `artifacts`, `last_handoff` 필드는 새 활성 작업부터 점진적으로 추가한다.
+
 ## 플레이테스트 메모
 
 ```text
