@@ -93,15 +93,35 @@ quest_title: "M1-D9 캐릭터 3종과 빌드 아키타입 매트릭스"
 
 ## Recommended Action
 
-D8 무기 정체성 플레이 검증 후, M1-D9 브레인스토밍 세션에서 Option 1을 목표로 하되 캐릭터 이름/직업 확정은 강요하지 않는다. 먼저 “캐릭터 3종이 어떤 빌드 문법을 선호해야 하는가”와 “각 캐릭터가 억지로 한 아키타입만 타지 않게 만드는 브릿지/깡 성능 선택은 무엇인가”를 정리한다.
+D8 무기 정체성은 complete 상태이므로, D9는 `docs/brainstorms/2026-06-07-m1-d9-character-archetype-matrix-brainstorm.md`를 기준으로 진행한다.
+
+Option 1을 목표로 하되 캐릭터 이름/직업 확정은 강요하지 않는다. 먼저 “캐릭터 3종이 어떤 빌드 문법을 선호해야 하는가”와 “각 캐릭터가 억지로 한 아키타입만 타지 않게 만드는 브릿지/깡 성능 선택은 무엇인가”를 정리한다.
+
+Planner 권장 기본값은 캐릭터를 임시 코드명 `압축형`, `연쇄형`, `전환형`으로 두고, 각 캐릭터가 2-3개 아키타입을 선호하게 만드는 것이다. Producer는 구현 plan으로 넘기기 전에 아래 design question을 사용자에게 확인한다.
+
+- BLOCKED: DESIGN QUESTION - 캐릭터 3종은 지금 단계에서 “압축형/연쇄형/전환형” 같은 빌드 문법 코드명으로 확정해도 되는가?
+- BLOCKED: DESIGN QUESTION - D9 첫 구현은 캐릭터 선택 UI까지 포함해야 하는가, 아니면 데이터/디버그/상점 편향만 먼저 넣고 UI는 다음 단계로 미룰 것인가?
+- BLOCKED: DESIGN QUESTION - 각 캐릭터는 모든 D8 무기와 조합 가능해야 하는가, 아니면 특정 무기 1-2개와 강한 선호를 가져도 되는가?
 
 ## Acceptance Criteria
 
-- [ ] 캐릭터 3종의 역할/컨셉 후보가 정리되어 있다.
+### Design-Only
+
+- [ ] 캐릭터 3종은 최종 이름/직업이 아니라 빌드 문법 선호 코드명으로 정의되어 있다.
 - [ ] 각 캐릭터가 선호하는 대표 아키타입 2-3개가 정리되어 있다.
-- [ ] 각 아키타입의 핵심 트리거, 페이로드, 빈도, 대가가 정리되어 있다.
-- [ ] 초반 깡 성능 선택과 아키타입 조각, 브릿지 아이템, 코어 아이템의 차이가 정리되어 있다.
+- [ ] 각 아키타입의 핵심 trigger, payload, frequency, cost가 정리되어 있다.
+- [ ] 초반 깡 성능 선택, 아키타입 조각, 브릿지 아이템, 코어 아이템의 차이가 정리되어 있다.
 - [ ] 이후 강화/아이템/유물 재검토와 다중 화폐 경제 설계에 넘길 기준이 생긴다.
+
+### Validator-Verifiable
+
+- [ ] debug: 캐릭터/아키타입/아이템 metadata를 구현할 때 각 항목은 `character_bias`, `archetype_tags`, `trigger`, `payload`, `frequency`, `cost` 중 필요한 필드를 출력할 수 있다.
+- [ ] debug: 최소 3개 캐릭터 코드명과 캐릭터별 2개 이상 아키타입 tag가 데이터 검사 명령에서 누락 없이 출력된다.
+- [ ] smoke: 각 캐릭터 코드명으로 1라운드 시작이 가능하고, 기존 D8 무기 선택 흐름을 깨지 않는다.
+- [ ] smoke: 각 캐릭터는 최소 2개 다른 아키타입 tag의 상점/보상 후보를 받을 수 있다.
+- [ ] capture: 캐릭터 선택 또는 빌드 summary UI가 생기면, 코드명/선호 문법/대표 tag가 한 화면에서 겹치지 않고 읽힌다.
+- [ ] playtest: 같은 무기라도 캐릭터 코드명에 따라 상점에서 고르고 싶은 카드가 달라졌는지 기록한다.
+- [ ] playtest: 한 캐릭터가 하나의 정답 아키타입만 강요하거나, 반대로 캐릭터 차이가 스킨처럼 느껴지면 조정 대상으로 기록한다.
 
 ## Work Log
 
@@ -117,3 +137,32 @@ D8 무기 정체성 플레이 검증 후, M1-D9 브레인스토밍 세션에서 
 **Learnings:**
 - 최종 게임의 핵심은 단일 빌드가 아니라, 여러 강화 레이어가 맞물려 시너지를 일으키는 빌드 제작이다.
 - Slay the Spire식 캐릭터 구조를 차용하되, 각 캐릭터가 하나의 정답 아키타입만 강요하지 않게 해야 한다.
+
+### 2026-06-07 - Planner Handoff
+
+**By:** Planner
+
+**상태:**
+- needs-review
+
+**Actions:**
+- D9 scope를 캐릭터 최종 이름/직업 확정이 아니라 캐릭터별 빌드 문법 선호 매트릭스 작성으로 좁혔다.
+- `docs/brainstorms/2026-06-07-m1-d9-character-archetype-matrix-brainstorm.md` 초안을 작성했다.
+- 임시 캐릭터 코드명 `압축형`, `연쇄형`, `전환형`과 각 2-3개 아키타입 후보를 정리했다.
+- 각 아키타입을 `trigger`, `payload`, `frequency`, `cost`로 설명했다.
+- `Acceptance Criteria`를 design-only와 Validator-verifiable 항목으로 분리했다.
+
+**Verification:**
+- 문서 작업만 수행했다. 구현, 에셋 생성, Godot 검증은 수행하지 않았다.
+- Validator가 이후 확인할 수 있도록 debug/smoke/capture/playtest 검증 방식을 acceptance criteria에 명시했다.
+
+**Questions:**
+- BLOCKED: DESIGN QUESTION - 캐릭터 3종은 지금 단계에서 “압축형/연쇄형/전환형” 같은 빌드 문법 코드명으로 확정해도 되는가?
+- BLOCKED: DESIGN QUESTION - D9 첫 구현은 캐릭터 선택 UI까지 포함해야 하는가, 아니면 데이터/디버그/상점 편향만 먼저 넣고 UI는 다음 단계로 미룰 것인가?
+- BLOCKED: DESIGN QUESTION - 각 캐릭터는 모든 D8 무기와 조합 가능해야 하는가, 아니면 특정 무기 1-2개와 강한 선호를 가져도 되는가?
+
+**Next Handoff:**
+- Producer는 위 design question 중 최소 1번과 2번을 사용자에게 확인한다.
+- Developer는 사용자 결정 후 `data/debug first` 또는 `selection UI included` 범위로 D9 plan을 받아 구현한다.
+- Asset은 캐릭터 이름/직업 확정 전에는 실사용 캐릭터 에셋을 만들지 말고, 필요 시 mood/reference만 제안한다.
+- Validator는 design-only 기준과 debug/smoke/capture/playtest 기준을 분리해 완료 판정을 준비한다.
