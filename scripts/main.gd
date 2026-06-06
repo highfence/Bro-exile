@@ -486,6 +486,7 @@ func _capture_combat_feedback_and_quit() -> void:
 	player["facing_right"] = true
 	enemies.clear()
 	bullets.clear()
+	pickups.clear()
 	sparks.clear()
 	floating_text.clear()
 	_add_relic(_relic_by_id("chosen_prey"))
@@ -518,6 +519,9 @@ func _capture_combat_feedback_and_quit() -> void:
 		var spider := _make_enemy("spider")
 		spider["pos"] = pos
 		enemies.append(spider)
+	pickups.append({"pos": Vector2(486.0, 500.0), "radius": 8.0, "type": "xp", "value": 6.0, "color": Color("#6cc3c0")})
+	pickups.append({"pos": Vector2(520.0, 500.0), "radius": 6.0, "type": "ore", "value": 1, "color": Color("#e6b85c")})
+	pickups.append({"pos": Vector2(548.0, 500.0), "radius": 6.0, "type": "ore", "value": 1, "color": Color("#e6b85c")})
 
 	_fire_projectiles(weapon, boss, 620.0, false)
 	for frame in range(34):

@@ -62,7 +62,7 @@ Bro-exile의 P1 목표는 “라운드 1부터 라운드 5까지 플레이 가�
 
 관련 퀘스트:
 
-- `003-ready-p1-combat-readability-snapshot.md`
+- `003-complete-p1-combat-readability-snapshot.md`
 - `005-ready-p1-enemy-archetypes-and-wave-patterns.md`
 
 ### 정체성 퀘스트: 광산 게임처럼 보이기

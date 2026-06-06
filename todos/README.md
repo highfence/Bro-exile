@@ -40,12 +40,11 @@ M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고
 
 | 추천 순서 | 상태 | 퀘스트 | 이유 |
 | --- | --- | --- | --- |
-| 1 | ready | [M1-D8 전투 가독성 스냅샷](003-ready-p1-combat-readability-snapshot.md) | 새 무기 3종이 들어온 뒤 전투 화면이 읽히는지 확인한다. |
-| 2 | pending | [M1-D9 캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) | 아이템/유물/화폐를 늘리기 전에 캐릭터별 빌드 생태계를 정리한다. |
-| 3 | pending, blocked by 021 | [M1-D10 숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) | 디자인 변경 전후 난이도를 숙련도별 기준선으로 비교한다. |
-| 4 | pending, blocked by 021 | [M1-D8 강화/아이템/유물 목록 재검토](018-pending-p2-upgrade-item-relic-review.md) | 캐릭터별 아키타입 기준으로 상점/아이템/유물 목록을 다시 정리한다. |
-| 5 | pending | [상점/보상 선택감 정리](011-pending-p2-shop-and-reward-choice-pass.md) | D8 이후 상점 선택이 무기 방향을 밀어주는지 다듬는다. |
-| 6 | pending, blocked by 021/022/018 | [M1-D11 다중 화폐 경제](020-pending-p2-m1-d11-multi-currency-economy.md) | D9/D10과 목록 재검토 이후 경제를 세분화한다. |
+| 1 | pending | [M1-D9 캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) | 아이템/유물/화폐를 늘리기 전에 캐릭터별 빌드 생태계를 정리한다. |
+| 2 | pending, blocked by 021 | [M1-D10 숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) | 디자인 변경 전후 난이도를 숙련도별 기준선으로 비교한다. |
+| 3 | pending, blocked by 021 | [M1-D8 강화/아이템/유물 목록 재검토](018-pending-p2-upgrade-item-relic-review.md) | 캐릭터별 아키타입 기준으로 상점/아이템/유물 목록을 다시 정리한다. |
+| 4 | pending | [상점/보상 선택감 정리](011-pending-p2-shop-and-reward-choice-pass.md) | D8 이후 상점 선택이 무기 방향을 밀어주는지 다듬는다. |
+| 5 | pending, blocked by 021/022/018 | [M1-D11 다중 화폐 경제](020-pending-p2-m1-d11-multi-currency-economy.md) | D9/D10과 목록 재검토 이후 경제를 세분화한다. |
 
 ## 보류 큐
 
@@ -60,6 +59,7 @@ M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고
 
 | ID | 상태 | 퀘스트 | 흡수된 위치 |
 | --- | --- | --- | --- |
+| 003 | complete | [전투 가독성 스냅샷](003-complete-p1-combat-readability-snapshot.md) | M1-D8 품질 게이트 |
 | 008 | complete | [런 리포트](008-complete-p2-run-report.md) | M1-D4 |
 | 009 | complete | [계약 카드 첫 프로토타입](009-complete-p2-contract-card-first-prototype.md) | M1-D3, M1-D7 |
 
@@ -69,7 +69,7 @@ M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고
 | --- | --- | --- | --- | --- | --- |
 | 001 | p1 | ready | M1-D1 | validation | [플레이테스트 렌즈](001-ready-p1-playtest-lens.md) |
 | 002 | p1 | ready | M1-D1 | design | [핵심 루프 기준표](002-ready-p1-core-loop-scorecard.md) |
-| 003 | p1 | ready | M1-D8 | combat | [전투 가독성 스냅샷](003-ready-p1-combat-readability-snapshot.md) |
+| 003 | p1 | complete | M1-D8 | combat | [전투 가독성 스냅샷](003-complete-p1-combat-readability-snapshot.md) |
 | 004 | p1 | complete | M1-D1 | core-loop | [5라운드 플레이어블 루프](004-complete-p1-m1-d1-five-round-playable-loop.md) |
 | 005 | p1 | complete | M1-D1 | combat | [적 아키타입과 웨이브 패턴](005-complete-p1-enemy-archetypes-and-wave-patterns.md) |
 | 006 | p2 | ready | M1-backlog | art | [광산 정체성 에셋 패스](006-ready-p2-mining-identity-asset-pass.md) |
