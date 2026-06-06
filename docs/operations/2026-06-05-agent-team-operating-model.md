@@ -11,7 +11,7 @@ status: active-reference
 
 Bro-exile의 장기 작업은 기획, 개발, 에셋이 서로 다른 속도로 움직인다. 한 스레드에서 모든 컨텍스트를 계속 들고 가면 작업이 빠르게 넓어지고, 반대로 역할별 에이전트를 아무 규칙 없이 늘리면 handoff가 사라진다.
 
-이 운영 모델은 사용자가 메인 에이전트를 통해 전체 흐름을 관리하면서, 기획/개발/에셋 역할 에이전트가 각자의 컨텍스트와 하네스를 유지하게 만드는 반자동 팀 방식이다. 첫 단계에서는 자동 queue watcher를 만들지 않는다. 메인 에이전트가 `todos/`와 문서를 읽고 필요한 역할 스레드에 작업을 배정한다.
+이 운영 모델은 사용자가 메인 에이전트를 통해 전체 흐름을 관리하면서, 기획/개발/에셋/검증 역할 에이전트가 각자의 컨텍스트와 하네스를 유지하게 만드는 반자동 팀 방식이다. 첫 단계에서는 자동 queue watcher를 만들지 않는다. 메인 에이전트가 `todos/`와 문서를 읽고 필요한 역할 스레드에 작업을 배정한다.
 
 ## 팀 구성
 
@@ -20,7 +20,7 @@ Bro-exile의 장기 작업은 기획, 개발, 에셋이 서로 다른 속도로 
 역할:
 
 - `todos/README.md`와 개별 todo를 읽고 현재 우선순위를 정리한다.
-- 기획, 개발, 에셋 에이전트에 작업을 배정한다.
+- 기획, 개발, 에셋, 검증 에이전트에 작업을 배정한다.
 - 각 역할 에이전트의 결과를 하나로 합쳐 사용자에게 보고한다.
 - 사용자가 결정해야 하는 질문만 추려서 묻는다.
 - todo 상태, Work Log, handoff 문서가 최신인지 확인한다.
@@ -87,6 +87,30 @@ Bro-exile의 장기 작업은 기획, 개발, 에셋이 서로 다른 속도로 
 - `assets/candidates/...`
 - 에셋 후보 metadata와 캡처 이미지.
 
+### 검증 에이전트: Validator
+
+역할:
+
+- Developer 또는 Asset의 완료 보고를 독립적으로 검증한다.
+- todo acceptance criteria가 실제로 검증 가능한지 확인한다.
+- 빠진 테스트 케이스, 회귀 위험, 플레이 감각 문제를 찾는다.
+- debug, smoke, capture, headless load, 실제 플레이 확인을 실행한다.
+- "통과 / 조건부 통과 / 반려"로 판정하고 Producer에게 넘긴다.
+
+주요 산출물:
+
+- todo `Work Log`의 검증 기록.
+- `docs/reports/playtests/...` 또는 `docs/reports/validation/...` 리포트.
+- 실행한 명령, 캡처 경로, 실패 로그, 재현 절차.
+- 후속 Developer/Asset/Planner 작업으로 넘길 구체적인 이슈.
+
+Validator가 직접 하지 않는 일:
+
+- 큰 기능 구현.
+- 디자인 방향 임의 확정.
+- Developer와 같은 파일을 동시에 수정.
+- 취향 문제를 버그처럼 단정.
+
 ## todo-queue 라우팅 규칙
 
 기본 큐는 `todos/README.md`다. 개별 작업의 source of truth는 `todos/NNN-...md`다.
@@ -98,13 +122,15 @@ Bro-exile의 장기 작업은 기획, 개발, 에셋이 서로 다른 속도로 
 | `status: pending`, 검증 질문이 흐림 | Planner |
 | `status: ready`, 구현 acceptance criteria가 명확함 | Developer |
 | `tags`에 `asset`, `art`, `sprite`, `icon`, `harness` 포함 | Asset |
+| 구현/에셋 완료 보고 이후, 완료 판정 전 | Validator |
+| `tags`에 `validation`, `playtest`, `simulation`, `readability` 포함 | Validator |
 | UI/전투/경제 구현과 에셋이 모두 필요한 작업 | Producer가 Planner/Developer/Asset으로 분할 |
 | 여러 todo 의존성 조정, 마일스톤 순서 변경 | Producer + Planner |
 
 권장 frontmatter 확장:
 
 ```yaml
-owner_lane: planning | dev | asset | producer
+owner_lane: planning | dev | asset | validation | producer
 active_thread:
 worktree:
 blocked_questions: []
@@ -121,10 +147,10 @@ last_handoff:
 ```markdown
 ### YYYY-MM-DD - <역할> Handoff
 
-**By:** Planner / Developer / Asset
+**By:** Planner / Developer / Asset / Validator
 
 **상태:**
-- done / blocked / needs-review 중 하나
+- done / blocked / needs-review / passed / conditional-pass / rejected 중 하나
 
 **Actions:**
 - 수행한 일
@@ -149,8 +175,9 @@ last_handoff:
 3. 메인 에이전트가 필요한 역할을 판정한다.
 4. 역할 에이전트에게 명확한 범위, 읽을 문서, 쓰기 범위, 멈춰야 할 질문 조건을 전달한다.
 5. 역할 에이전트는 자기 스레드와 필요 시 worktree에서 작업한다.
-6. 결과는 todo `Work Log`, docs, reports, artifacts에 남긴다.
-7. 메인 에이전트가 결과를 합쳐 사용자에게 현재 상태, 질문, 다음 결정을 보고한다.
+6. Developer 또는 Asset 작업이 끝나면 Validator가 완료 판정 전 독립 검증을 수행한다.
+7. 결과는 todo `Work Log`, docs, reports, artifacts에 남긴다.
+8. 메인 에이전트가 결과를 합쳐 사용자에게 현재 상태, 질문, 다음 결정을 보고한다.
 
 ## D8 첫 적용
 
@@ -168,7 +195,8 @@ D8 라우팅:
 - Planner: D8의 남은 디자인 질문, D9/D10/D11 의존성, D8 완료 판정 기준을 정리한다.
 - Developer: 무기 선택 UI, 세 스타터 무기 공격, 상점 decoration, debug/capture/smoke 검증을 구현한다.
 - Asset: 곡괭이/네일건/랜턴 아이콘, 무기 선택 UI/HUD/상점에서 읽히는 프리뷰, 필요한 후보 리포트를 만든다.
-- Producer: 세 결과를 합쳐 "D8을 계속 진행할 수 있는가, 사용자 결정이 필요한가, 다음 todo가 무엇인가"를 보고한다.
+- Validator: D8 구현과 에셋이 acceptance criteria를 통과하는지 독립 검증하고, 실제 캡처/플레이 감각에서 이상한 부분을 찾는다.
+- Producer: 네 결과를 합쳐 "D8을 계속 진행할 수 있는가, 사용자 결정이 필요한가, 다음 todo가 무엇인가"를 보고한다.
 
 ## 자동화로 승격하는 조건
 
@@ -176,6 +204,7 @@ D8 라우팅:
 
 - todo의 owner lane이 일관되게 맞는다.
 - 역할 에이전트가 handoff를 빠뜨리지 않는다.
+- Validator가 완료 전 검증 로그를 안정적으로 남긴다.
 - 사용자 질문이 줄고, 질문 품질이 올라간다.
 - worktree/branch 충돌이 관리된다.
 - 에셋 후보가 실사용 에셋에 자동으로 섞이지 않는다.
