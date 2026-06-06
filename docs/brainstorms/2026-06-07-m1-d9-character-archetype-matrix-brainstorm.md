@@ -2,7 +2,7 @@
 date: 2026-06-07
 topic: m1-d9-character-archetype-matrix
 kind: brainstorm
-status: needs-producer-review
+status: partially-approved
 related_todos:
   - todos/021-pending-p1-m1-d9-character-archetype-matrix.md
 ---
@@ -112,9 +112,11 @@ Slay the Spire식 캐릭터 구조를 참고하되, Bro-exile은 액션 자동�
 
 ## Producer Design Questions
 
-### BLOCKED: DESIGN QUESTION 1
+### DECIDED: DESIGN QUESTION 1
 
 캐릭터 3종은 지금 단계에서 “압축형/연쇄형/전환형” 같은 빌드 문법 코드명으로 확정해도 되는가?
+
+결정: 승인. D9는 캐릭터 3종을 `압축형`, `연쇄형`, `전환형` 빌드 문법 코드명으로 구분한다. 이는 최종 캐릭터 이름, 직업, 외형 확정이 아니라 후속 plan, debug metadata, simulation profile이 참조할 임시 설계 축이다.
 
 왜 지금 필요한가: D9 plan과 D10 simulation profile은 캐릭터를 식별할 최소 단위가 필요하다. 최종 직업명은 늦춰도 되지만, 데이터/검증 축의 3분할은 지금 정해야 한다.
 
@@ -132,7 +134,7 @@ D9 첫 구현은 캐릭터 선택 UI까지 포함해야 하는가, 아니면 데
 
 ## Recommended Next Step
 
-Producer가 위 3개 질문 중 최소 1번과 2번을 사용자에게 확인한 뒤, D9를 구현 계획으로 승격한다. 3번은 구현 전 기본값을 정해도 되며, 권장 기본값은 “모든 무기와 조합 가능하되 캐릭터별 1개 무기는 자연 선호를 갖는다”이다.
+Producer가 남은 2번 질문을 사용자에게 확인한 뒤, D9를 구현 계획으로 승격한다. 1번은 승인됐고, 3번은 구현 전 기본값을 정해도 된다. 3번의 권장 기본값은 “모든 무기와 조합 가능하되 캐릭터별 1개 무기는 자연 선호를 갖는다”이다.
 
 Planner 권장 경로:
 

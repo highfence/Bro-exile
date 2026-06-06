@@ -97,9 +97,9 @@ D8 무기 정체성은 complete 상태이므로, D9는 `docs/brainstorms/2026-06
 
 Option 1을 목표로 하되 캐릭터 이름/직업 확정은 강요하지 않는다. 먼저 “캐릭터 3종이 어떤 빌드 문법을 선호해야 하는가”와 “각 캐릭터가 억지로 한 아키타입만 타지 않게 만드는 브릿지/깡 성능 선택은 무엇인가”를 정리한다.
 
-Planner 권장 기본값은 캐릭터를 임시 코드명 `압축형`, `연쇄형`, `전환형`으로 두고, 각 캐릭터가 2-3개 아키타입을 선호하게 만드는 것이다. Producer는 구현 plan으로 넘기기 전에 아래 design question을 사용자에게 확인한다.
+Planner 권장 기본값은 캐릭터를 임시 코드명 `압축형`, `연쇄형`, `전환형`으로 두고, 각 캐릭터가 2-3개 아키타입을 선호하게 만드는 것이다. 이 3분할 방향은 2026-06-07 Producer/User 논의에서 승인됐다. Producer는 구현 plan으로 넘기기 전에 남은 design question을 사용자에게 확인한다.
 
-- BLOCKED: DESIGN QUESTION - 캐릭터 3종은 지금 단계에서 “압축형/연쇄형/전환형” 같은 빌드 문법 코드명으로 확정해도 되는가?
+- DECIDED: DESIGN QUESTION - 캐릭터 3종은 지금 단계에서 “압축형/연쇄형/전환형” 같은 빌드 문법 코드명으로 확정한다.
 - BLOCKED: DESIGN QUESTION - D9 첫 구현은 캐릭터 선택 UI까지 포함해야 하는가, 아니면 데이터/디버그/상점 편향만 먼저 넣고 UI는 다음 단계로 미룰 것인가?
 - BLOCKED: DESIGN QUESTION - 각 캐릭터는 모든 D8 무기와 조합 가능해야 하는가, 아니면 특정 무기 1-2개와 강한 선호를 가져도 되는가?
 
@@ -162,7 +162,19 @@ Planner 권장 기본값은 캐릭터를 임시 코드명 `압축형`, `연쇄�
 - BLOCKED: DESIGN QUESTION - 각 캐릭터는 모든 D8 무기와 조합 가능해야 하는가, 아니면 특정 무기 1-2개와 강한 선호를 가져도 되는가?
 
 **Next Handoff:**
-- Producer는 위 design question 중 최소 1번과 2번을 사용자에게 확인한다.
+- Producer는 1번 승인 결정을 기준으로 남은 2번을 사용자에게 확인하고, 필요하면 3번 기본값도 확정한다.
 - Developer는 사용자 결정 후 `data/debug first` 또는 `selection UI included` 범위로 D9 plan을 받아 구현한다.
 - Asset은 캐릭터 이름/직업 확정 전에는 실사용 캐릭터 에셋을 만들지 말고, 필요 시 mood/reference만 제안한다.
 - Validator는 design-only 기준과 debug/smoke/capture/playtest 기준을 분리해 완료 판정을 준비한다.
+
+### 2026-06-07 - Producer Decision
+
+**By:** Producer
+
+**Decision:**
+- 사용자와 논의한 결과, D9의 캐릭터 아키타입을 `압축형`, `연쇄형`, `전환형` 3종 빌드 문법으로 구분하는 방향을 승인했다.
+- 이 결정은 최종 캐릭터 이름, 직업, 외형 확정이 아니라 D9 plan과 D10 simulation profile이 참조할 임시 설계 축이다.
+
+**Remaining Questions:**
+- BLOCKED: DESIGN QUESTION - D9 첫 구현은 캐릭터 선택 UI까지 포함해야 하는가, 아니면 데이터/디버그/상점 편향만 먼저 넣고 UI는 다음 단계로 미룰 것인가?
+- BLOCKED: DESIGN QUESTION - 각 캐릭터는 모든 D8 무기와 조합 가능해야 하는가, 아니면 특정 무기 1-2개와 강한 선호를 가져도 되는가?
