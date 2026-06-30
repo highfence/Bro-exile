@@ -1,0 +1,26 @@
+# Compound Engineering local config.
+# Copy to .compound-engineering/config.local.yaml in a project root.
+# Keep config.local.yaml gitignored because it may contain machine-local choices.
+
+# Work delegation for CE skills that can ask Codex to perform isolated work.
+# work_delegate: codex           # codex | false
+# work_delegate_consent: true    # true | false
+# work_delegate_sandbox: yolo    # yolo | full-auto
+# work_delegate_decision: auto   # auto | ask
+# work_delegate_model: gpt-5.4
+# work_delegate_effort: high
+
+# Output format preferences.
+# plan_output: md                # md | html
+# brainstorm_output: md          # md | html
+# ideate_output: html            # md | html
+
+# ce-plan scoping confirmation.
+# plan_skip_scoping_confirm: false
+
+# Product pulse settings are usually written by /ce-product-pulse setup.
+# pulse_product_name: "My Product"
+# pulse_lookback_default: 24h
+# pulse_analytics_source: posthog
+# pulse_tracing_source: sentry
+# pulse_payments_source: stripe

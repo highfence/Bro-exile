@@ -50,3 +50,17 @@ Tool mapping:
 - 에셋 제작, 캐릭터 애니메이션, 몬스터 이미지, prompt pack, asset harness, 후보 promotion 작업은 먼저 `.codex/skills/bro-exile-asset-workflow/SKILL.md`를 연다.
 - Skill discovery를 사용할 수 없는 에이전트는 `docs/art/agent-asset-workflow.md`를 읽고 `python3 scripts/tools/asset_workflow_context.py --format markdown`를 실행한다.
 - 자동 생성 에셋은 실사용 경로에 바로 덮어쓰지 않는다. 후보 생성, normalization, 64px preview, Godot harness, stage capture, 사용자 승인 후 promotion 순서를 따른다.
+
+## Agent Pipeline Context
+
+- 장기 작업 운영은 `docs/operations/2026-06-05-agent-team-operating-model.md`와 `docs/operations/agent-pipeline-quickstart.md`를 따른다.
+- Producer는 `todos/README.md`를 읽고 Planner, Developer, Asset, Validator 중 하나로 작업을 라우팅한다.
+- 역할 에이전트는 채팅 요약만으로 끝내지 않고 관련 todo의 `Work Log`나 report에 handoff를 남긴다.
+- Codex local skill을 사용할 수 있으면 `.codex/skills/bro-exile-agent-pipeline/SKILL.md`를 먼저 연다.
+
+## Pixel Perfect Context
+
+- 에셋, UI, 애니메이션, capture, promotion 작업은 `docs/quality/2026-06-30-pixel-perfect-quality-gates.md`를 기준으로 검증한다.
+- Pixel-perfect 검증이 필요한 작업은 `.codex/skills/bro-exile-pixel-perfect/SKILL.md`를 함께 적용한다.
+- Headless load 성공만으로 visual QA를 통과 처리하지 않는다. 64px preview, metadata, 실제 Godot capture 경로를 handoff에 남긴다.
+- UI 텍스트가 관련된 변경은 `--capture-ui` 또는 동등한 캡처 결과에서 실제 픽셀이 보이는지 확인한다.
