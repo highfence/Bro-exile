@@ -14,7 +14,7 @@ const MODE_PLAY := "play"
 const MODE_CHOICE := "choice"
 const MODE_GAME_OVER := "game_over"
 const MODE_VICTORY := "victory"
-const MAX_ROUNDS := 10
+const MAX_ROUNDS := RunRulesScript.MAX_ROUNDS
 const MAX_WEAPON_SLOTS := 6
 const MAX_WEAPON_LEVEL := 4
 const SHOP_OPTION_COUNT := 4
@@ -43,6 +43,9 @@ const P7_GAME_OVER_SUMMARY_CAPTURE_PATH := "/private/tmp/orebound-godot-p7-game-
 const P8_WEAPON_SELECT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-p8-weapon-select-ui.png"
 const P8_SHOP_WEAPON_PARTS_CAPTURE_PATH := "/private/tmp/orebound-godot-p8-shop-weapon-parts.png"
 const P8_PICKAXE_SWING_CAPTURE_PATH := "/private/tmp/orebound-godot-p8-pickaxe-swing.png"
+const CHECKPOINT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-checkpoint-ui.png"
+const CHECKPOINT_HUD_CAPTURE_PATH := "/private/tmp/orebound-godot-checkpoint-hud.png"
+const CHECKPOINT_ELITE_BONUS := 45
 const PLAYER_VISUAL_SCALE := 0.27
 const ZOMBIE_VISUAL_SCALE := 0.25
 const PLAYER_IDLE_PERIOD := 1.32
@@ -126,6 +129,8 @@ var floating_text: Array = []
 var boss_spawned := false
 var selected_weapon_id := ""
 var run_rule_state := {}
+var checkpoint_feedback_cache := PackedStringArray()
+var checkpoint_feedback_dirty := true
 
 var game_ui: CanvasLayer
 var ui_font: Font
@@ -267,8 +272,9 @@ var weapon_catalog := {
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
+	var checkpoint_smoke := _checkpoint_smoke_request(args)
 	smoke_weapon_id = _weapon_arg_from_args(args)
-	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--debug-p8-weapon-routes") or args.has("--debug-demo-rule-seams") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary") or args.has("--capture-p8-weapon-select-ui") or args.has("--capture-p8-shop-weapon-parts") or args.has("--capture-p8-pickaxe-swing"):
+	if bool(checkpoint_smoke.get("present", false)) or args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--debug-p8-weapon-routes") or args.has("--debug-demo-rule-seams") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary") or args.has("--capture-p8-weapon-select-ui") or args.has("--capture-p8-shop-weapon-parts") or args.has("--capture-p8-pickaxe-swing") or args.has("--capture-checkpoint-ui"):
 		seed(12345)
 	else:
 		randomize()
@@ -313,6 +319,10 @@ func _ready() -> void:
 		_capture_p8_shop_weapon_parts_and_quit.call_deferred()
 	elif args.has("--capture-p8-pickaxe-swing"):
 		_capture_p8_pickaxe_swing_and_quit.call_deferred()
+	elif args.has("--capture-checkpoint-ui"):
+		_capture_checkpoint_ui_and_quit.call_deferred()
+	elif bool(checkpoint_smoke.get("present", false)):
+		_smoke_checkpoint_route_and_quit.call_deferred(str(checkpoint_smoke.get("route", "")))
 	elif args.has("--smoke-playtest"):
 		_start_smoke_playtest.call_deferred()
 	elif args.has("--debug-spider-relic-wave2"):
@@ -339,6 +349,8 @@ func _ready() -> void:
 		_debug_p8_weapon_routes_and_quit.call_deferred()
 	elif args.has("--debug-demo-rule-seams"):
 		_debug_demo_rule_seams_and_quit.call_deferred()
+	elif args.has("--debug-u3-checkpoint-contract"):
+		_debug_u3_checkpoint_contract_and_quit.call_deferred()
 
 
 func _weapon_arg_from_args(args: PackedStringArray) -> String:
@@ -348,6 +360,15 @@ func _weapon_arg_from_args(args: PackedStringArray) -> String:
 			if starter_weapon_ids.has(id):
 				return id
 	return ""
+
+
+func _checkpoint_smoke_request(args: PackedStringArray) -> Dictionary:
+	for arg in args:
+		if arg == "--smoke-checkpoint-route":
+			return {"present": true, "route": ""}
+		if arg.begins_with("--smoke-checkpoint-route="):
+			return {"present": true, "route": arg.trim_prefix("--smoke-checkpoint-route=")}
+	return {"present": false, "route": ""}
 
 
 func _debug_spider_relic_wave2_and_quit() -> void:
@@ -949,6 +970,115 @@ func _capture_p8_pickaxe_swing_and_quit() -> void:
 	get_tree().quit()
 
 
+func _capture_checkpoint_ui_and_quit() -> void:
+	_reset_run(true)
+	var risk_open := RunRulesScript.open_checkpoint(run_rule_state, 3)
+	var risk_result: Dictionary = RunRulesScript.select_checkpoint_route(risk_open, "risk")
+	var risk_state: Dictionary = RunRulesScript.attach_persistent_risk(risk_result.get("state", risk_open), "rough_vein")
+	var elite_open := RunRulesScript.open_checkpoint(risk_state, 5)
+	var elite_result: Dictionary = RunRulesScript.select_checkpoint_route(elite_open, "elite")
+	_set_run_rule_state(elite_result.get("state", elite_open))
+	_add_relic(_relic_by_id("rough_vein"))
+	wave = 6
+	mode = MODE_PLAY
+	_hide_overlay()
+	_update_hud()
+	queue_redraw()
+	for frame in range(5):
+		await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var hud_image := get_viewport().get_texture().get_image()
+	hud_image.save_png(CHECKPOINT_HUD_CAPTURE_PATH)
+
+	wave = 5
+	rounds_cleared = 5
+	round_ore_earned = 52
+	ore = 96
+	player["hp"] = 42.0
+	_set_run_rule_state(RunRulesScript.open_checkpoint(risk_state, wave))
+	_open_checkpoint_choice()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	image.save_png(CHECKPOINT_UI_CAPTURE_PATH)
+	print("CHECKPOINT_CAPTURE overlay=%s hud=%s size=%s" % [CHECKPOINT_UI_CAPTURE_PATH, CHECKPOINT_HUD_CAPTURE_PATH, str(image.get_size())])
+	get_tree().quit()
+
+
+func _smoke_checkpoint_route_and_quit(route_id: String) -> void:
+	_reset_run(true)
+	_hide_overlay()
+	wave = 3
+	rounds_cleared = 3
+	player["hp"] = 37.0
+	var hp_before := float(player["hp"])
+	_set_run_rule_state(RunRulesScript.open_checkpoint(run_rule_state, wave))
+	_open_checkpoint_choice()
+	if route_id.is_empty():
+		_choose_checkpoint_route({})
+		_checkpoint_smoke_fail("missing_route", route_id)
+		return
+	if route_id == "disabled":
+		var disabled_option := _active_choice_option_by_id("safe").duplicate(true)
+		disabled_option["disabled"] = true
+		active_choice_options[0] = disabled_option
+		_choose_checkpoint_route(disabled_option)
+		_checkpoint_smoke_fail("disabled_route", route_id)
+		return
+	if route_id == "unchanged":
+		var safe_option := _active_choice_option_by_id("safe")
+		_choose_checkpoint_route(safe_option)
+		var repeated: Dictionary = RunRulesScript.select_checkpoint_route(run_rule_state, "safe")
+		if str(repeated.get("error", "")) == "checkpoint_already_selected":
+			_checkpoint_smoke_fail("unchanged_route", route_id)
+		else:
+			_checkpoint_smoke_fail("immutability_not_enforced", route_id)
+		return
+	if not RunRulesScript.is_checkpoint_route(route_id):
+		_choose_checkpoint_route({"id": route_id, "kind": "checkpoint_route"})
+		_checkpoint_smoke_fail("unknown_route", route_id)
+		return
+	var option := _active_choice_option_by_id(route_id)
+	if option.is_empty() or _choice_option_disabled(option):
+		_checkpoint_smoke_fail("route_unavailable", route_id)
+		return
+	_choose_checkpoint_route(option)
+	if route_id == "risk":
+		if active_choice_method != "_choose_checkpoint_risk_relic" or active_choice_options.is_empty():
+			_checkpoint_smoke_fail("risk_contract_missing", route_id)
+			return
+		_choose_checkpoint_risk_relic(active_choice_options[0])
+	elif route_id == "shop":
+		var exit_option := _active_choice_option_by_id("next_round")
+		if exit_option.is_empty() or int(exit_option.get("cost", -1)) != 0:
+			_checkpoint_smoke_fail("free_shop_exit_missing", route_id)
+			return
+		_choose_shop_option(exit_option)
+	var hp_after := float(player.get("hp", 0.0))
+	var expected_hp := float(player.get("max_hp", 0.0)) if route_id == "safe" else hp_before
+	var risk_attached := route_id != "risk" or not Array(run_rule_state.get("persistent_risks", [])).is_empty()
+	var valid := mode == MODE_PLAY and wave == 4 and is_equal_approx(hp_after, expected_hp) and str(run_rule_state.get("selected_route", "")) == route_id and risk_attached
+	print("SMOKE_CHECKPOINT_ROUTE result=%s route=%s mode=%s wave=%d hp_before=%.1f hp_after=%.1f state=%s" % [
+		"PASS" if valid else "FAIL", route_id, mode, wave, hp_before, hp_after, JSON.stringify(run_rule_state),
+	])
+	get_tree().quit(0 if valid else 1)
+
+
+func _checkpoint_smoke_fail(reason: String, route_id: String) -> void:
+	print("SMOKE_CHECKPOINT_ROUTE result=FAIL reason=%s route=%s mode=%s wave=%d state=%s options=%s" % [
+		reason, route_id, mode, wave, JSON.stringify(run_rule_state), JSON.stringify(active_choice_options),
+	])
+	get_tree().quit(1)
+
+
+func _active_choice_option_by_id(id: String) -> Dictionary:
+	for option in active_choice_options:
+		if str(option.get("id", "")) == id:
+			return option
+	return {}
+
+
 func _debug_p7_reward_routes_and_quit() -> void:
 	var failures := 0
 	for round_index in range(1, MAX_ROUNDS + 1):
@@ -960,15 +1090,15 @@ func _debug_p7_reward_routes_and_quit() -> void:
 			2:
 				expected = "shop"
 			3:
-				expected = "contract -> shop"
+				expected = "checkpoint"
 			4:
 				expected = "shop"
 			5:
-				expected = "stat -> contract -> shop"
+				expected = "stat -> checkpoint"
 			6:
 				expected = "shop"
 			7:
-				expected = "stat -> contract -> shop"
+				expected = "stat -> checkpoint"
 			8:
 				expected = "shop"
 			9:
@@ -1269,7 +1399,7 @@ func _debug_demo_rule_seams_and_quit() -> void:
 	var expected_state := RunRulesScript.fresh_run_state()
 	if run_rule_state != expected_state:
 		failures += 1
-	if _reward_route_label(3) != "contract -> shop":
+	if _reward_route_label(3) != "checkpoint":
 		failures += 1
 	if _round_duration(5) != P1_BOSS_ROUND_DURATION:
 		failures += 1
@@ -1280,6 +1410,75 @@ func _debug_demo_rule_seams_and_quit() -> void:
 		str(run_rule_state),
 		_reward_route_label(3),
 		str(starter_weapon_ids),
+	])
+	get_tree().quit(1 if failures > 0 else 0)
+
+
+func _debug_u3_checkpoint_contract_and_quit() -> void:
+	_reset_run(true)
+	var failures := 0
+	wave = 3
+	player["hp"] = 31.0
+	_set_run_rule_state(RunRulesScript.open_checkpoint(run_rule_state, wave))
+	_open_checkpoint_choice()
+	_choose_checkpoint_route(_active_choice_option_by_id("safe"))
+	var locked_route_before := str(run_rule_state.get("selected_route", ""))
+	var wave_before_reopen := wave
+	_open_checkpoint_choice()
+	var reopen_nonblocking: bool = mode == MODE_PLAY and not game_ui.overlay.visible and wave == wave_before_reopen and str(run_rule_state.get("selected_route", "")) == locked_route_before
+	if not reopen_nonblocking:
+		failures += 1
+	_set_paused(true)
+	_open_checkpoint_choice()
+	var paused_reopen_immutable: bool = mode == MODE_PLAY and paused and game_ui.pause_banner.visible and not game_ui.overlay.visible and str(run_rule_state.get("selected_route", "")) == locked_route_before
+	_set_paused(false)
+	var resumed_reopen_immutable: bool = mode == MODE_PLAY and not paused and not game_ui.pause_banner.visible and str(run_rule_state.get("selected_route", "")) == locked_route_before
+	if not paused_reopen_immutable or not resumed_reopen_immutable:
+		failures += 1
+	_reset_run(true)
+	wave = 3
+	var current_open := RunRulesScript.open_checkpoint(run_rule_state, wave)
+	var current_selected: Dictionary = RunRulesScript.select_checkpoint_route(current_open, "safe")
+	_set_run_rule_state(current_selected.get("state", current_open))
+	mode = MODE_CHOICE
+	_open_checkpoint_choice()
+	var current_reopen_nonblocking: bool = mode == MODE_PLAY and not game_ui.overlay.visible and wave == 4 and str(run_rule_state.get("selected_route", "")) == "safe"
+	if not current_reopen_nonblocking:
+		failures += 1
+	_reset_run(true)
+	var state := RunRulesScript.open_checkpoint(run_rule_state, 3)
+	var risk_result: Dictionary = RunRulesScript.select_checkpoint_route(state, "risk")
+	state = RunRulesScript.attach_persistent_risk(risk_result.get("state", state), "rough_vein")
+	state = RunRulesScript.open_checkpoint(state, 5)
+	var safe_result: Dictionary = RunRulesScript.select_checkpoint_route(state, "safe")
+	state = safe_result.get("state", state)
+	var risk_survived := Array(state.get("persistent_risks", [])).size() == 1
+	_set_run_rule_state(state)
+	var risk_feedback := "\n".join(_checkpoint_feedback_lines()).contains("런 지속")
+	if not risk_survived or not risk_feedback:
+		failures += 1
+	var elite_base := RunRulesScript.open_checkpoint(RunRulesScript.fresh_run_state(), 5)
+	var elite_result: Dictionary = RunRulesScript.select_checkpoint_route(elite_base, "elite")
+	_set_run_rule_state(RunRulesScript.mark_elite_spawned(elite_result.get("state", elite_base)))
+	var ore_before := ore
+	_record_enemy_defeat({"type": "elite_zombie", "checkpoint_elite": true, "pos": player.get("pos", Vector2.ZERO)})
+	var elite_success := str(Dictionary(run_rule_state.get("elite_segment", {})).get("status", "")) == "success" and ore == ore_before + CHECKPOINT_ELITE_BONUS
+	var success_feedback := "\n".join(_checkpoint_feedback_lines()).contains("성공") and _elite_result_history_text().contains("성공")
+	if not elite_success or not success_feedback:
+		failures += 1
+	var missed_base := RunRulesScript.open_checkpoint(RunRulesScript.fresh_run_state(), 7)
+	var missed_result: Dictionary = RunRulesScript.select_checkpoint_route(missed_base, "elite")
+	var missed_state: Dictionary = RunRulesScript.advance_checkpoint_state(missed_result.get("state", missed_base), 11)
+	var elite_missed := str(Dictionary(missed_state.get("elite_segment", {})).get("status", "")) == "missed"
+	_set_run_rule_state(missed_state)
+	var missed_feedback := "\n".join(_checkpoint_feedback_lines()).contains("놓침") and _elite_result_history_text().contains("놓침")
+	if not elite_missed or not missed_feedback:
+		failures += 1
+	var route_contract := _reward_route_label(3) == "checkpoint" and _reward_route_label(5) == "stat -> checkpoint" and _reward_route_label(7) == "stat -> checkpoint"
+	if not route_contract:
+		failures += 1
+	print("DEBUG_U3_CHECKPOINT_CONTRACT failures=%d reopen_nonblocking=%s current_reopen_nonblocking=%s paused_reopen_immutable=%s resumed_reopen_immutable=%s routes=%s risk_survived=%s risk_feedback=%s elite_success=%s success_feedback=%s elite_missed=%s missed_feedback=%s state=%s" % [
+		failures, str(reopen_nonblocking), str(current_reopen_nonblocking), str(paused_reopen_immutable), str(resumed_reopen_immutable), str([_reward_route_label(3), _reward_route_label(5), _reward_route_label(7)]), str(risk_survived), str(risk_feedback), str(elite_success), str(success_feedback), str(elite_missed), str(missed_feedback), JSON.stringify(run_rule_state),
 	])
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -1497,7 +1696,7 @@ func _reset_run(start_playing: bool) -> void:
 	floating_text.clear()
 	boss_spawned = false
 	selected_weapon_id = ""
-	run_rule_state = RunRulesScript.fresh_run_state()
+	_set_run_rule_state(RunRulesScript.fresh_run_state())
 	if start_playing:
 		_equip_weapon_for_run("drill_tip")
 	_render_weapons()
@@ -1706,6 +1905,14 @@ func _spawn_enemies() -> void:
 		spawn_timer = 0.35
 		return
 
+	if _should_spawn_checkpoint_elite():
+		_queue_spawn_warning("elite_zombie", 1)
+		if not spawn_warnings.is_empty():
+			spawn_warnings[-1]["checkpoint_elite"] = true
+		_set_run_rule_state(RunRulesScript.mark_elite_spawned(run_rule_state))
+		spawn_timer = max(0.38, _enemy_spawn_interval("elite_zombie") * 0.82)
+		return
+
 	if _should_spawn_elite_zombie():
 		_queue_spawn_warning("elite_zombie", 1)
 		spawn_timer = max(0.38, _enemy_spawn_interval("elite_zombie") * 0.82)
@@ -1721,7 +1928,7 @@ func _spawn_enemy_pack(kind: String, pack_size: int) -> void:
 	_spawn_enemy_pack_at(kind, pack_size, _spawn_position(), false)
 
 
-func _spawn_enemy_pack_at(kind: String, pack_size: int, anchor: Vector2, emerging: bool) -> void:
+func _spawn_enemy_pack_at(kind: String, pack_size: int, anchor: Vector2, emerging: bool, checkpoint_elite: bool = false) -> void:
 	for i in range(pack_size):
 		if enemies.size() >= _enemy_cap():
 			return
@@ -1732,6 +1939,8 @@ func _spawn_enemy_pack_at(kind: String, pack_size: int, anchor: Vector2, emergin
 		if emerging:
 			enemy["emerge_timer"] = ENEMY_EMERGE_DURATION
 			enemy["emerge_duration"] = ENEMY_EMERGE_DURATION
+		if checkpoint_elite:
+			enemy["checkpoint_elite"] = true
 		enemies.append(enemy)
 
 
@@ -1754,7 +1963,7 @@ func _update_spawn_warnings(delta: float) -> void:
 		var warning: Dictionary = spawn_warnings[i]
 		warning["timer"] = float(warning.get("timer", 0.0)) - delta
 		if float(warning["timer"]) <= 0.0:
-			_spawn_enemy_pack_at(str(warning.get("kind", "zombie")), int(warning.get("pack_size", 1)), Vector2(warning.get("pos", player.get("pos", WORLD_SIZE * 0.5))), true)
+			_spawn_enemy_pack_at(str(warning.get("kind", "zombie")), int(warning.get("pack_size", 1)), Vector2(warning.get("pos", player.get("pos", WORLD_SIZE * 0.5))), true, bool(warning.get("checkpoint_elite", false)))
 			spawn_warnings.remove_at(i)
 
 
@@ -2552,7 +2761,7 @@ func _update_enemies(delta: float) -> void:
 		var enemy = enemies[i]
 		if enemy["hp"] <= 0.0:
 			var defeated_type := str(enemy.get("type", "zombie"))
-			_record_enemy_defeat(defeated_type)
+			_record_enemy_defeat(enemy)
 			_drop_pickups(enemy)
 			_trigger_enemy_death_pattern(enemy)
 			_add_spark(enemy["pos"], enemy["color"], 14)
@@ -3104,9 +3313,7 @@ func _update_pickups(delta: float) -> void:
 		if distance < player["radius"] + item["radius"]:
 			if item["type"] == "ore":
 				var value := int(item.get("value", 0))
-				ore += value
-				round_ore_earned += value
-				run_ore_collected += value
+				_credit_collected_ore(value)
 			else:
 				_add_xp(item["value"] * xp_multiplier)
 			pickups.remove_at(i)
@@ -3276,9 +3483,9 @@ func _finish_round() -> void:
 	_collect_leftover_ore()
 	_award_round_clear_ore()
 	_clear_combat_state()
-	_fully_heal_player()
 	spawn_timer = 0.0
 	screen_shake = 0.0
+	_set_run_rule_state(RunRulesScript.advance_checkpoint_state(run_rule_state, wave + 1))
 
 	pending_reward_chain = _reward_chain_for_round(wave)
 	_open_next_reward_or_round()
@@ -3296,6 +3503,8 @@ func _reward_route_label(round_index: int) -> String:
 				labels.append("stat")
 			"contract":
 				labels.append("contract")
+			"checkpoint":
+				labels.append("checkpoint")
 			"shop":
 				labels.append("shop")
 			"final_shop":
@@ -3313,6 +3522,8 @@ func _open_next_reward_or_round() -> void:
 			_open_stat_reward()
 		"contract":
 			_open_contract_choice()
+		"checkpoint":
+			_open_checkpoint_choice()
 		"shop", "final_shop":
 			_open_shop()
 		_:
@@ -3323,18 +3534,14 @@ func _collect_leftover_ore() -> void:
 	for item in pickups:
 		if item["type"] == "ore":
 			var value := int(item.get("value", 0))
-			ore += value
-			round_ore_earned += value
-			run_ore_collected += value
+			_credit_collected_ore(value)
 	pickups.clear()
 
 
 func _award_round_clear_ore() -> void:
 	var base_reward := EconomyRulesScript.round_clear_reward(wave)
 	var reward := int(round(float(base_reward) * _relic_clear_ore_multiplier()))
-	ore += reward
-	round_ore_earned += reward
-	run_ore_collected += reward
+	_credit_collected_ore(reward)
 
 
 func _clear_combat_state() -> void:
@@ -3393,6 +3600,8 @@ func _next_reward_or_round_desc() -> String:
 				return "다음 보상으로 기본 체급 보정을 선택합니다."
 			"contract":
 				return "다음 보상으로 위험한 광맥 계약을 선택합니다."
+			"checkpoint":
+				return "다음 구간의 안전, 위험, 상점, 엘리트 경로를 선택합니다."
 			"shop", "final_shop":
 				return "다음 보상으로 상점에 진입합니다."
 	return "%s\n%s" % [_next_round_warning_text(min(wave + 1, MAX_ROUNDS)), _round_brief(min(wave + 1, MAX_ROUNDS))]
@@ -3411,6 +3620,14 @@ func _choose_relic_option(relic: Dictionary) -> void:
 	_open_next_reward_or_round()
 
 
+func _choose_checkpoint_risk_relic(relic: Dictionary) -> void:
+	if str(relic.get("kind", "")) != "relic":
+		return
+	_add_relic(relic)
+	_set_run_rule_state(RunRulesScript.attach_persistent_risk(run_rule_state, str(relic.get("id", ""))))
+	_open_next_reward_or_round()
+
+
 func _open_stat_reward() -> void:
 	mode = MODE_CHOICE
 	var title := "기본 체급 보정"
@@ -3418,10 +3635,68 @@ func _open_stat_reward() -> void:
 	_show_choice_overlay(eyebrow, title, _sample_array(stat_rewards, 3), "_choose_reward")
 
 
-func _open_contract_choice() -> void:
+func _open_contract_choice(choice_method: String = "_choose_relic_option") -> void:
 	mode = MODE_CHOICE
 	var options := _roll_relic_options()
-	_show_choice_overlay("계약 이벤트  ·  %s" % _next_round_warning_text(min(wave + 1, MAX_ROUNDS)), "위험한 광맥 선택", options, "_choose_relic_option")
+	_show_choice_overlay("계약 이벤트  ·  %s" % _next_round_warning_text(min(wave + 1, MAX_ROUNDS)), "위험한 광맥 선택", options, choice_method)
+
+
+func _open_checkpoint_choice() -> void:
+	var locked_checkpoint_round := int(run_rule_state.get("checkpoint_round", 0))
+	var locked_route := str(run_rule_state.get("selected_route", ""))
+	if not locked_route.is_empty():
+		_hide_overlay()
+		active_choice_options.clear()
+		active_choice_method = ""
+		if wave <= locked_checkpoint_round:
+			print("CHECKPOINT_REENTRY_FAILSAFE action=advance checkpoint_round=%d wave=%d route=%s state=%s" % [locked_checkpoint_round, wave, locked_route, JSON.stringify(run_rule_state)])
+			_open_next_reward_or_round()
+		else:
+			print("CHECKPOINT_REENTRY_FAILSAFE action=preserve checkpoint_round=%d wave=%d route=%s state=%s" % [locked_checkpoint_round, wave, locked_route, JSON.stringify(run_rule_state)])
+			mode = MODE_PLAY
+		return
+	if not RunRulesScript.is_checkpoint_round(wave):
+		print("CHECKPOINT_ROUTE_ERROR reason=checkpoint_not_scheduled wave=%d state=%s" % [wave, JSON.stringify(run_rule_state)])
+		_hide_overlay()
+		active_choice_options.clear()
+		active_choice_method = ""
+		mode = MODE_PLAY
+		return
+	mode = MODE_CHOICE
+	_set_run_rule_state(RunRulesScript.open_checkpoint(run_rule_state, wave))
+	_show_choice_overlay(
+		"R%d 완료 · 다음 구간을 직접 선택" % wave,
+		"얼마나 깊이 들어갈까요?",
+		DemoContentScript.checkpoint_route_options(wave),
+		"_choose_checkpoint_route"
+	)
+
+
+func _choose_checkpoint_route(option: Dictionary) -> void:
+	var route_id := str(option.get("id", ""))
+	if str(option.get("kind", "")) != "checkpoint_route" or not RunRulesScript.is_checkpoint_route(route_id):
+		print("CHECKPOINT_ROUTE_ERROR reason=unknown_or_missing state=%s option=%s" % [JSON.stringify(run_rule_state), JSON.stringify(option)])
+		return
+	var offered := _active_choice_option_by_id(route_id)
+	if offered.is_empty() or _choice_option_disabled(offered):
+		print("CHECKPOINT_ROUTE_ERROR reason=disabled_or_unoffered state=%s option=%s" % [JSON.stringify(run_rule_state), JSON.stringify(option)])
+		return
+	var result: Dictionary = RunRulesScript.select_checkpoint_route(run_rule_state, route_id)
+	if not bool(result.get("ok", false)):
+		print("CHECKPOINT_ROUTE_ERROR reason=%s state=%s option=%s" % [str(result.get("error", "unknown")), JSON.stringify(run_rule_state), JSON.stringify(option)])
+		return
+	_set_run_rule_state(result.get("state", run_rule_state))
+	_hide_overlay()
+	match route_id:
+		"safe":
+			_fully_heal_player()
+			_open_next_reward_or_round()
+		"risk":
+			_open_contract_choice("_choose_checkpoint_risk_relic")
+		"shop":
+			_open_shop()
+		"elite":
+			_open_next_reward_or_round()
 
 
 func _roll_relic_options() -> Array:
@@ -3483,7 +3758,6 @@ func _add_relic(relic: Dictionary) -> void:
 
 func _open_shop() -> void:
 	mode = MODE_CHOICE
-	_fully_heal_player()
 	shop_visit_seen_item_ids.clear()
 	reroll_cost = _shop_reroll_cost()
 	shop_stock = _roll_shop_stock()
@@ -3838,6 +4112,7 @@ func _remove_shop_stock(item: Dictionary) -> void:
 
 func _start_next_round() -> void:
 	wave += 1
+	_set_run_rule_state(RunRulesScript.advance_checkpoint_state(run_rule_state, wave))
 	wave_timer = _round_duration(wave)
 	spawn_timer = 0.0
 	round_ore_earned = 0
@@ -3845,13 +4120,14 @@ func _start_next_round() -> void:
 	boss_spawned = false
 	_set_paused(false)
 	_clear_combat_state()
-	_fully_heal_player()
 	_hide_overlay()
 	mode = MODE_PLAY
 	_render_weapons()
 
 
 func _choice_option_disabled(option: Dictionary) -> bool:
+	if bool(option.get("disabled", false)):
+		return true
 	if int(option.get("cost", 0)) > ore:
 		return true
 	if str(option.get("kind", "")) == "weapon":
@@ -3919,9 +4195,14 @@ func _record_shop_purchase(item: Dictionary) -> void:
 		run_rare_legendary_purchase_names.append("%s(%s)" % [str(item.get("name", "미확인 구매")), _rarity_label(rarity)])
 
 
-func _record_enemy_defeat(type: String) -> void:
+func _record_enemy_defeat(enemy: Dictionary) -> void:
+	var type := str(enemy.get("type", "zombie"))
 	run_kill_count += 1
 	run_kills_by_type[type] = int(run_kills_by_type.get(type, 0)) + 1
+	if bool(enemy.get("checkpoint_elite", false)):
+		_credit_collected_ore(CHECKPOINT_ELITE_BONUS)
+		_set_run_rule_state(RunRulesScript.complete_elite_objective(run_rule_state, CHECKPOINT_ELITE_BONUS))
+		_add_floating_text("엘리트 목표 성공 +%d 광석" % CHECKPOINT_ELITE_BONUS, Vector2(enemy.get("pos", player.get("pos", Vector2.ZERO))), Color("#f2cf66"))
 	if type == "final_boss" or (type == "boss" and wave >= MAX_ROUNDS):
 		run_boss_defeated = true
 
@@ -3941,6 +4222,12 @@ func _run_report_lines() -> PackedStringArray:
 	lines.append("광석 획득 %d / 사용 %d / 보유 %d / 리롤 %d" % [run_ore_collected, run_ore_spent, ore, run_rerolls])
 	lines.append("구매 %d회 / 희귀·전설: %s" % [run_purchase_count, _format_name_counts(run_rare_legendary_purchase_names, "없음")])
 	lines.append("계약: %s" % _format_relic_counts_for_report())
+	lines.append("체크포인트: %s" % _checkpoint_route_history_text())
+	var elite_history := _elite_result_history_text()
+	if not elite_history.is_empty():
+		lines.append("엘리트 결과: %s" % elite_history)
+	for feedback in _checkpoint_feedback_lines():
+		lines.append(feedback)
 	lines.append("전투 처치 %d (%s) / 보스 피해 %d / 보스 %s" % [
 		run_kill_count,
 		_format_kill_counts_for_report(),
@@ -3948,6 +4235,86 @@ func _run_report_lines() -> PackedStringArray:
 		"처치" if run_boss_defeated else "미처치",
 	])
 	return lines
+
+
+func _checkpoint_route_history_text() -> String:
+	var history: Array = run_rule_state.get("route_history", [])
+	if history.is_empty():
+		return "선택 없음"
+	var parts := PackedStringArray()
+	for entry in history:
+		parts.append("R%d %s" % [int(entry.get("checkpoint_round", 0)), _checkpoint_route_label(str(entry.get("route", "")))])
+	return " / ".join(parts)
+
+
+func _checkpoint_route_label(route_id: String) -> String:
+	match route_id:
+		"safe":
+			return "안전"
+		"risk":
+			return "위험"
+		"shop":
+			return "상점"
+		"elite":
+			return "엘리트"
+		_:
+			return "미확인"
+
+
+func _elite_result_history_text() -> String:
+	var results: Array = run_rule_state.get("elite_results", [])
+	if results.is_empty():
+		return ""
+	var parts := PackedStringArray()
+	for result in results:
+		var checkpoint_round := int(result.get("checkpoint_round", 0))
+		if str(result.get("status", "")) == "success":
+			parts.append("R%d 성공 +%d 광석" % [checkpoint_round, int(result.get("bonus", 0))])
+		else:
+			parts.append("R%d 놓침" % checkpoint_round)
+	return " / ".join(parts)
+
+
+func _checkpoint_feedback_lines() -> PackedStringArray:
+	var lines := PackedStringArray()
+	var risks: Array = run_rule_state.get("persistent_risks", [])
+	if risks.is_empty():
+		lines.append("지속 위험: 없음")
+	else:
+		var names := PackedStringArray()
+		for risk in risks:
+			var relic := _relic_by_id(str(risk.get("id", "")))
+			var name := str(relic.get("name", risk.get("id", "미확인 위험")))
+			var danger := str(relic.get("danger", "적 압박 증가"))
+			names.append("%s · %s · 런 지속" % [name, danger])
+		lines.append("지속 위험: %s" % " / ".join(names))
+	var elite: Dictionary = run_rule_state.get("elite_segment", {})
+	match str(elite.get("status", "")):
+		"active":
+			lines.append("엘리트 목표: R%d-R%d 강적 추적 중" % [int(elite.get("start_round", 0)), int(elite.get("end_round", 0))])
+		"success":
+			lines.append("엘리트 목표: 성공 · 처치 보너스 +%d 광석" % int(elite.get("bonus", 0)))
+		"missed":
+			lines.append("엘리트 목표: 구간 종료 · 보너스 놓침")
+	return lines
+
+
+func _checkpoint_hud_feedback_lines() -> PackedStringArray:
+	if checkpoint_feedback_dirty:
+		checkpoint_feedback_cache = _checkpoint_feedback_lines()
+		checkpoint_feedback_dirty = false
+	return checkpoint_feedback_cache
+
+
+func _set_run_rule_state(next_state: Dictionary) -> void:
+	run_rule_state = next_state
+	checkpoint_feedback_dirty = true
+
+
+func _credit_collected_ore(amount: int) -> void:
+	ore += amount
+	round_ore_earned += amount
+	run_ore_collected += amount
 
 
 func _selected_weapon_report_text() -> String:
@@ -4081,6 +4448,13 @@ func _should_spawn_elite_zombie() -> bool:
 	if _round_is_boss(wave):
 		chance *= 0.65
 	return randf() < chance
+
+
+func _should_spawn_checkpoint_elite() -> bool:
+	var segment: Dictionary = run_rule_state.get("elite_segment", {})
+	if str(segment.get("status", "")) != "active" or bool(segment.get("spawned", false)):
+		return false
+	return wave >= int(segment.get("start_round", 0)) and wave <= int(segment.get("end_round", 0)) and enemies.size() < _enemy_cap()
 
 
 func _game_over() -> void:
@@ -4844,6 +5218,7 @@ func _update_hud() -> void:
 		"ore": ore,
 		"time": _format_time(max(0.0, wave_timer)),
 		"relics": _active_relic_summary(),
+		"risk_lines": _checkpoint_hud_feedback_lines(),
 	})
 
 
@@ -4910,6 +5285,8 @@ func _choice_meta_text(option: Dictionary, disabled: bool) -> String:
 	if str(option.get("kind", "")) == "relic":
 		var next_level: int = min(3, _relic_count(str(option.get("id", ""))) + 1)
 		return "계약 %s · %s · %s" % [_roman_level(next_level), str(option.get("danger", "위험 누적")), str(option.get("reward_hint", "위험한 광맥일수록 더 많은 광석을 품는다."))]
+	if str(option.get("kind", "")) == "checkpoint_route":
+		return "%s · %s · %s" % [str(option.get("scope", "다음 구간")), str(option.get("danger", "위험 미확인")), str(option.get("outcome", "결과 미확인"))]
 	if option.has("cost"):
 		var cost := int(option["cost"])
 		var price_text := "무료" if cost <= 0 else "광석 %d" % cost

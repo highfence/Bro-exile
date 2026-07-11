@@ -24,6 +24,8 @@ var weapon_panel: PanelContainer
 var weapon_box: HBoxContainer
 var relic_panel: PanelContainer
 var relic_box: HBoxContainer
+var risk_panel: PanelContainer
+var risk_label: Label
 var overlay: Control
 var overlay_panel: PanelContainer
 var overlay_box: VBoxContainer
@@ -72,6 +74,13 @@ func update_hud(data: Dictionary) -> void:
 	time_label.text = str(data.get("time", "00:00"))
 	var relics: Array = data.get("relics", [])
 	render_relics(relics)
+	var risk_lines: PackedStringArray = data.get("risk_lines", PackedStringArray())
+	var risk_text := "\n".join(risk_lines)
+	if risk_label.text != risk_text:
+		risk_label.text = risk_text
+	var risk_visible := not risk_lines.is_empty()
+	if risk_panel.visible != risk_visible:
+		risk_panel.visible = risk_visible
 
 
 func render_weapons(weapons: Array, damage_multiplier: float) -> void:
@@ -152,11 +161,15 @@ func show_choice(eyebrow: String, title: String, options: Array, relics: Array =
 	var tall := options.size() > 3
 	var columns: int = 2 if options.size() > 6 else 3
 	var card_height: int = 142 if tall else 126
+	var checkpoint_options := _options_are_checkpoints(options)
+	if checkpoint_options:
+		columns = 2
+		card_height = 164
 	if _options_are_contracts(options):
 		card_height = 158
 	if _options_are_starter_weapons(options):
 		card_height = 190
-	_prepare_overlay(Vector2(900, 0), OreUITheme.PANEL_STRONG)
+	_prepare_overlay(Vector2(1040 if checkpoint_options else 900, 0), OreUITheme.PANEL_STRONG)
 	overlay_box.add_child(_make_label(eyebrow, 14, OreUITheme.ORE))
 	overlay_box.add_child(_make_label(title, 34, OreUITheme.INK))
 	if not relics.is_empty():
@@ -187,6 +200,13 @@ func _options_are_contracts(options: Array) -> bool:
 func _options_are_starter_weapons(options: Array) -> bool:
 	for option in options:
 		if str(Dictionary(option).get("kind", "")) == "starter_weapon":
+			return true
+	return false
+
+
+func _options_are_checkpoints(options: Array) -> bool:
+	for option in options:
+		if str(Dictionary(option).get("kind", "")) == "checkpoint_route":
 			return true
 	return false
 
@@ -332,6 +352,23 @@ func _build_hud() -> void:
 	relic_box = HBoxContainer.new()
 	relic_box.add_theme_constant_override("separation", 7)
 	relic_margin.add_child(relic_box)
+
+	risk_panel = PanelContainer.new()
+	risk_panel.name = "RiskHud"
+	risk_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	risk_panel.offset_left = 12
+	risk_panel.offset_top = 78
+	risk_panel.offset_right = 520
+	risk_panel.offset_bottom = 168
+	risk_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	risk_panel.add_theme_stylebox_override("panel", OreUITheme.panel_style(Color(0.12, 0.08, 0.06, 0.88), Color(0.66, 0.38, 0.22, 0.88), 8, 1))
+	root.add_child(risk_panel)
+	var risk_margin := _margin(10, 7, 10, 7)
+	risk_panel.add_child(risk_margin)
+	risk_label = _make_label("", 12, OreUITheme.INK)
+	risk_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	risk_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	risk_margin.add_child(risk_label)
 
 
 func _build_overlay() -> void:
@@ -605,7 +642,7 @@ func _make_option_card(option: Dictionary, min_height: int) -> Control:
 	box.add_child(desc)
 
 	var meta := _make_label(str(option.get("meta_text", "")), 12, meta_color)
-	if str(option.get("kind", "")) == "relic":
+	if str(option.get("kind", "")) == "relic" or str(option.get("kind", "")) == "checkpoint_route":
 		meta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		meta.custom_minimum_size = Vector2(0, 34)
 	else:

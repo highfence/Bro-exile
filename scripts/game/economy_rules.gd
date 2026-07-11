@@ -1,6 +1,8 @@
 extends RefCounted
 
-const MAX_ROUNDS := 10
+const RunRulesScript = preload("res://scripts/game/run_rules.gd")
+
+const MAX_ROUNDS := RunRulesScript.MAX_ROUNDS
 const ROUND_CLEAR_ORE_BASE := 20
 const ROUND_CLEAR_ORE_STEP := 8
 

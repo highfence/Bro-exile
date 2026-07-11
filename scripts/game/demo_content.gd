@@ -1,5 +1,7 @@
 extends RefCounted
 
+const RunRulesScript = preload("res://scripts/game/run_rules.gd")
+
 const STARTER_WEAPON_IDS := ["pickaxe", "nailgun", "lantern"]
 const BASE_CONTRACT_IDS := ["overheated_footsteps", "sharpened_throwing", "rough_vein", "chosen_prey"]
 const MID_CONTRACT_IDS := ["cracked_shield_oath", "viscous_poison_vein", "shortened_fuse"]
@@ -17,6 +19,38 @@ static func contract_ids_for_round(round_index: int) -> Array:
 	if round_index >= 7:
 		ids.append_array(LATE_CONTRACT_IDS)
 	return ids
+
+
+static func checkpoint_route_ids() -> Array:
+	return RunRulesScript.CHECKPOINT_ROUTE_IDS.duplicate()
+
+
+static func checkpoint_route_options(completed_round: int) -> Array:
+	var start_round := completed_round + 1
+	var end_round := RunRulesScript.checkpoint_segment_end(completed_round)
+	var scope := "R%d-R%d" % [start_round, end_round]
+	return [
+		{
+			"id": "safe", "kind": "checkpoint_route", "name": "안전 정비",
+			"desc": "전투 피해를 모두 회복하고 다음 구간으로 이동합니다.",
+			"scope": scope, "danger": "위험 없음", "outcome": "완전 회복", "cost": 0,
+		},
+		{
+			"id": "risk", "kind": "checkpoint_route", "name": "위험 계약",
+			"desc": "누적되는 위험을 하나 받아 더 값진 적과 광맥을 만납니다.",
+			"scope": "이번 런 지속", "danger": "지속 위험", "outcome": "계약 보상", "cost": 0,
+		},
+		{
+			"id": "shop", "kind": "checkpoint_route", "name": "보급 상점",
+			"desc": "회복 없이 현재 광석으로 장비를 정비합니다. 나가기는 무료입니다.",
+			"scope": scope, "danger": "현재 체력 유지", "outcome": "구매 기회", "cost": 0,
+		},
+		{
+			"id": "elite", "kind": "checkpoint_route", "name": "엘리트 추적",
+			"desc": "다음 구간의 강적을 처치하면 즉시 추가 광석을 획득합니다.",
+			"scope": scope, "danger": "강적 예약", "outcome": "처치 보너스", "cost": 0,
+		},
+	]
 
 
 static func round_brief(round_index: int) -> String:

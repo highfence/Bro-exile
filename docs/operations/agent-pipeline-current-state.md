@@ -8,7 +8,7 @@ status: active-reference
 # 에이전트 파이프라인 현재 상태
 
 <!-- pipeline-queue
-{"active_slice": "023", "artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md"], "last_handoff": "2026-07-12 - Producer Queue Rebaseline Handoff", "order": ["023", "020", "021", "022", "024"], "owner_lane": "dev"}
+{"active_slice": "023", "artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "scripts/game/run_rules.gd", "scripts/game/demo_content.gd", "scripts/main.gd", "scripts/ui/game_ui.gd", "scripts/tools/demo_validation_harness.gd", "docs/reports/validation/2026-07-12-u3-checkpoint-risk-loop-validation.md"], "last_handoff": "2026-07-12 - U3 Post-Simplification Validator Handoff", "order": ["023", "020", "021", "022", "024"], "owner_lane": "producer"}
 -->
 
 이 문서는 canonical todo를 새 세션에서 빠르게 읽기 위한 projection이다. 값이 충돌하면 개별 `pipeline_slice` todo frontmatter와 최신 Work Log 증거가 권위이며, projection을 고친 뒤에만 새 역할을 dispatch한다.
@@ -28,7 +28,7 @@ status: active-reference
 
 | 순서 | todo | lifecycle | owner lane | Validator | user gate |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `todos/023-ready-p1-demo-checkpoint-risk-loop.md` | ready | dev | not-run | not-requested |
+| 1 | `todos/023-ready-p1-demo-checkpoint-risk-loop.md` | ready | producer | passed | awaiting-user-approval |
 | 2 | `todos/020-pending-p2-m1-d11-multi-currency-economy.md` | pending | planning | not-run | not-requested |
 | 3 | `todos/021-pending-p1-m1-d9-character-archetype-matrix.md` | pending | planning | not-run | not-requested |
 | 4 | `todos/022-pending-p1-m1-d10-skill-simulation-validation.md` | pending | planning | not-run | not-requested |
@@ -37,10 +37,10 @@ status: active-reference
 ## Active Dispatch
 
 - Active slice: `023` 공개 데모 체크포인트 위험 선택 루프.
-- Owner lane: Developer.
+- Owner lane: Producer.
 - Canonical todo: `todos/023-ready-p1-demo-checkpoint-risk-loop.md`.
 - Plan: `docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md` U2, U3.
-- 다음 허용 transition: Developer handoff 뒤 독립 Validator 판정.
+- 다음 허용 transition: Product Owner 실제 플레이 승인 또는 변경 요청.
 - 금지: 023이 `complete/passed/approved`가 되기 전에 020을 `ready`로 만들거나 D9 구현을 재개하지 않는다.
 
 ## State Contract
@@ -97,4 +97,4 @@ D9는 취소되지 않았고 공개 데모의 세 번째 slice로 이동했다. 
 
 ## Role Prompt Seed
 
-현재 Developer는 U2 characterization gate를 먼저 만들고 U3 체크포인트 slice를 구현한다. 쓰기 범위, verification, 멈춤 조건은 023 todo와 public-demo plan으로 제한한다. 구현 handoff에는 변경 파일, 실행한 debug/smoke/capture/playtest, 실패한 검증, 다음 Validator lane을 남긴다.
+U3는 독립 Validator `passed` 상태다. Producer는 safe/risk/shop/elite 실제 플레이 단위를 Product Owner에게 제공하고 승인 또는 변경 요청을 기록한다. 승인 전에는 020을 활성화하지 않는다.

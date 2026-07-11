@@ -53,11 +53,11 @@ func _validate_run_rules() -> void:
 	var expected_routes := [
 		"stat",
 		"shop",
-		"contract -> shop",
+		"checkpoint",
 		"shop",
-		"stat -> contract -> shop",
+		"stat -> checkpoint",
 		"shop",
-		"stat -> contract -> shop",
+		"stat -> checkpoint",
 		"shop",
 		"final_shop",
 		"victory",
@@ -74,10 +74,28 @@ func _validate_run_rules() -> void:
 	_expect_equal("run.checkpoint_cadence", checkpoint_rounds, [3, 5, 7])
 	_expect_equal("run.round_5_duration", RunRulesScript.round_duration(5, false), 120.0)
 	_expect_equal("run.round_10_is_boss", RunRulesScript.is_boss_round(10), true)
+	_expect_equal("run.checkpoint_route_ids", DemoContentScript.checkpoint_route_ids(), ["safe", "risk", "shop", "elite"])
 
-	var initial_state: Dictionary = RunRulesScript.fresh_run_state()
-	initial_state["checkpoint_round"] = 7
-	initial_state["selected_route"] = "risk"
+	var checkpoint_state: Dictionary = RunRulesScript.open_checkpoint(RunRulesScript.fresh_run_state(), 3)
+	_expect_equal("run.checkpoint_opened", checkpoint_state.get("checkpoint_round", 0), 3)
+	var risk_result: Dictionary = RunRulesScript.select_checkpoint_route(checkpoint_state, "risk")
+	_expect_equal("run.risk_selected", risk_result.get("ok", false), true)
+	var risk_state: Dictionary = RunRulesScript.attach_persistent_risk(risk_result.get("state", {}), "rough_vein")
+	_expect_equal("run.risk_persists", risk_state.get("persistent_risks", []), [{"id": "rough_vein", "since_round": 3}])
+	var locked_result: Dictionary = RunRulesScript.select_checkpoint_route(risk_state, "safe")
+	_expect_equal("run.checkpoint_immutable", locked_result.get("error", ""), "checkpoint_already_selected")
+	var elite_state: Dictionary = RunRulesScript.open_checkpoint(RunRulesScript.fresh_run_state(), 5)
+	var elite_result: Dictionary = RunRulesScript.select_checkpoint_route(elite_state, "elite")
+	_expect_equal("run.elite_selected", elite_result.get("ok", false), true)
+	_expect_equal("run.elite_segment", Dictionary(elite_result.get("state", {})).get("elite_segment", {}), {
+		"checkpoint_round": 5,
+		"start_round": 6,
+		"end_round": 7,
+		"status": "active",
+	})
+	var expired_state: Dictionary = RunRulesScript.advance_checkpoint_state(elite_result.get("state", {}), 8)
+	_expect_equal("run.elite_expires", Dictionary(expired_state.get("elite_segment", {})).get("status", ""), "missed")
+
 	var reset_state: Dictionary = RunRulesScript.fresh_run_state()
 	_expect_equal("run.reset_state", reset_state, {
 		"checkpoint_round": 0,
@@ -93,6 +111,8 @@ func _validate_run_rules() -> void:
 		"routes": actual_routes,
 		"checkpoint_rounds": checkpoint_rounds,
 		"reset_state": reset_state,
+		"risk_state": risk_state,
+		"elite_expired_state": expired_state,
 	}
 
 
