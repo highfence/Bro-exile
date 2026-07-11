@@ -1,5 +1,9 @@
 # Orebound Prototype Quest Board
 
+<!-- pipeline-queue
+{"active_slice": "023", "artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md"], "last_handoff": "2026-07-12 - Producer Queue Rebaseline Handoff", "order": ["023", "020", "021", "022", "024"], "owner_lane": "dev"}
+-->
+
 이 대시보드는 Bro-exile 프로토타입을 검증 가능한 사이드 퀘스트로 쪼개서 보는 현황판이다. 각 퀘스트는 “무엇을 만들까”보다 “무엇을 확인할까”를 먼저 적는다.
 
 ## 표기 규칙
@@ -16,7 +20,7 @@
 
 **한 판의 실패와 학습, 성장 선택이 성립하는 플레이어블 roguelike 프로토타입을 만든다.**
 
-M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고, 배우고, 다음 런에서 더 나아갈 수 있는 게임”을 검증한다. D1-D8에서 기본 전투, 상점, 계약, 10라운드 위협 루프, 무기 정체성을 만들었다. D9에서는 캐릭터 3종과 빌드 아키타입 매트릭스를 정리하고, D10에서는 숙련도별 자동 시뮬레이션 계기판을 만든다. D11에서 다중 화폐 경제를 세분화한다.
+M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고, 배우고, 다음 런에서 더 나아갈 수 있는 게임”을 검증한다. D1-D8에서 기본 전투, 상점, 계약, 10라운드 위협 루프, 무기 정체성을 만들었다. 공개 데모 경로는 체크포인트 위험 선택, 다중 화폐의 획득/소비, 캐릭터, 시뮬레이션, Windows 출시 순서로 한 slice씩 닫는다.
 
 ## M1 진행도
 
@@ -35,16 +39,18 @@ M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고
 | D9 | pending | [캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) | 캐릭터별로 여러 아키타입과 교차 시너지를 만들 수 있는가? |
 | D10 | pending | [숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) | 플레이어 수준별 자동 검증으로 난이도 변화를 읽을 수 있는가? |
 | D11 | pending | [다중 화폐 경제](020-pending-p2-m1-d11-multi-currency-economy.md) | 리롤/능력/강화 자원을 나누면 선택이 깊어지는가? |
+| Demo | ready | [체크포인트 위험 선택 루프](023-ready-p1-demo-checkpoint-risk-loop.md) | 플레이어가 더 큰 위험을 능동적으로 선택하고 보상을 체감하는가? |
+| Demo | pending | [Windows itch.io 공개 데모](024-pending-p1-demo-windows-release.md) | 외부 플레이어가 설치부터 다음 런까지 막힘 없이 경험하는가? |
 
 ## 지금 큐
 
 | 추천 순서 | 상태 | 퀘스트 | 이유 |
 | --- | --- | --- | --- |
-| 1 | pending | [M1-D9 캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) | 아이템/유물/화폐를 늘리기 전에 캐릭터별 빌드 생태계를 정리한다. |
-| 2 | pending, blocked by 021 | [M1-D10 숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) | 디자인 변경 전후 난이도를 숙련도별 기준선으로 비교한다. |
-| 3 | pending, blocked by 021 | [M1-D8 강화/아이템/유물 목록 재검토](018-pending-p2-upgrade-item-relic-review.md) | 캐릭터별 아키타입 기준으로 상점/아이템/유물 목록을 다시 정리한다. |
-| 4 | pending | [상점/보상 선택감 정리](011-pending-p2-shop-and-reward-choice-pass.md) | D8 이후 상점 선택이 무기 방향을 밀어주는지 다듬는다. |
-| 5 | pending, blocked by 021/022/018 | [M1-D11 다중 화폐 경제](020-pending-p2-m1-d11-multi-currency-economy.md) | D9/D10과 목록 재검토 이후 경제를 세분화한다. |
+| 1 | ready | [공개 데모 체크포인트 위험 선택 루프](023-ready-p1-demo-checkpoint-risk-loop.md) | 가장 큰 제품 불확실성인 능동적 위험/보상 선택을 먼저 플레이 가능하게 닫는다. |
+| 2 | pending, blocked by 023 approval | [다중 화폐 playable slice](020-pending-p2-m1-d11-multi-currency-economy.md) | 011의 상점/보상 선택과 018의 강화 sink를 묶어 화폐 source/sink를 한 판에서 검증한다. |
+| 3 | pending, blocked by 020 approval | [M1-D9 캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) | 먼저 성립한 위험/경제 위에 캐릭터별 buildcraft를 얹는다. |
+| 4 | pending, blocked by 021 approval | [M1-D10 숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) | 완성된 데모 축을 숙련도별 deterministic 기준선으로 비교한다. |
+| 5 | pending, blocked by 022 approval | [Windows itch.io 공개 데모](024-pending-p1-demo-windows-release.md) | packaged build와 첫 외부 코호트를 확인한 뒤 Product Owner 승인으로 공개한다. |
 
 ## 보류 큐
 
@@ -89,6 +95,8 @@ M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고
 | 020 | p2 | pending | M1-D11 | economy | [다중 화폐 경제](020-pending-p2-m1-d11-multi-currency-economy.md) |
 | 021 | p1 | pending | M1-D9 | buildcraft | [캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) |
 | 022 | p1 | pending | M1-D10 | validation | [숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) |
+| 023 | p1 | ready | Public Demo | risk-reward | [체크포인트 위험 선택 루프](023-ready-p1-demo-checkpoint-risk-loop.md) |
+| 024 | p1 | pending | Public Demo | release | [Windows itch.io 공개 데모](024-pending-p1-demo-windows-release.md) |
 
 ## 상태 규칙
 
@@ -96,12 +104,23 @@ M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고
 - `pending`: 방향 확인, 우선순위 결정, 또는 세부 명세가 필요한 퀘스트.
 - `complete`: 통과 조건을 확인했거나 뒤 마일스톤에 흡수되어 Work Log에 결과가 남은 퀘스트.
 
+공개 데모 `pipeline_slice`에는 다음 축을 서로 대신하지 않도록 별도로 기록한다.
+
+- `status`: `pending | ready | complete` lifecycle. 한 번에 정확히 하나만 `ready`다.
+- `owner_lane`: `planning | dev | asset | validation | producer`.
+- `validator_verdict`: `not-run | passed | conditional-pass | rejected`.
+- `user_gate`: `not-requested | awaiting-user-approval | approved | changes-requested`.
+- `artifacts`: handoff에서 확인한 저장소 상대 경로의 증거.
+- todo frontmatter가 권위이고, 최신 Work Log의 `pipeline-state` marker는 그 상태를 만든 append-only 증거다. 두 값이 다르면 새 dispatch를 중단한다.
+- `passed`는 `complete`가 아니다. Product Owner가 실제 플레이 단위를 승인해야 `user_gate: approved`, `status: complete`로 닫고 다음 slice를 `ready`로 만든다.
+
 ## 에이전트 운영 연동
 
 - 장기 운영은 [반자동 에이전트 운영 팀](../docs/operations/2026-06-05-agent-team-operating-model.md)을 따른다.
 - `todos/README.md`는 메인 Producer가 읽는 기본 queue다.
 - 개별 todo의 `Work Log`는 Planner, Developer, Asset, Validator 에이전트의 handoff 기록 장소로 사용한다.
 - `owner_lane`, `active_thread`, `worktree`, `blocked_questions`, `artifacts`, `last_handoff` 필드는 새 활성 작업부터 점진적으로 추가한다.
+- 공개 데모 dispatch 전에는 `python3 scripts/tools/validate_agent_pipeline.py`가 `PIPELINE VALID`를 출력해야 한다.
 
 ## 플레이테스트 메모
 

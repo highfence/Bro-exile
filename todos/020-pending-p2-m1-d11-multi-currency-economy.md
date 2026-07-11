@@ -3,11 +3,22 @@ status: pending
 priority: p2
 issue_id: "020"
 tags: [prototype, m1, d11, economy, currency, shop, design]
-dependencies: ["019", "021", "022", "018"]
+dependencies: ["019", "023"]
 milestone: M1
 delivery: D11
 chain: economy
 quest_title: "M1-D11 다중 화폐 경제"
+pipeline_slice: true
+queue_order: 2
+owner_lane: planning
+validator_verdict: not-run
+user_gate: not-requested
+artifacts:
+  - "docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md"
+  - "todos/011-pending-p2-shop-and-reward-choice-pass.md"
+  - "todos/018-pending-p2-upgrade-item-relic-review.md"
+last_handoff: "2026-07-12 - Producer Queue Rebaseline Handoff"
+routing_reason: ""
 ---
 
 # 020. M1-D11 다중 화폐 경제
@@ -25,7 +36,7 @@ quest_title: "M1-D11 다중 화폐 경제"
 
 ## Findings
 
-- D11 세분화는 D8 무기 정체성 구현, D9 캐릭터/아키타입 매트릭스, D10 숙련도별 자동 시뮬레이션, 018 강화/아이템/유물 재검토 이후로 미룬다.
+- 공개 데모 첫 세분화는 023 체크포인트 slice 승인 뒤 진행하고, 011 상점/보상 선택과 018 강화 sink를 같은 playable slice에 흡수한다.
 - 첫 설계에서는 너무 많은 화폐보다 3종 안팎의 목적 분리가 적절하다.
 - 후보 역할은 상점 리롤, 능력/부품 획득, 장비 강화다.
 - 계약 보상은 직접 능력치 상승보다 위험한 몹을 잡았을 때의 보상 품질 상승과 연결되는 쪽이 더 적절하다.
@@ -48,7 +59,7 @@ quest_title: "M1-D11 다중 화폐 경제"
 
 ## Recommended Action
 
-M1-D8 구현, M1-D9 캐릭터/아키타입 매트릭스, M1-D10 숙련도별 자동 시뮬레이션, 018 강화/아이템/유물 재검토가 끝난 뒤 세분화한다. 지금은 방향만 큐에 보관한다.
+023 체크포인트 slice 승인 뒤 3화폐의 source와 sink를 한 판에서 함께 검증한다. 이 playable slice가 승인된 뒤 D9 캐릭터, D10 시뮬레이션으로 넘어간다.
 
 ## Acceptance Criteria
 
@@ -71,3 +82,28 @@ M1-D8 구현, M1-D9 캐릭터/아키타입 매트릭스, M1-D10 숙련도별 자
 
 **Learnings:**
 - 경제 시스템은 무기/아이템 체계가 흔들리는 동안 먼저 세분화하면 다시 바뀔 가능성이 크다.
+
+### 2026-07-12 - Producer Queue Rebaseline Handoff
+
+<!-- pipeline-state
+{"artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "todos/011-pending-p2-shop-and-reward-choice-pass.md", "todos/018-pending-p2-upgrade-item-relic-review.md"], "owner_lane": "planning", "routing_reason": "", "status": "pending", "user_gate": "not-requested", "validator_verdict": "not-run"}
+-->
+
+**By:** Producer
+
+**상태:**
+- pending
+
+**Actions:**
+- 기존 020, 011, 018을 하나의 플레이 가능한 화폐 source/sink slice로 묶었다.
+- 공개 데모 큐에서 023 체크포인트 slice 다음, D9 캐릭터 slice 이전으로 이동했다.
+- 과거 D11 명칭과 Work Log는 역사로 보존하고, 첫 구현은 3화폐의 획득과 소비가 한 판 안에서 닫히는 범위로 제한한다.
+
+**Verification:**
+- 큐/상태 계약만 검증한다. 경제 구현 검증은 이 slice 활성화 뒤 수행한다.
+
+**Questions:**
+- 023 Product Owner 승인 뒤 Planner가 화폐 이름과 수치를 구현 시점에 확정한다.
+
+**Next Handoff:**
+- 023이 `complete/approved`가 되면 이 todo를 `ready`로 바꾸고 Planner에 넘긴다.

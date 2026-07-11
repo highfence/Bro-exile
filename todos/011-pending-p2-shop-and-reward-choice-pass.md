@@ -3,11 +3,15 @@ status: pending
 priority: p2
 issue_id: "011"
 tags: [prototype, m1, d8, shop, rewards, buildcraft, quest]
-dependencies: ["019"]
+dependencies: ["019", "023"]
 milestone: M1
 delivery: D8
 chain: choice
 quest_title: "상점/보상 선택감 정리"
+owner_lane: planning
+supporting_slice: "020"
+artifacts:
+  - "todos/020-pending-p2-m1-d11-multi-currency-economy.md"
 ---
 
 # 011. 상점/보상 선택감 정리
@@ -81,3 +85,23 @@ A와 B를 작게 진행한다. C는 계약 카드 재미가 확인된 뒤로 미
 
 **Learnings:**
 - 계약은 혼자 재미있을 수 없고, 빌드 선택지가 위험을 해석하게 만들어야 한다.
+
+### 2026-07-12 - Producer Currency Slice Mapping
+
+**By:** Producer
+
+**상태:**
+- done
+
+**Actions:**
+- 이 backlog를 독립 active slice로 두지 않고 020 화폐 playable slice의 상점/보상 sink 기준으로 연결했다.
+- 기존 문제 정의와 acceptance criteria는 020 Planner가 source/sink 범위를 만들 때 입력으로 사용한다.
+
+**Verification:**
+- queue projection과 supporting link만 검증했다.
+
+**Questions:**
+- 없음.
+
+**Next Handoff:**
+- 020 Planner가 이 todo의 태그/선택감 기준을 구현 plan에 흡수한다.

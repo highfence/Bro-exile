@@ -3,11 +3,15 @@ status: pending
 priority: p2
 issue_id: "018"
 tags: [m1, d8, shop, items, relics, design]
-dependencies: ["019", "021"]
+dependencies: ["019", "023"]
 milestone: M1
 delivery: D8
 chain: design
 quest_title: "M1-D8 강화/아이템/유물 목록 재검토"
+owner_lane: planning
+supporting_slice: "020"
+artifacts:
+  - "todos/020-pending-p2-m1-d11-multi-currency-economy.md"
 ---
 
 # 018. M1-D8 강화 목록, 아이템 목록, 유물 목록 재검토
@@ -83,7 +87,7 @@ P8에서는 검증 범위를 좁히기 위해 같은 강화 효과 풀을 유지
 
 ## Recommended Action
 
-To be filled during triage. Current recommendation: P8 플레이 검증 직후 별도 브레인스토밍 세션으로 진행한다.
+전면 목록 재설계는 보류한다. 공개 데모에서는 020 화폐 playable slice가 요구하는 최소 장비 강화 sink만 이 todo에서 가져간다.
 
 ## Technical Details
 
@@ -126,3 +130,25 @@ To be filled during triage. Current recommendation: P8 플레이 검증 직후 �
 ## Notes
 
 - P8 구현 중 아이템 이름이 임시로 느껴지더라도, 목록 전면 재검토는 이 TODO에서 다룬다.
+
+## Work Log (continued)
+
+### 2026-07-12 - Producer Currency Slice Mapping
+
+**By:** Producer
+
+**상태:**
+- done
+
+**Actions:**
+- 이 backlog를 독립 active slice로 두지 않고 020 화폐 playable slice의 장비 강화 sink 기준으로 연결했다.
+- 기존 옵션과 과거 Work Log는 보존하며, 전면 목록 재설계는 공개 데모 첫 화폐 검증 범위 밖으로 둔다.
+
+**Verification:**
+- queue projection과 supporting link만 검증했다.
+
+**Questions:**
+- 없음.
+
+**Next Handoff:**
+- 020 Planner가 장비 강화 화폐의 최소 sink를 정할 때 이 todo를 읽는다.
