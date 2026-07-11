@@ -2,6 +2,9 @@ extends Node2D
 
 const GameUIScript = preload("res://scripts/ui/game_ui.gd")
 const OreUIThemeScript = preload("res://scripts/ui/ore_ui_theme.gd")
+const RunRulesScript = preload("res://scripts/game/run_rules.gd")
+const EconomyRulesScript = preload("res://scripts/game/economy_rules.gd")
+const DemoContentScript = preload("res://scripts/game/demo_content.gd")
 
 const VIEW_SIZE := Vector2(1280, 720)
 const WORLD_SIZE := Vector2(2048, 2048)
@@ -20,8 +23,6 @@ const P1_ROUND_DURATION := 42.0
 const P1_BOSS_ROUND_DURATION := 120.0
 const P2_SHOP_REWARDS_ENABLED := true
 const P2_LEVEL_UP_REWARDS_ENABLED := false
-const ROUND_CLEAR_ORE_BASE := 20
-const ROUND_CLEAR_ORE_STEP := 8
 const SMOKE_ROUND_DURATION := 5.0
 const SMOKE_PLAYTEST_DURATION := 130.0
 const SMOKE_PLAYTEST_CAPTURE_PATH := "/private/tmp/orebound-godot-playtest.png"
@@ -124,6 +125,7 @@ var sparks: Array = []
 var floating_text: Array = []
 var boss_spawned := false
 var selected_weapon_id := ""
+var run_rule_state := {}
 
 var game_ui: CanvasLayer
 var ui_font: Font
@@ -247,7 +249,7 @@ var relic_catalog := [
 	},
 ]
 
-var starter_weapon_ids := ["pickaxe", "nailgun", "lantern"]
+var starter_weapon_ids: Array = DemoContentScript.starter_weapon_ids()
 
 var weapon_catalog := {
 	"pickaxe": {"name": "곡괭이", "family": "근접", "feel": "짧은 전방 부채꼴 휘두르기", "strength": "보스 딜타임과 가까운 적 정리", "weakness": "포위와 원거리 투척 압박", "fire_type": "pickaxe_slash", "cooldown": 0.82, "damage": 28.0, "range": 124.0, "speed": 0.0, "color": Color("#f2cf66"), "pierce": 0, "projectiles": 1, "spread": 0.28, "splash": 0.0, "armor_pierce": 0.0, "knockback": 16.0, "shape": "pickaxe", "icon": "res://assets/sprites/items/p8_weapons/weapon_pickaxe.png"},
@@ -266,7 +268,7 @@ var weapon_catalog := {
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	smoke_weapon_id = _weapon_arg_from_args(args)
-	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--debug-p8-weapon-routes") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary") or args.has("--capture-p8-weapon-select-ui") or args.has("--capture-p8-shop-weapon-parts") or args.has("--capture-p8-pickaxe-swing"):
+	if args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--debug-p8-weapon-routes") or args.has("--debug-demo-rule-seams") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary") or args.has("--capture-p8-weapon-select-ui") or args.has("--capture-p8-shop-weapon-parts") or args.has("--capture-p8-pickaxe-swing"):
 		seed(12345)
 	else:
 		randomize()
@@ -335,6 +337,8 @@ func _ready() -> void:
 		_debug_p7_legendary_aim_and_quit.call_deferred()
 	elif args.has("--debug-p8-weapon-routes"):
 		_debug_p8_weapon_routes_and_quit.call_deferred()
+	elif args.has("--debug-demo-rule-seams"):
+		_debug_demo_rule_seams_and_quit.call_deferred()
 
 
 func _weapon_arg_from_args(args: PackedStringArray) -> String:
@@ -1257,6 +1261,29 @@ func _debug_p8_weapon_routes_and_quit() -> void:
 	get_tree().quit(1 if failures > 0 else 0)
 
 
+func _debug_demo_rule_seams_and_quit() -> void:
+	var failures := 0
+	run_rule_state["checkpoint_round"] = 7
+	run_rule_state["selected_route"] = "risk"
+	_reset_run(false)
+	var expected_state := RunRulesScript.fresh_run_state()
+	if run_rule_state != expected_state:
+		failures += 1
+	if _reward_route_label(3) != "contract -> shop":
+		failures += 1
+	if _round_duration(5) != P1_BOSS_ROUND_DURATION:
+		failures += 1
+	if starter_weapon_ids != ["pickaxe", "nailgun", "lantern"]:
+		failures += 1
+	print("DEBUG_DEMO_RULE_SEAMS failures=%d reset_state=%s reward_r3=\"%s\" starters=%s" % [
+		failures,
+		str(run_rule_state),
+		_reward_route_label(3),
+		str(starter_weapon_ids),
+	])
+	get_tree().quit(1 if failures > 0 else 0)
+
+
 func _debug_p8_probe_weapon_attack(id: String) -> bool:
 	mode = MODE_PLAY
 	wave = 1
@@ -1470,46 +1497,22 @@ func _reset_run(start_playing: bool) -> void:
 	floating_text.clear()
 	boss_spawned = false
 	selected_weapon_id = ""
+	run_rule_state = RunRulesScript.fresh_run_state()
 	if start_playing:
 		_equip_weapon_for_run("drill_tip")
 	_render_weapons()
 
 
 func _round_duration(round_index: int) -> float:
-	if smoke_playtest:
-		return SMOKE_ROUND_DURATION
-	match round_index:
-		1:
-			return 25.0
-		2:
-			return 35.0
-		3:
-			return 45.0
-		4:
-			return 50.0
-		5:
-			return P1_BOSS_ROUND_DURATION
-		6:
-			return 55.0
-		7:
-			return 60.0
-		8:
-			return 65.0
-		9:
-			return 70.0
-		10:
-			return P1_BOSS_ROUND_DURATION
-		_:
-			return P1_BOSS_ROUND_DURATION
+	return RunRulesScript.round_duration(round_index, smoke_playtest, SMOKE_ROUND_DURATION, P1_BOSS_ROUND_DURATION)
 
 
 func _round_is_boss(round_index: int) -> bool:
-	return round_index == 5 or round_index == 10
+	return RunRulesScript.is_boss_round(round_index)
 
 
 func _shop_reroll_cost() -> int:
-	var base_cost: int = max(2, int(round(2.0 + wave * 0.65 + rounds_cleared * 0.25)))
-	return base_cost
+	return EconomyRulesScript.shop_reroll_cost(wave, rounds_cleared)
 
 
 func _update_game(delta: float) -> void:
@@ -3282,27 +3285,7 @@ func _finish_round() -> void:
 
 
 func _reward_chain_for_round(round_index: int) -> Array:
-	match round_index:
-		1:
-			return [{"type": "stat"}]
-		2:
-			return [{"type": "shop"}]
-		3:
-			return [{"type": "contract"}, {"type": "shop"}]
-		4:
-			return [{"type": "shop"}]
-		5:
-			return [{"type": "stat"}, {"type": "contract"}, {"type": "shop"}]
-		6:
-			return [{"type": "shop"}]
-		7:
-			return [{"type": "stat"}, {"type": "contract"}, {"type": "shop"}]
-		8:
-			return [{"type": "shop"}]
-		9:
-			return [{"type": "final_shop"}]
-		_:
-			return []
+	return RunRulesScript.reward_chain_for_round(round_index)
 
 
 func _reward_route_label(round_index: int) -> String:
@@ -3347,7 +3330,7 @@ func _collect_leftover_ore() -> void:
 
 
 func _award_round_clear_ore() -> void:
-	var base_reward := ROUND_CLEAR_ORE_BASE + wave * ROUND_CLEAR_ORE_STEP
+	var base_reward := EconomyRulesScript.round_clear_reward(wave)
 	var reward := int(round(float(base_reward) * _relic_clear_ore_multiplier()))
 	ore += reward
 	round_ore_earned += reward
@@ -3391,51 +3374,11 @@ func _choose_round_break_option(option: Dictionary) -> void:
 
 
 func _round_brief(round_index: int) -> String:
-	match round_index:
-		2:
-			return "색이 다른 빠른 좀비가 합류합니다. 거리를 더 자주 다시 잡아야 합니다."
-		3:
-			return "체력은 낮지만 4-5마리씩 몰려오는 거미떼가 합류합니다."
-		4:
-			return "원거리에서 돌을 던지는 좀비가 합류합니다. 투사체와 우선 처치 대상을 읽어야 합니다."
-		5:
-			return "중간 보스가 돌진, 장판, 방패 좀비 소환으로 후반 패턴을 예고합니다."
-		6:
-			return "방패 좀비가 일반 웨이브에 섞입니다. 정면을 고집하면 피해가 잘 들어가지 않습니다."
-		7:
-			return "독 거미가 죽으며 독 장판을 남깁니다. 이동 경로가 잠깐 망가집니다."
-		8:
-			return "자폭 광부가 전조 후 짧게 돌진합니다. 거리를 읽고 밀어내야 합니다."
-		9:
-			return "후반 위협이 함께 몰립니다. 최종 준비 상점 전 마지막 광맥입니다."
-		10:
-			return "최종 보스가 돌진, 장판, 소환, 탄막을 체력 페이즈에 따라 확장합니다."
-		_:
-			return "다음 라운드를 시작합니다."
+	return DemoContentScript.round_brief(round_index)
 
 
 func _next_round_warning_text(round_index: int) -> String:
-	match round_index:
-		2:
-			return "다음 광맥: 빨라진 발소리"
-		3:
-			return "다음 광맥: 몰려오는 거미떼"
-		4:
-			return "다음 광맥: 날아오는 돌"
-		5:
-			return "다음 광맥: 중간 우두머리"
-		6:
-			return "다음 광맥: 방패를 든 무리"
-		7:
-			return "다음 광맥: 독 흔적"
-		8:
-			return "다음 광맥: 불안정한 폭약 냄새"
-		9:
-			return "다음 광맥: 후반 압박"
-		10:
-			return "다음 광맥: 최종 우두머리"
-		_:
-			return "다음 광맥: 미확인"
+	return DemoContentScript.next_round_warning_text(round_index)
 
 
 func _reward_eyebrow_text() -> String:
@@ -3504,13 +3447,8 @@ func _roll_relic_options() -> Array:
 
 
 func _contract_candidates_for_round(round_index: int) -> Array:
-	var ids := ["overheated_footsteps", "sharpened_throwing", "rough_vein", "chosen_prey"]
-	if round_index >= 5:
-		ids.append_array(["cracked_shield_oath", "viscous_poison_vein", "shortened_fuse"])
-	if round_index >= 7:
-		ids.append("awakened_overseer")
 	var candidates: Array = []
-	for id in ids:
+	for id in DemoContentScript.contract_ids_for_round(round_index):
 		var relic := _relic_by_id(id)
 		if not relic.is_empty():
 			candidates.append(relic)
@@ -3675,14 +3613,7 @@ func _roll_shop_rarity(round_index: int) -> String:
 
 
 func _shop_rarity_weight(rarity: String, round_index: int) -> float:
-	var progress := clampf(float(round_index - 1) / float(MAX_ROUNDS - 1), 0.0, 1.0)
-	match rarity:
-		"legendary":
-			return 0.010 + progress * 0.035
-		"rare":
-			return 0.18 + progress * 0.14
-		_:
-			return 0.81 - progress * 0.13
+	return EconomyRulesScript.shop_rarity_weight(rarity, round_index)
 
 
 func _shop_items_for_round(round_index: int, avoid_ids: Array = []) -> Array:
@@ -3764,13 +3695,7 @@ func _stock_has_item_id(stock: Array, id: String) -> bool:
 
 
 func _scaled_shop_cost(base_cost: int, rarity: String = "common") -> int:
-	var scale := 1.0 + float(wave - 1) * 0.075
-	match rarity:
-		"rare":
-			scale *= 1.12
-		"legendary":
-			scale *= 1.24
-	return int(max(1.0, round(float(base_cost) * scale)))
+	return EconomyRulesScript.scaled_shop_cost(base_cost, rarity, wave)
 
 
 func _choose_shop_option(item: Dictionary) -> void:
@@ -4118,57 +4043,28 @@ func _enemy_type_label(type: String) -> String:
 
 
 func _contract_enemy_hp_multiplier(kind: String) -> float:
-	var mult := float(pow(1.08, _relic_count("rough_vein")))
-	if kind == "shield_zombie":
-		mult *= float(pow(1.06, _relic_count("cracked_shield_oath")))
-	return mult
+	return RunRulesScript.contract_enemy_hp_multiplier(kind, relic_counts)
 
 
 func _contract_enemy_damage_multiplier(kind: String) -> float:
-	var mult := float(pow(1.05, _relic_count("rough_vein")))
-	if kind == "thrower":
-		mult *= float(pow(1.08, _relic_count("sharpened_throwing")))
-	return mult
+	return RunRulesScript.contract_enemy_damage_multiplier(kind, relic_counts)
 
 
 func _contract_enemy_speed_multiplier(kind: String) -> float:
-	if kind == "fast_zombie":
-		return float(pow(1.10, _relic_count("overheated_footsteps")))
-	return 1.0
+	return RunRulesScript.contract_enemy_speed_multiplier(kind, relic_counts)
 
 
 func _contract_thrower_cooldown_multiplier() -> float:
-	return float(pow(0.88, _relic_count("sharpened_throwing")))
+	return RunRulesScript.contract_thrower_cooldown_multiplier(relic_counts)
 
 
 func _should_make_contract_elite(kind: String) -> bool:
-	if _is_boss_type(kind) or kind == "elite_zombie":
-		return false
-	var count := _relic_count("chosen_prey")
-	if count <= 0 or wave < 4:
-		return false
-	return randf() < min(0.24, 0.055 * float(count) + 0.025 * float(wave - 4))
+	var chance := RunRulesScript.contract_elite_chance(kind, wave, relic_counts)
+	return chance > 0.0 and randf() < chance
 
 
 func _contract_ore_multiplier(enemy: Dictionary) -> float:
-	var mult := 1.0
-	var type := str(enemy.get("type", ""))
-	if type == "fast_zombie":
-		mult += 0.18 * float(_relic_count("overheated_footsteps"))
-	if type == "thrower":
-		mult += 0.18 * float(_relic_count("sharpened_throwing"))
-	if type == "shield_zombie":
-		mult += 0.20 * float(_relic_count("cracked_shield_oath"))
-	if type == "toxic_spider":
-		mult += 0.20 * float(_relic_count("viscous_poison_vein"))
-	if type == "bomb_miner":
-		mult += 0.22 * float(_relic_count("shortened_fuse"))
-	if bool(enemy.get("elite", false)):
-		mult += 0.65 + 0.18 * float(_relic_count("chosen_prey"))
-	if _is_boss_type(type):
-		mult += 0.25 * float(_relic_count("awakened_overseer"))
-	mult += 0.08 * float(_relic_count("rough_vein"))
-	return mult
+	return RunRulesScript.contract_ore_multiplier(enemy, relic_counts)
 
 
 func _relic_clear_ore_multiplier() -> float:
