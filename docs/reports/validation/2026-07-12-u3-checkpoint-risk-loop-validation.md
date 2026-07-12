@@ -68,3 +68,17 @@ status: passed
 - R5 `stat -> checkpoint` chain의 checkpoint step은 overlay를 열기 전에 한 번만 `pop_front()`되며, route handler는 해당 reward를 다시 삽입하지 않는다. R5 route 선택은 history에 한 번만 추가되어 reward duplication이 없다.
 - project load, pure rule harness, P7 reward/shop/contract/boss/pause/legendary, P8 weapon routes, U2 rule seams도 모두 exit 0이었다.
 - Validator 판정은 `passed`; 상태는 Product Owner 재확인을 위한 `ready/passed/awaiting-user-approval`을 유지한다.
+
+## U3 Balance Revision Revalidation
+
+- Validator 판정: `passed`. 다음 게이트는 Product Owner balance revision 실제 플레이 승인이다.
+- `--debug-u3-balance-contract`: exit 0, `failures=0`. 스타터 수치는 곡괭이 cooldown/damage/range `1.05/35/124`, 네일건 `0.62/15/360`, 랜턴 `1.35/17/158`이다.
+- 같은 production seam에서 중간보스 HP/speed `680/70`, 최종보스 `1550/74`, boss pool radius `128`을 확인했다.
+- `weapon_catalog`은 `_add_weapon()`에서 runtime weapon으로 복사된다. 보스 수치는 `_make_enemy()`가 생성하고 실제 `pool` pattern은 `BOSS_POOL_RADIUS`를 `_spawn_poison_zone()`에 전달한다.
+- 변경 diff에는 일반 적 roster, enemy cap, spawn interval/curve 수정이 없다.
+- 무기별 stat reward의 damage/cooldown/range 문구는 각각 곡괭이 휘두름, 네일건 못, 랜턴 빛 펄스 용어를 사용한다.
+- `/private/tmp/orebound-godot-choice-ui-pickaxe.png`, `/private/tmp/orebound-godot-choice-ui-nailgun.png`, `/private/tmp/orebound-godot-choice-ui-lantern.png`은 각 1280x720 actual Metal capture다.
+- 세 capture 모두 한글 damage/cooldown/range 설명이 실제 픽셀로 보이고 3열 카드가 겹치지 않는다. 곡괭이와 랜턴에는 금지된 `드릴촉`, `화살촉`, `투사체` 표현이 없다.
+- cold shader cache 첫 actual render에서 panel style이 부분 또는 전체 늦게 나타나는 간헐 현상을 관찰했다. 같은 HOME 재렌더 뒤 최종 세 evidence는 모두 full overlay로 정상이며, 이 항목은 gameplay UI 결함이 아닌 capture infrastructure risk로 기록한다.
+- project headless load, pure `--rule=all`, `--debug-u3-checkpoint-contract`, `--debug-p7-boss-patterns`, `--debug-p8-weapon-routes`가 모두 exit 0이었다.
+- pipeline validator unit test 10개가 통과했고 최종 consistency validator는 `PIPELINE VALID`를 출력해야 handoff가 닫힌다.

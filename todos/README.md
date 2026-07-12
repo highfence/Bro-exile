@@ -1,7 +1,7 @@
 # Orebound Prototype Quest Board
 
 <!-- pipeline-queue
-{"active_slice": "023", "artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "scripts/game/run_rules.gd", "scripts/game/demo_content.gd", "scripts/main.gd", "scripts/ui/game_ui.gd", "scripts/tools/demo_validation_harness.gd", "docs/reports/validation/2026-07-12-u3-checkpoint-risk-loop-validation.md"], "last_handoff": "2026-07-12 - U3 R5 Progression Regression Validator Handoff", "order": ["023", "020", "021", "022", "024"], "owner_lane": "producer"}
+{"active_slice": "023", "artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "scripts/game/run_rules.gd", "scripts/game/demo_content.gd", "scripts/main.gd", "scripts/ui/game_ui.gd", "scripts/tools/demo_validation_harness.gd", "docs/reports/validation/2026-07-12-u3-checkpoint-risk-loop-validation.md", "docs/reports/playtests/2026-07-12-u3-product-owner-balance-feedback.md"], "last_handoff": "2026-07-12 - U3 Balance Revision Validator Handoff", "order": ["023", "020", "021", "022", "024"], "owner_lane": "producer"}
 -->
 
 이 대시보드는 Bro-exile 프로토타입을 검증 가능한 사이드 퀘스트로 쪼개서 보는 현황판이다. 각 퀘스트는 “무엇을 만들까”보다 “무엇을 확인할까”를 먼저 적는다.

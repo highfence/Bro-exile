@@ -46,6 +46,7 @@ const P8_PICKAXE_SWING_CAPTURE_PATH := "/private/tmp/orebound-godot-p8-pickaxe-s
 const CHECKPOINT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-checkpoint-ui.png"
 const CHECKPOINT_HUD_CAPTURE_PATH := "/private/tmp/orebound-godot-checkpoint-hud.png"
 const CHECKPOINT_ELITE_BONUS := 45
+const BOSS_POOL_RADIUS := 128.0
 const PLAYER_VISUAL_SCALE := 0.27
 const ZOMBIE_VISUAL_SCALE := 0.25
 const PLAYER_IDLE_PERIOD := 1.32
@@ -156,7 +157,7 @@ var pickaxe_swing_texture: Texture2D
 
 var stat_rewards := [
 	{"id": "cooldown", "name": "손목 리듬 조정", "desc": "공격 속도가 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
-	{"id": "range", "name": "거리 감각 보정", "desc": "드릴촉 사거리가 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
+	{"id": "range", "name": "거리 감각 보정", "desc": "현재 무기의 유효 범위가 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
 	{"id": "speed", "name": "발걸음 정비", "desc": "이동 속도가 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
 	{"id": "damage", "name": "타격점 보정", "desc": "피해량이 아주 소폭 증가합니다.", "tag": "무료 체급 보정"},
 	{"id": "hp", "name": "흉곽 보강", "desc": "최대 체력이 아주 소폭 증가하고 체력을 조금 회복합니다.", "tag": "무료 체급 보정"},
@@ -257,9 +258,9 @@ var relic_catalog := [
 var starter_weapon_ids: Array = DemoContentScript.starter_weapon_ids()
 
 var weapon_catalog := {
-	"pickaxe": {"name": "곡괭이", "family": "근접", "feel": "짧은 전방 부채꼴 휘두르기", "strength": "보스 딜타임과 가까운 적 정리", "weakness": "포위와 원거리 투척 압박", "fire_type": "pickaxe_slash", "cooldown": 0.82, "damage": 28.0, "range": 124.0, "speed": 0.0, "color": Color("#f2cf66"), "pierce": 0, "projectiles": 1, "spread": 0.28, "splash": 0.0, "armor_pierce": 0.0, "knockback": 16.0, "shape": "pickaxe", "icon": "res://assets/sprites/items/p8_weapons/weapon_pickaxe.png"},
-	"nailgun": {"name": "네일건", "family": "원거리", "feel": "빠른 직선 못 투사체", "strength": "빠른 적과 투척 적 선제 처리", "weakness": "거미떼와 방패 정면", "fire_type": "bullet", "cooldown": 0.46, "damage": 12.0, "range": 520.0, "speed": 920.0, "color": Color("#d8f3ff"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0, "armor_pierce": 0.0, "knockback": 6.0, "shape": "nail", "icon": "res://assets/sprites/items/p8_weapons/weapon_nailgun.png"},
-	"lantern": {"name": "랜턴", "family": "마법/장비", "feel": "쿨다운마다 번지는 주변 빛 펄스", "strength": "거미떼와 밀집 적, 동선 만들기", "weakness": "단일 보스딜과 원거리 투척 적", "fire_type": "lantern_pulse", "cooldown": 1.05, "damage": 13.5, "range": 158.0, "speed": 0.0, "color": Color("#e6b85c"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0, "armor_pierce": 0.0, "knockback": 4.0, "shape": "lantern", "icon": "res://assets/sprites/items/p8_weapons/weapon_lantern.png"},
+	"pickaxe": {"name": "곡괭이", "family": "근접", "feel": "짧은 전방 부채꼴 휘두르기", "strength": "보스 딜타임과 가까운 적 정리", "weakness": "포위와 원거리 투척 압박", "fire_type": "pickaxe_slash", "cooldown": 1.05, "damage": 35.0, "range": 124.0, "speed": 0.0, "color": Color("#f2cf66"), "pierce": 0, "projectiles": 1, "spread": 0.28, "splash": 0.0, "armor_pierce": 0.0, "knockback": 16.0, "shape": "pickaxe", "icon": "res://assets/sprites/items/p8_weapons/weapon_pickaxe.png"},
+	"nailgun": {"name": "네일건", "family": "원거리", "feel": "빠른 직선 못 투사체", "strength": "빠른 적과 투척 적 선제 처리", "weakness": "거미떼와 방패 정면", "fire_type": "bullet", "cooldown": 0.62, "damage": 15.0, "range": 360.0, "speed": 920.0, "color": Color("#d8f3ff"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0, "armor_pierce": 0.0, "knockback": 6.0, "shape": "nail", "icon": "res://assets/sprites/items/p8_weapons/weapon_nailgun.png"},
+	"lantern": {"name": "랜턴", "family": "마법/장비", "feel": "쿨다운마다 번지는 주변 빛 펄스", "strength": "거미떼와 밀집 적, 동선 만들기", "weakness": "단일 보스딜과 원거리 투척 적", "fire_type": "lantern_pulse", "cooldown": 1.35, "damage": 17.0, "range": 158.0, "speed": 0.0, "color": Color("#e6b85c"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0, "armor_pierce": 0.0, "knockback": 4.0, "shape": "lantern", "icon": "res://assets/sprites/items/p8_weapons/weapon_lantern.png"},
 	"drill_tip": {"name": "드릴촉 발사기", "family": "legacy/debug", "feel": "기존 직선 드릴촉", "strength": "기존 회귀 검증", "weakness": "D8 일반 스타터 아님", "fire_type": "bullet", "cooldown": 0.72, "damage": 16.0, "range": 430.0, "speed": 690.0, "color": Color("#d8ceb9"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0, "armor_pierce": 0.0, "knockback": 0.0, "shape": "drill_tip", "icon": "res://assets/sprites/items/p2_parts/part_piercing_bit.png"},
 	"spitter": {"name": "광석 분사기", "fire_type": "bullet", "cooldown": 0.62, "damage": 18.0, "range": 470.0, "speed": 640.0, "color": Color("#e6b85c"), "pierce": 0, "projectiles": 1, "spread": 0.0, "splash": 0.0},
 	"flintlock": {"name": "쌍발 화승총", "fire_type": "bullet", "cooldown": 0.54, "damage": 9.0, "range": 390.0, "speed": 760.0, "color": Color("#f0643b"), "pierce": 0, "projectiles": 2, "spread": 0.20, "splash": 0.0},
@@ -274,7 +275,7 @@ func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	var checkpoint_smoke := _checkpoint_smoke_request(args)
 	smoke_weapon_id = _weapon_arg_from_args(args)
-	if bool(checkpoint_smoke.get("present", false)) or args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--debug-p8-weapon-routes") or args.has("--debug-demo-rule-seams") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary") or args.has("--capture-p8-weapon-select-ui") or args.has("--capture-p8-shop-weapon-parts") or args.has("--capture-p8-pickaxe-swing") or args.has("--capture-checkpoint-ui"):
+	if bool(checkpoint_smoke.get("present", false)) or args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--debug-p8-weapon-routes") or args.has("--debug-demo-rule-seams") or args.has("--debug-u3-balance-contract") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary") or args.has("--capture-p8-weapon-select-ui") or args.has("--capture-p8-shop-weapon-parts") or args.has("--capture-p8-pickaxe-swing") or args.has("--capture-checkpoint-ui"):
 		seed(12345)
 	else:
 		randomize()
@@ -351,6 +352,8 @@ func _ready() -> void:
 		_debug_demo_rule_seams_and_quit.call_deferred()
 	elif args.has("--debug-u3-checkpoint-contract"):
 		_debug_u3_checkpoint_contract_and_quit.call_deferred()
+	elif args.has("--debug-u3-balance-contract"):
+		_debug_u3_balance_contract_and_quit.call_deferred()
 
 
 func _weapon_arg_from_args(args: PackedStringArray) -> String:
@@ -419,10 +422,18 @@ func _capture_ui_and_quit() -> void:
 
 func _capture_choice_ui_and_quit() -> void:
 	_reset_run(true)
+	if not smoke_weapon_id.is_empty():
+		_equip_weapon_for_run(smoke_weapon_id)
 	level = 2
-	_open_level_up()
-	await get_tree().process_frame
-	await get_tree().process_frame
+	var capture_rewards: Array = []
+	for reward in _stat_rewards_for_selected_weapon():
+		if ["damage", "cooldown", "range"].has(str(reward.get("id", ""))):
+			capture_rewards.append(reward)
+	mode = MODE_CHOICE
+	_show_choice_overlay("레벨 %d" % level, "보상 선택", capture_rewards, "_choose_reward")
+	for frame in range(6):
+		await get_tree().process_frame
+	await get_tree().create_timer(0.12).timeout
 	await RenderingServer.frame_post_draw
 	var image := get_viewport().get_texture().get_image()
 	image.save_png(CHOICE_UI_CAPTURE_PATH)
@@ -1189,6 +1200,63 @@ func _debug_p7_boss_patterns_and_quit() -> void:
 		_boss_phase(final),
 	])
 	get_tree().quit(1 if mid_state != "windup" or not has_projectiles else 0)
+
+
+func _debug_u3_balance_contract_and_quit() -> void:
+	_reset_run(true)
+	var failures := 0
+	var expected_weapons := {
+		"pickaxe": {"cooldown": 1.05, "damage": 35.0, "range": 124.0, "range_token": "휘두름 범위"},
+		"nailgun": {"cooldown": 0.62, "damage": 15.0, "range": 360.0, "range_token": "못 비행 거리"},
+		"lantern": {"cooldown": 1.35, "damage": 17.0, "range": 158.0, "range_token": "빛 펄스 반경"},
+	}
+	var reward_summaries := {}
+	for weapon_id in ["pickaxe", "nailgun", "lantern"]:
+		var expected: Dictionary = expected_weapons[weapon_id]
+		var actual: Dictionary = weapon_catalog[weapon_id]
+		for key in ["cooldown", "damage", "range"]:
+			if not is_equal_approx(float(actual.get(key, 0.0)), float(expected[key])):
+				failures += 1
+		_equip_weapon_for_run(weapon_id)
+		var range_reward := {}
+		for reward in _stat_rewards_for_selected_weapon():
+			if str(reward.get("id", "")) == "range":
+				range_reward = reward
+				break
+		var reward_text := "%s %s" % [str(range_reward.get("name", "")), str(range_reward.get("desc", ""))]
+		reward_summaries[weapon_id] = reward_text
+		if not reward_text.contains(str(expected["range_token"])):
+			failures += 1
+		if weapon_id != "nailgun" and (reward_text.contains("화살촉") or reward_text.contains("드릴촉") or reward_text.contains("투사체")):
+			failures += 1
+
+	var mid := _make_enemy("mid_boss")
+	var final := _make_enemy("final_boss")
+	if not is_equal_approx(float(mid.get("hp", 0.0)), 680.0) or not is_equal_approx(float(mid.get("speed", 0.0)), 70.0):
+		failures += 1
+	if not is_equal_approx(float(final.get("hp", 0.0)), 1550.0) or not is_equal_approx(float(final.get("speed", 0.0)), 74.0):
+		failures += 1
+
+	hazard_zones.clear()
+	mid["pattern_index"] = 1
+	_execute_boss_pattern(mid)
+	var pool_radius := 0.0
+	if not hazard_zones.is_empty():
+		pool_radius = float(Dictionary(hazard_zones[0]).get("radius", 0.0))
+	if not is_equal_approx(pool_radius, BOSS_POOL_RADIUS):
+		failures += 1
+
+	print("DEBUG_U3_BALANCE_CONTRACT failures=%d weapons=%s rewards=%s mid_hp=%.1f mid_speed=%.1f final_hp=%.1f final_speed=%.1f pool_radius=%.1f" % [
+		failures,
+		JSON.stringify(expected_weapons),
+		JSON.stringify(reward_summaries),
+		float(mid.get("hp", 0.0)),
+		float(mid.get("speed", 0.0)),
+		float(final.get("hp", 0.0)),
+		float(final.get("speed", 0.0)),
+		pool_radius,
+	])
+	get_tree().quit(1 if failures > 0 else 0)
 
 
 func _debug_p7_elite_marker_and_quit() -> void:
@@ -2231,17 +2299,17 @@ func _make_enemy(kind: String) -> Dictionary:
 			dropped_ore = 0
 			color = Color("#6f4f86")
 		"mid_boss":
-			hp = 360.0
+			hp = 680.0
 			radius = 42.0
-			speed = 44.0
+			speed = 70.0
 			damage = 16.0
 			armor = 3.0
 			dropped_ore = 0
 			color = Color("#6f4f86")
 		"final_boss":
-			hp = 860.0
+			hp = 1550.0
 			radius = 48.0
-			speed = 44.0
+			speed = 74.0
 			damage = 18.0
 			armor = 4.0
 			dropped_ore = 0
@@ -2946,7 +3014,7 @@ func _execute_boss_pattern(enemy: Dictionary) -> void:
 		"charge":
 			_start_boss_charge(enemy)
 		"pool":
-			_spawn_poison_zone(Vector2(enemy.get("pos", Vector2.ZERO)), 94.0, 3.8, _pattern_damage(5.0), Color("#7560a8"))
+			_spawn_poison_zone(Vector2(enemy.get("pos", Vector2.ZERO)), BOSS_POOL_RADIUS, 3.8, _pattern_damage(5.0), Color("#7560a8"))
 			enemy["pattern_timer"] = _boss_pattern_interval(enemy)
 		"summon":
 			_boss_summon(enemy)
@@ -3460,7 +3528,44 @@ func _add_floating_text(text: String, pos: Vector2, color: Color) -> void:
 
 func _open_level_up() -> void:
 	mode = MODE_CHOICE
-	_show_choice_overlay("레벨 %d" % level, "보상 선택", _sample_array(stat_rewards, 3), "_choose_reward")
+	_show_choice_overlay("레벨 %d" % level, "보상 선택", _sample_array(_stat_rewards_for_selected_weapon(), 3), "_choose_reward")
+
+
+func _stat_rewards_for_selected_weapon() -> Array:
+	var decorated: Array = []
+	var decorations := _weapon_stat_reward_decorations(_current_weapon_id())
+	for reward in stat_rewards:
+		var option: Dictionary = reward.duplicate(true)
+		var id := str(option.get("id", ""))
+		if decorations.has(id):
+			var copy: Dictionary = decorations[id]
+			option["name"] = str(copy.get("name", option.get("name", "")))
+			option["desc"] = str(copy.get("desc", option.get("desc", "")))
+		decorated.append(option)
+	return decorated
+
+
+func _weapon_stat_reward_decorations(weapon_id: String) -> Dictionary:
+	match weapon_id:
+		"pickaxe":
+			return {
+				"cooldown": {"name": "휘두름 리듬 조정", "desc": "곡괭이 휘두름 간격이 아주 소폭 줄어듭니다."},
+				"damage": {"name": "곡괭이날 연마", "desc": "곡괭이 한 번의 피해량이 아주 소폭 증가합니다."},
+				"range": {"name": "긴 곡괭이 자루", "desc": "곡괭이 휘두름 범위가 아주 소폭 증가합니다."},
+			}
+		"nailgun":
+			return {
+				"cooldown": {"name": "방아쇠 리듬 조정", "desc": "네일건 발사 간격이 아주 소폭 줄어듭니다."},
+				"damage": {"name": "강화 강철 못", "desc": "못 한 발의 피해량이 아주 소폭 증가합니다."},
+				"range": {"name": "긴 압축 레일", "desc": "못 비행 거리가 아주 소폭 증가합니다."},
+			}
+		"lantern":
+			return {
+				"cooldown": {"name": "심지 리듬 조정", "desc": "랜턴 빛 펄스 간격이 아주 소폭 줄어듭니다."},
+				"damage": {"name": "밝은 심지", "desc": "빛 펄스 피해량이 아주 소폭 증가합니다."},
+				"range": {"name": "확산 렌즈", "desc": "빛 펄스 반경이 아주 소폭 증가합니다."},
+			}
+	return {}
 
 
 func _choose_reward(reward: Dictionary) -> void:
@@ -3642,7 +3747,7 @@ func _open_stat_reward() -> void:
 	mode = MODE_CHOICE
 	var title := "기본 체급 보정"
 	var eyebrow := _reward_eyebrow_text()
-	_show_choice_overlay(eyebrow, title, _sample_array(stat_rewards, 3), "_choose_reward")
+	_show_choice_overlay(eyebrow, title, _sample_array(_stat_rewards_for_selected_weapon(), 3), "_choose_reward")
 
 
 func _open_contract_choice(choice_method: String = "_choose_relic_option") -> void:

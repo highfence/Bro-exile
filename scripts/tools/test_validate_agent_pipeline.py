@@ -236,6 +236,23 @@ class AgentPipelineValidatorTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("awaiting Product Owner approval", result.stderr)
 
+    def test_product_owner_changes_route_passed_slice_back_to_planning(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            states = _base_states()
+            states["023"].update(
+                owner_lane="planning",
+                validator_verdict="passed",
+                user_gate="changes-requested",
+            )
+            _make_fixture(root, states, active_slice="023")
+
+            result = self.run_validator(root)
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("owner_lane=planning", result.stdout)
+            self.assertIn("next_allowed_transition=planner-handoff", result.stdout)
+
     def test_rejection_routes_by_reason(self) -> None:
         cases = (("code", "dev"), ("asset", "asset"), ("design", "planning"))
         for routing_reason, expected_owner in cases:

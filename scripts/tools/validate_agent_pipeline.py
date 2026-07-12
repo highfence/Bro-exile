@@ -204,10 +204,13 @@ def _validate_state(todo: SliceTodo) -> None:
     routing_reason = state["routing_reason"]
 
     if verdict == "passed" and status != "complete":
-        if gate != "awaiting-user-approval" or owner != "producer":
+        awaiting_approval = gate == "awaiting-user-approval" and owner == "producer"
+        revising_after_feedback = gate == "changes-requested" and owner == "planning"
+        if not (awaiting_approval or revising_after_feedback):
             raise ValidationError(
-                f"{todo.path}: passed requires owner_lane=producer and "
-                "user_gate=awaiting-user-approval until approval"
+                f"{todo.path}: passed requires either owner_lane=producer with "
+                "user_gate=awaiting-user-approval or owner_lane=planning with "
+                "user_gate=changes-requested"
             )
     if status == "complete" and not (verdict == "passed" and gate == "approved"):
         raise ValidationError(
@@ -233,6 +236,8 @@ def _validate_state(todo: SliceTodo) -> None:
 
 def _next_transition(active: SliceTodo) -> str:
     state = active.state
+    if state["user_gate"] == "changes-requested":
+        return "planner-handoff"
     if state["validator_verdict"] == "passed":
         return "product-owner-approval"
     if state["validator_verdict"] in {"rejected", "conditional-pass"}:

@@ -8,7 +8,7 @@ status: active-reference
 # 에이전트 파이프라인 현재 상태
 
 <!-- pipeline-queue
-{"active_slice": "023", "artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "scripts/game/run_rules.gd", "scripts/game/demo_content.gd", "scripts/main.gd", "scripts/ui/game_ui.gd", "scripts/tools/demo_validation_harness.gd", "docs/reports/validation/2026-07-12-u3-checkpoint-risk-loop-validation.md"], "last_handoff": "2026-07-12 - U3 R5 Progression Regression Validator Handoff", "order": ["023", "020", "021", "022", "024"], "owner_lane": "producer"}
+{"active_slice": "023", "artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "scripts/game/run_rules.gd", "scripts/game/demo_content.gd", "scripts/main.gd", "scripts/ui/game_ui.gd", "scripts/tools/demo_validation_harness.gd", "docs/reports/validation/2026-07-12-u3-checkpoint-risk-loop-validation.md", "docs/reports/playtests/2026-07-12-u3-product-owner-balance-feedback.md"], "last_handoff": "2026-07-12 - U3 Balance Revision Validator Handoff", "order": ["023", "020", "021", "022", "024"], "owner_lane": "producer"}
 -->
 
 이 문서는 canonical todo를 새 세션에서 빠르게 읽기 위한 projection이다. 값이 충돌하면 개별 `pipeline_slice` todo frontmatter와 최신 Work Log 증거가 권위이며, projection을 고친 뒤에만 새 역할을 dispatch한다.
@@ -97,4 +97,4 @@ D9는 취소되지 않았고 공개 데모의 세 번째 slice로 이동했다. 
 
 ## Role Prompt Seed
 
-U3는 독립 Validator `passed` 상태다. Producer는 safe/risk/shop/elite 실제 플레이 단위를 Product Owner에게 제공하고 승인 또는 변경 요청을 기록한다. 승인 전에는 020을 활성화하지 않는다.
+U3 balance revision은 독립 Validator `passed` 상태다. Producer는 세 스타터의 공격 감각과 R5/R10 보스 및 독 장판 압박을 Product Owner가 실제 플레이하도록 제공하고 승인 또는 변경 요청을 기록한다. 승인 전에는 020을 활성화하지 않는다.
