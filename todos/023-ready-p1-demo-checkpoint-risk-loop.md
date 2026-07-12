@@ -21,7 +21,7 @@ artifacts:
   - "scripts/ui/game_ui.gd"
   - "scripts/tools/demo_validation_harness.gd"
   - "docs/reports/validation/2026-07-12-u3-checkpoint-risk-loop-validation.md"
-last_handoff: "2026-07-12 - U3 Post-Simplification Validator Handoff"
+last_handoff: "2026-07-12 - U3 R5 Progression Regression Validator Handoff"
 routing_reason: ""
 ---
 
@@ -196,3 +196,34 @@ routing_reason: ""
 **Next Handoff:**
 - Producer가 Product Owner 승인 또는 변경 요청을 받는다.
 - 승인 전에는 020을 활성화하지 않는다.
+
+### 2026-07-12 - U3 R5 Progression Regression Validator Handoff
+
+<!-- pipeline-state
+{"artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "scripts/game/run_rules.gd", "scripts/game/demo_content.gd", "scripts/main.gd", "scripts/ui/game_ui.gd", "scripts/tools/demo_validation_harness.gd", "docs/reports/validation/2026-07-12-u3-checkpoint-risk-loop-validation.md"], "owner_lane": "producer", "routing_reason": "", "status": "ready", "user_gate": "awaiting-user-approval", "validator_verdict": "passed"}
+-->
+
+**By:** Validator
+
+**상태:**
+- passed
+
+**Actions:**
+- R3에서 선택한 route가 남아 있는 상태로 R5 보상 체인에 진입하면 체크포인트가 사라지던 회귀 수정을 독립 검증했다.
+- 재진입 잠금이 현재 `wave`와 같은 checkpoint에만 적용되어 같은 라운드 선택은 불변으로 유지되고, 과거 R3 선택은 R5의 새 선택을 막지 않는지 확인했다.
+- checkpoint reward가 열리기 전에 한 번만 소비되고, R5 선택 시 route history가 한 번만 추가되어 보상이 중복되지 않는 경로를 코드로 검토했다.
+
+**Verification:**
+- project headless load와 pure `--rule=all` harness -> exit 0, `DEMO_RULE_HARNESS_PASS`.
+- `--debug-u3-checkpoint-contract` -> exit 0, `failures=0`, `later_checkpoint_opens=true`, `reopen_nonblocking=true`, `current_reopen_nonblocking=true`.
+- historical R3 risk 뒤 R5 open에서 `checkpoint_round=5`, `selected_route=""`, route options 4개가 새로 열리고 persistent risk는 유지됐다.
+- `--smoke-checkpoint-route=safe|risk|shop|elite` -> 모두 exit 0이며 각 route 선택 후 다음 라운드 `mode=play`, `wave=4`에 도달했다. 동일 handler와 비어 있는 R5 pending chain을 사용하는 R5 선택도 `_start_next_round()`로 R6에 진행함을 검토했다.
+- P7 reward/shop/contract/boss/pause/legendary, P8 weapon routes, U2 rule seams -> 모두 exit 0.
+- reward flow 검토: R5 `stat -> checkpoint`에서 checkpoint step은 `_open_checkpoint_choice()` 호출 전에 `pop_front()`되고, route 선택 경로는 checkpoint step을 다시 추가하지 않는다.
+
+**Questions:**
+- Product Owner가 수정 빌드로 R5 이후 진행을 다시 확인해 승인 또는 추가 변경을 요청한다.
+
+**Next Handoff:**
+- Producer가 수정 빌드를 다시 실행해 Product Owner 승인 게이트를 재개한다.
+- 승인 전에는 `status: ready`, `owner_lane: producer`, `validator_verdict: passed`, `user_gate: awaiting-user-approval`을 유지하고 020을 활성화하지 않는다.

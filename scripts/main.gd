@@ -1446,6 +1446,16 @@ func _debug_u3_checkpoint_contract_and_quit() -> void:
 	if not current_reopen_nonblocking:
 		failures += 1
 	_reset_run(true)
+	var round_3_open := RunRulesScript.open_checkpoint(run_rule_state, 3)
+	var round_3_selected: Dictionary = RunRulesScript.select_checkpoint_route(round_3_open, "risk")
+	_set_run_rule_state(RunRulesScript.attach_persistent_risk(round_3_selected.get("state", round_3_open), "rough_vein"))
+	wave = 5
+	mode = MODE_CHOICE
+	_open_checkpoint_choice()
+	var later_checkpoint_opens: bool = mode == MODE_CHOICE and game_ui.overlay.visible and int(run_rule_state.get("checkpoint_round", 0)) == 5 and str(run_rule_state.get("selected_route", "")).is_empty() and active_choice_method == "_choose_checkpoint_route" and active_choice_options.size() == 4
+	if not later_checkpoint_opens:
+		failures += 1
+	_reset_run(true)
 	var state := RunRulesScript.open_checkpoint(run_rule_state, 3)
 	var risk_result: Dictionary = RunRulesScript.select_checkpoint_route(state, "risk")
 	state = RunRulesScript.attach_persistent_risk(risk_result.get("state", state), "rough_vein")
@@ -1477,8 +1487,8 @@ func _debug_u3_checkpoint_contract_and_quit() -> void:
 	var route_contract := _reward_route_label(3) == "checkpoint" and _reward_route_label(5) == "stat -> checkpoint" and _reward_route_label(7) == "stat -> checkpoint"
 	if not route_contract:
 		failures += 1
-	print("DEBUG_U3_CHECKPOINT_CONTRACT failures=%d reopen_nonblocking=%s current_reopen_nonblocking=%s paused_reopen_immutable=%s resumed_reopen_immutable=%s routes=%s risk_survived=%s risk_feedback=%s elite_success=%s success_feedback=%s elite_missed=%s missed_feedback=%s state=%s" % [
-		failures, str(reopen_nonblocking), str(current_reopen_nonblocking), str(paused_reopen_immutable), str(resumed_reopen_immutable), str([_reward_route_label(3), _reward_route_label(5), _reward_route_label(7)]), str(risk_survived), str(risk_feedback), str(elite_success), str(success_feedback), str(elite_missed), str(missed_feedback), JSON.stringify(run_rule_state),
+	print("DEBUG_U3_CHECKPOINT_CONTRACT failures=%d reopen_nonblocking=%s current_reopen_nonblocking=%s later_checkpoint_opens=%s paused_reopen_immutable=%s resumed_reopen_immutable=%s routes=%s risk_survived=%s risk_feedback=%s elite_success=%s success_feedback=%s elite_missed=%s missed_feedback=%s state=%s" % [
+		failures, str(reopen_nonblocking), str(current_reopen_nonblocking), str(later_checkpoint_opens), str(paused_reopen_immutable), str(resumed_reopen_immutable), str([_reward_route_label(3), _reward_route_label(5), _reward_route_label(7)]), str(risk_survived), str(risk_feedback), str(elite_success), str(success_feedback), str(elite_missed), str(missed_feedback), JSON.stringify(run_rule_state),
 	])
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -3644,7 +3654,7 @@ func _open_contract_choice(choice_method: String = "_choose_relic_option") -> vo
 func _open_checkpoint_choice() -> void:
 	var locked_checkpoint_round := int(run_rule_state.get("checkpoint_round", 0))
 	var locked_route := str(run_rule_state.get("selected_route", ""))
-	if not locked_route.is_empty():
+	if not locked_route.is_empty() and locked_checkpoint_round == wave:
 		_hide_overlay()
 		active_choice_options.clear()
 		active_choice_method = ""

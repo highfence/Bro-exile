@@ -56,3 +56,15 @@ status: passed
 - 모든 실제 state transition은 cache-invalidating setter를 사용하고, 모든 collected ore 경로는 wallet/round/run totals를 한 helper에서 갱신한다.
 - 2026-07-12 03:13:31 Metal 캡처 두 장에서 기존 실제 텍스트 픽셀과 레이아웃 가독성이 유지됐다.
 - 최종 판정은 `passed`; 남은 게이트는 Product Owner 실제 플레이 승인이다.
+
+## U3 R5 Progression Regression Validator Handoff
+
+- 사용자 재현: R5를 클리어한 뒤 다음 보상 또는 R6로 진행하지 못했다.
+- 원인: R3에서 고른 `selected_route`가 남아 있으면 그 선택의 `checkpoint_round`가 현재 `wave`와 다른데도 재진입으로 처리해, 이미 소비한 R5 checkpoint reward를 닫고 `wave=5`에 남겼다.
+- 수정 검증: 재진입 잠금은 `locked_checkpoint_round == wave`일 때만 적용된다. 같은 checkpoint의 재진입은 여전히 선택을 바꾸지 않고 nonblocking이며, 과거 R3 선택은 R5를 새 checkpoint로 연다.
+- `--debug-u3-checkpoint-contract`는 exit 0, `failures=0`, `later_checkpoint_opens=true`, `reopen_nonblocking=true`, `current_reopen_nonblocking=true`를 출력했다.
+- historical R3 risk 뒤 새 R5 state는 `checkpoint_round=5`, `selected_route=""`, 4개 route option을 가지며 persistent risk는 유지된다.
+- safe/risk/shop/elite positive smoke는 모두 exit 0이고 route handler 이후 다음 라운드에 도달했다. R5에서도 동일 handler가 비어 있는 pending chain을 이어받아 R6를 시작한다.
+- R5 `stat -> checkpoint` chain의 checkpoint step은 overlay를 열기 전에 한 번만 `pop_front()`되며, route handler는 해당 reward를 다시 삽입하지 않는다. R5 route 선택은 history에 한 번만 추가되어 reward duplication이 없다.
+- project load, pure rule harness, P7 reward/shop/contract/boss/pause/legendary, P8 weapon routes, U2 rule seams도 모두 exit 0이었다.
+- Validator 판정은 `passed`; 상태는 Product Owner 재확인을 위한 `ready/passed/awaiting-user-approval`을 유지한다.
