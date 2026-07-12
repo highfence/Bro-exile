@@ -1,7 +1,7 @@
 # Orebound Prototype Quest Board
 
 <!-- pipeline-queue
-{"active_slice": "023", "artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "scripts/game/run_rules.gd", "scripts/game/demo_content.gd", "scripts/main.gd", "scripts/ui/game_ui.gd", "scripts/tools/demo_validation_harness.gd", "docs/reports/validation/2026-07-12-u3-checkpoint-risk-loop-validation.md", "docs/reports/playtests/2026-07-12-u3-product-owner-balance-feedback.md"], "last_handoff": "2026-07-12 - U3 Balance Revision Validator Handoff", "order": ["023", "020", "021", "022", "024"], "owner_lane": "producer"}
+{"active_slice": "020", "artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "todos/011-pending-p2-shop-and-reward-choice-pass.md", "todos/018-pending-p2-upgrade-item-relic-review.md"], "last_handoff": "2026-07-13 - Producer Activation Handoff", "order": ["023", "020", "021", "022", "024"], "owner_lane": "planning"}
 -->
 
 이 대시보드는 Bro-exile 프로토타입을 검증 가능한 사이드 퀘스트로 쪼개서 보는 현황판이다. 각 퀘스트는 “무엇을 만들까”보다 “무엇을 확인할까”를 먼저 적는다.
@@ -39,15 +39,15 @@ M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고
 | D9 | pending | [캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) | 캐릭터별로 여러 아키타입과 교차 시너지를 만들 수 있는가? |
 | D10 | pending | [숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) | 플레이어 수준별 자동 검증으로 난이도 변화를 읽을 수 있는가? |
 | D11 | pending | [다중 화폐 경제](020-pending-p2-m1-d11-multi-currency-economy.md) | 리롤/능력/강화 자원을 나누면 선택이 깊어지는가? |
-| Demo | ready | [체크포인트 위험 선택 루프](023-ready-p1-demo-checkpoint-risk-loop.md) | 플레이어가 더 큰 위험을 능동적으로 선택하고 보상을 체감하는가? |
+| Demo | complete | [체크포인트 위험 선택 루프](023-ready-p1-demo-checkpoint-risk-loop.md) | 플레이어가 더 큰 위험을 능동적으로 선택하고 보상을 체감하는가? |
 | Demo | pending | [Windows itch.io 공개 데모](024-pending-p1-demo-windows-release.md) | 외부 플레이어가 설치부터 다음 런까지 막힘 없이 경험하는가? |
 
 ## 지금 큐
 
 | 추천 순서 | 상태 | 퀘스트 | 이유 |
 | --- | --- | --- | --- |
-| 1 | ready | [공개 데모 체크포인트 위험 선택 루프](023-ready-p1-demo-checkpoint-risk-loop.md) | 가장 큰 제품 불확실성인 능동적 위험/보상 선택을 먼저 플레이 가능하게 닫는다. |
-| 2 | pending, blocked by 023 approval | [다중 화폐 playable slice](020-pending-p2-m1-d11-multi-currency-economy.md) | 011의 상점/보상 선택과 018의 강화 sink를 묶어 화폐 source/sink를 한 판에서 검증한다. |
+| 1 | complete, approved | [공개 데모 체크포인트 위험 선택 루프](023-ready-p1-demo-checkpoint-risk-loop.md) | Product Owner가 balance revision 빌드를 현재 저장 지점으로 승인했다. |
+| 2 | ready, planning | [다중 화폐 playable slice](020-pending-p2-m1-d11-multi-currency-economy.md) | 다음 재개 시 011의 상점/보상 선택과 018의 강화 sink를 묶어 화폐 source/sink를 설계한다. |
 | 3 | pending, blocked by 020 approval | [M1-D9 캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) | 먼저 성립한 위험/경제 위에 캐릭터별 buildcraft를 얹는다. |
 | 4 | pending, blocked by 021 approval | [M1-D10 숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) | 완성된 데모 축을 숙련도별 deterministic 기준선으로 비교한다. |
 | 5 | pending, blocked by 022 approval | [Windows itch.io 공개 데모](024-pending-p1-demo-windows-release.md) | packaged build와 첫 외부 코호트를 확인한 뒤 Product Owner 승인으로 공개한다. |
@@ -92,10 +92,10 @@ M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고
 | 017 | p1 | complete | M1-D7 | threat-economy | [10라운드 위협/경제 재정비](017-complete-p1-m1-d7-ten-round-threat-economy.md) |
 | 018 | p2 | pending | M1-D8 | design | [강화/아이템/유물 목록 재검토](018-pending-p2-upgrade-item-relic-review.md) |
 | 019 | p1 | complete | M1-D8 | weapon-identity | [무기 정체성 루프](019-complete-p1-m1-d8-weapon-identity.md) |
-| 020 | p2 | pending | M1-D11 | economy | [다중 화폐 경제](020-pending-p2-m1-d11-multi-currency-economy.md) |
+| 020 | p2 | ready | M1-D11 | economy | [다중 화폐 경제](020-pending-p2-m1-d11-multi-currency-economy.md) |
 | 021 | p1 | pending | M1-D9 | buildcraft | [캐릭터 3종과 빌드 아키타입 매트릭스](021-pending-p1-m1-d9-character-archetype-matrix.md) |
 | 022 | p1 | pending | M1-D10 | validation | [숙련도별 자동 시뮬레이션 검증](022-pending-p1-m1-d10-skill-simulation-validation.md) |
-| 023 | p1 | ready | Public Demo | risk-reward | [체크포인트 위험 선택 루프](023-ready-p1-demo-checkpoint-risk-loop.md) |
+| 023 | p1 | complete | Public Demo | risk-reward | [체크포인트 위험 선택 루프](023-ready-p1-demo-checkpoint-risk-loop.md) |
 | 024 | p1 | pending | Public Demo | release | [Windows itch.io 공개 데모](024-pending-p1-demo-windows-release.md) |
 
 ## 상태 규칙

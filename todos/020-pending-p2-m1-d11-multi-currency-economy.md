@@ -1,5 +1,5 @@
 ---
-status: pending
+status: ready
 priority: p2
 issue_id: "020"
 tags: [prototype, m1, d11, economy, currency, shop, design]
@@ -17,7 +17,7 @@ artifacts:
   - "docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md"
   - "todos/011-pending-p2-shop-and-reward-choice-pass.md"
   - "todos/018-pending-p2-upgrade-item-relic-review.md"
-last_handoff: "2026-07-12 - Producer Queue Rebaseline Handoff"
+last_handoff: "2026-07-13 - Producer Activation Handoff"
 routing_reason: ""
 ---
 
@@ -107,3 +107,24 @@ routing_reason: ""
 
 **Next Handoff:**
 - 023이 `complete/approved`가 되면 이 todo를 `ready`로 바꾸고 Planner에 넘긴다.
+
+### 2026-07-13 - Producer Activation Handoff
+
+<!-- pipeline-state
+{"artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "todos/011-pending-p2-shop-and-reward-choice-pass.md", "todos/018-pending-p2-upgrade-item-relic-review.md"], "owner_lane": "planning", "routing_reason": "", "status": "ready", "user_gate": "not-requested", "validator_verdict": "not-run"}
+-->
+
+**By:** Producer
+
+**상태:**
+- ready
+
+**Actions:**
+- 선행 023이 Product Owner 승인으로 닫혀 다음 공개 데모 slice로 활성화했다.
+- 현재 저장 지점에서는 Planner dispatch나 경제 구현을 시작하지 않는다.
+
+**Verification:**
+- pipeline consistency validator로 023 완료와 020 단일 ready 상태를 확인한다.
+
+**Next Handoff:**
+- 다음 작업 재개 시 Planner가 3화폐 source/sink 계약과 discovery-first 획득 구조를 구체화한다.

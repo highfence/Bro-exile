@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p1
 issue_id: "023"
 tags: [public-demo, checkpoint, risk, reward, vertical-slice]
@@ -12,7 +12,7 @@ pipeline_slice: true
 queue_order: 1
 owner_lane: producer
 validator_verdict: passed
-user_gate: awaiting-user-approval
+user_gate: approved
 artifacts:
   - "docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md"
   - "scripts/game/run_rules.gd"
@@ -22,7 +22,7 @@ artifacts:
   - "scripts/tools/demo_validation_harness.gd"
   - "docs/reports/validation/2026-07-12-u3-checkpoint-risk-loop-validation.md"
   - "docs/reports/playtests/2026-07-12-u3-product-owner-balance-feedback.md"
-last_handoff: "2026-07-12 - U3 Balance Revision Validator Handoff"
+last_handoff: "2026-07-13 - Product Owner Approval Handoff"
 routing_reason: ""
 ---
 
@@ -337,3 +337,25 @@ routing_reason: ""
 **Next Handoff:**
 - Producer가 balance revision 빌드를 실행해 Product Owner approval gate를 재개한다.
 - 승인 전에는 020을 활성화하지 않는다.
+
+### 2026-07-13 - Product Owner Approval Handoff
+
+<!-- pipeline-state
+{"artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "scripts/game/run_rules.gd", "scripts/game/demo_content.gd", "scripts/main.gd", "scripts/ui/game_ui.gd", "scripts/tools/demo_validation_harness.gd", "docs/reports/validation/2026-07-12-u3-checkpoint-risk-loop-validation.md", "docs/reports/playtests/2026-07-12-u3-product-owner-balance-feedback.md"], "owner_lane": "producer", "routing_reason": "", "status": "complete", "user_gate": "approved", "validator_verdict": "passed"}
+-->
+
+**By:** Product Owner / Producer
+
+**상태:**
+- approved
+
+**Actions:**
+- Product Owner가 balance revision 실제 플레이 뒤 현재 빌드를 저장 지점으로 승인했다.
+- 023 checkpoint 위험 선택 slice를 `complete/passed/approved`로 닫았다.
+- 다음 slice 활성화만 기록하며, 새 경제 구현은 시작하지 않는다.
+
+**Verification:**
+- 승인 대상 구현은 `d732794 fix(game): rebalance starter weapons and bosses`에 저장돼 있다.
+
+**Next Handoff:**
+- 020 다중 화폐 playable slice를 Planner가 이어받을 수 있는 상태로만 활성화한다.
