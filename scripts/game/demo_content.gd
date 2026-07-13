@@ -26,12 +26,12 @@ const CURRENCY_REGISTRY := {
 
 const ENEMY_CURRENCY_PROFILES := {
 	"zombie": {"primary_currency_id": "ore", "drop_weights": {"ore": 0.75, "catalyst": 0.10, "none": 0.15}, "currency_amounts": {"ore": 2, "catalyst": 1}, "drops_enabled": true},
-	"fast_zombie": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.35, "catalyst": 0.45, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 1}, "drops_enabled": true},
+	"fast_zombie": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.30, "catalyst": 0.50, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 1}, "drops_enabled": true},
 	"spider": {"primary_currency_id": "ore", "drop_weights": {"ore": 0.75, "catalyst": 0.10, "none": 0.15}, "currency_amounts": {"ore": 2, "catalyst": 1}, "drops_enabled": true},
-	"thrower": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.35, "catalyst": 0.45, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 2}, "drops_enabled": true},
+	"thrower": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.30, "catalyst": 0.50, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 2}, "drops_enabled": true},
 	"shield_zombie": {"primary_currency_id": "ore", "drop_weights": {"ore": 0.75, "catalyst": 0.10, "none": 0.15}, "currency_amounts": {"ore": 3, "catalyst": 1}, "drops_enabled": true},
-	"toxic_spider": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.35, "catalyst": 0.45, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 1}, "drops_enabled": true},
-	"bomb_miner": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.35, "catalyst": 0.45, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 3}, "drops_enabled": true},
+	"toxic_spider": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.30, "catalyst": 0.50, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 1}, "drops_enabled": true},
+	"bomb_miner": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.30, "catalyst": 0.50, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 3}, "drops_enabled": true},
 	"elite_zombie": {"primary_currency_id": "forge_core", "amount": 1, "chance": 1.0, "drops_enabled": true},
 	"boss": {"primary_currency_id": "", "amount": 0, "chance": 0.0, "drops_enabled": false},
 	"mid_boss": {"primary_currency_id": "forge_core", "amount": 2, "chance": 1.0, "drops_enabled": true},

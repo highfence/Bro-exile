@@ -148,7 +148,7 @@ func _validate_economy_rules() -> void:
 	var catalyst_profile: Dictionary = DemoContentScript.enemy_currency_profile("fast_zombie")
 	var safe_expected_catalyst := EconomyRulesScript.expected_drop_value(catalyst_profile, 1.0)
 	var risk_expected_catalyst := EconomyRulesScript.expected_drop_value(catalyst_profile, 1.18)
-	_expect_near("economy.safe_expected_catalyst", safe_expected_catalyst, 0.45)
+	_expect_near("economy.safe_expected_catalyst", safe_expected_catalyst, 0.50)
 	_expect_equal("economy.risk_expected_catalyst_increases", risk_expected_catalyst > safe_expected_catalyst, true)
 	_expect_equal("economy.ore_outcome", EconomyRulesScript.currency_drop_outcome(catalyst_profile, 0.20), {"currency_id": "ore", "amount": 1})
 	_expect_equal("economy.catalyst_outcome", EconomyRulesScript.currency_drop_outcome(catalyst_profile, 0.50), {"currency_id": "catalyst", "amount": 1})
