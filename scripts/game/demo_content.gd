@@ -25,13 +25,13 @@ const CURRENCY_REGISTRY := {
 }
 
 const ENEMY_CURRENCY_PROFILES := {
-	"zombie": {"primary_currency_id": "ore", "amount": 2, "chance": 1.0, "drops_enabled": true},
-	"fast_zombie": {"primary_currency_id": "catalyst", "amount": 1, "chance": 1.0, "drops_enabled": true},
-	"spider": {"primary_currency_id": "ore", "amount": 2, "chance": 1.0, "drops_enabled": true},
-	"thrower": {"primary_currency_id": "catalyst", "amount": 2, "chance": 1.0, "drops_enabled": true},
-	"shield_zombie": {"primary_currency_id": "ore", "amount": 3, "chance": 1.0, "drops_enabled": true},
-	"toxic_spider": {"primary_currency_id": "catalyst", "amount": 1, "chance": 0.70, "drops_enabled": true},
-	"bomb_miner": {"primary_currency_id": "catalyst", "amount": 3, "chance": 1.0, "drops_enabled": true},
+	"zombie": {"primary_currency_id": "ore", "drop_weights": {"ore": 0.75, "catalyst": 0.10, "none": 0.15}, "currency_amounts": {"ore": 2, "catalyst": 1}, "drops_enabled": true},
+	"fast_zombie": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.35, "catalyst": 0.45, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 1}, "drops_enabled": true},
+	"spider": {"primary_currency_id": "ore", "drop_weights": {"ore": 0.75, "catalyst": 0.10, "none": 0.15}, "currency_amounts": {"ore": 2, "catalyst": 1}, "drops_enabled": true},
+	"thrower": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.35, "catalyst": 0.45, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 2}, "drops_enabled": true},
+	"shield_zombie": {"primary_currency_id": "ore", "drop_weights": {"ore": 0.75, "catalyst": 0.10, "none": 0.15}, "currency_amounts": {"ore": 3, "catalyst": 1}, "drops_enabled": true},
+	"toxic_spider": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.35, "catalyst": 0.45, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 1}, "drops_enabled": true},
+	"bomb_miner": {"primary_currency_id": "catalyst", "drop_weights": {"ore": 0.35, "catalyst": 0.45, "none": 0.20}, "currency_amounts": {"ore": 1, "catalyst": 3}, "drops_enabled": true},
 	"elite_zombie": {"primary_currency_id": "forge_core", "amount": 1, "chance": 1.0, "drops_enabled": true},
 	"boss": {"primary_currency_id": "", "amount": 0, "chance": 0.0, "drops_enabled": false},
 	"mid_boss": {"primary_currency_id": "forge_core", "amount": 2, "chance": 1.0, "drops_enabled": true},
@@ -104,8 +104,25 @@ static func currency_contract_errors(registry_override: Dictionary = {}) -> Arra
 		var primary_currency_id := str(profile.get("primary_currency_id", ""))
 		if not CURRENCY_IDS.has(primary_currency_id):
 			errors.append("enemy_invalid_primary:%s" % enemy_type)
-		if int(profile.get("amount", 0)) <= 0 or float(profile.get("chance", 0.0)) <= 0.0:
-			errors.append("enemy_invalid_drop:%s" % enemy_type)
+		if primary_currency_id == "forge_core":
+			if int(profile.get("amount", 0)) <= 0 or float(profile.get("chance", 0.0)) <= 0.0:
+				errors.append("enemy_invalid_drop:%s" % enemy_type)
+			continue
+		var drop_weights: Dictionary = profile.get("drop_weights", {})
+		var currency_amounts: Dictionary = profile.get("currency_amounts", {})
+		var weight_total := 0.0
+		for outcome_id in ["ore", "catalyst", "none"]:
+			var weight := float(drop_weights.get(outcome_id, -1.0))
+			if weight < 0.0:
+				errors.append("enemy_invalid_weight:%s:%s" % [enemy_type, outcome_id])
+			weight_total += maxf(0.0, weight)
+		if not is_equal_approx(weight_total, 1.0):
+			errors.append("enemy_invalid_weight_total:%s" % enemy_type)
+		if float(drop_weights.get("none", 0.0)) <= 0.0:
+			errors.append("enemy_without_no_drop:%s" % enemy_type)
+		for currency_id in ["ore", "catalyst"]:
+			if int(currency_amounts.get(currency_id, 0)) <= 0:
+				errors.append("enemy_invalid_amount:%s:%s" % [enemy_type, currency_id])
 	for weapon_id in STARTER_WEAPON_IDS:
 		if not WEAPON_TEMPER_RECIPES.has(weapon_id):
 			errors.append("weapon_without_temper:%s" % weapon_id)
