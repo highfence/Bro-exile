@@ -391,6 +391,15 @@ func _debug_u4_currency_contract_and_quit() -> void:
 	for enemy_type in ["zombie", "fast_zombie", "elite_zombie", "mid_boss"]:
 		var enemy := _make_enemy(enemy_type)
 		print("DEBUG_U4_SOURCE_PROFILE enemy=%s profile=%s" % [enemy_type, JSON.stringify(enemy.get("currency_drop", {}))])
+		if ["zombie", "fast_zombie"].has(enemy_type):
+			var forced_profile: Dictionary = Dictionary(enemy.get("currency_drop", {})).duplicate(true)
+			var forced_currency_id := "ore" if enemy_type == "zombie" else "catalyst"
+			forced_profile["drop_weights"] = {
+				"ore": 1.0 if forced_currency_id == "ore" else 0.0,
+				"catalyst": 1.0 if forced_currency_id == "catalyst" else 0.0,
+				"none": 0.0,
+			}
+			enemy["currency_drop"] = forced_profile
 		enemy["pos"] = player.get("pos", Vector2.ZERO)
 		_drop_pickups(enemy)
 	_collect_leftover_currency()
