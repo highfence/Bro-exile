@@ -16,7 +16,7 @@ status: passed-awaiting-product-owner
 ## 구현 계약 검증
 
 - fresh wallet은 세 ID를 `balance/acquired/spent = 0`으로 만들고 retry에서 초기화된다.
-- 모든 일반 enemy family는 하나의 primary currency를 가지며 최종 라운드 spend currency drop은 비활성화된다.
+- 모든 일반 enemy family는 하나의 primary currency 성향을 가지되, 개별 처치는 광석·촉매·무드롭 중 하나를 weighted outcome으로 고른다. 최종 라운드 spend currency drop은 비활성화된다.
 - part/item은 광석, reroll은 촉매, 스타터 무기 단련은 강화핵만 소비한다.
 - 단련은 무기별 고정 recipe를 rank마다 한 번 적용하고 III에서 멈춘다. 네일건의 cooldown과 range는 단련으로 바뀌지 않는다.
 - 가격은 `{currency_id, amount: int}`만 허용한다. 소수·음수·미등록 화폐와 숫자형 유료 fallback은 거부된다.
@@ -27,20 +27,28 @@ status: passed-awaiting-product-owner
 
 - Godot headless load: exit 0.
 - `demo_validation_harness`: `DEMO_RULE_HARNESS_PASS`.
-  - 대표 고정 광석 비중 `0.25`.
-  - 첫 상점 예산 `16`.
-  - 목표 catalyst discovery proxy `2 → 6`, 무관 ore fixture 유지.
+  - weighted outcome, 위험 계약 선호 화폐 증가, 강화핵 보장 source 계약 통과.
+  - 첫 상점 기대 예산 `15`.
+  - 목표 catalyst discovery proxy `1 → 3`, 무관 ore fixture 유지.
 - `--debug-u4-currency-contract`: `failures=0`.
 - full smoke:
-  - 곡괭이: victory, 광석 `34`, 라운드 고정 `12`, 구매 2회, 단련 I.
-  - 네일건: victory, 광석 `56`, 라운드 고정 `12`, 구매 3회, 단련 I.
-  - 랜턴: victory, 광석 `61`, 라운드 고정 `12`, 구매 3회, 단련 I.
+  - 곡괭이: victory, 광석 `33`, 촉매 `10`, 리롤 1회, 구매 2회, 단련 I.
+  - 네일건: victory, 광석 `60`, 촉매 `11`, 리롤 1회, 구매 3회, 단련 I.
+  - 랜턴: victory, 광석 `51`, 촉매 `17`, 리롤 2회, 구매 3회, 단련 I.
 - checkpoint smoke: safe, risk, shop, elite 모두 PASS.
 - `DEBUG_DEMO_RULE_SEAMS`, U3 checkpoint/balance, P7 reward/rarity/relic/boss/pause/legendary, P8 weapon route 모두 exit 0 또는 `failures=0`.
 - pipeline validator test 10개와 현재 queue validation 통과.
 - `git diff --check` 통과.
 
 macOS headless 실행의 system CA certificate 경고는 모든 명령에서 확인됐지만 exit code와 pass marker에는 영향을 주지 않았다.
+
+## Product Owner 피드백 후 분포 재검증
+
+- 피드백 전 deterministic fixture는 광석 `69.5%`, 촉매 `30.5%`, 기대 리롤 `5.06회`로 촉매 과잉을 재현했다.
+- 최종 fixture는 광석 성향 `75/10/15`, 촉매 성향 `30/50/20`이며 exact 확률은 플레이어 UI에 노출하지 않는다.
+- 대표 3런 enemy mix의 기대 분포는 광석 `76.9%`, 촉매 `23.1%`, 무드롭 `17.4%`, 기대 리롤 `3.12회`다.
+- 실제 스타터 3종 full smoke 합계는 광석 `144`, 촉매 `38`로 일반 화폐 중 광석 `79.1%`, 촉매 `20.9%`였고 모두 승리했다.
+- `forge_core`의 elite, checkpoint elite, mid boss source와 스타터 무기 단련 sink는 변경하지 않았다.
 
 ## 시각 검증
 
