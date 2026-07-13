@@ -3496,18 +3496,23 @@ func _drop_pickups(enemy: Dictionary) -> void:
 	var profile: Dictionary = enemy.get("currency_drop", {})
 	if not bool(profile.get("drops_enabled", true)):
 		return
-	var currency_id := str(profile.get("primary_currency_id", ""))
+	var preferred_currency_id := str(profile.get("primary_currency_id", ""))
+	var contract_multiplier := _contract_currency_multiplier(enemy, preferred_currency_id)
+	var outcome := EconomyRulesScript.currency_drop_outcome(profile, randf(), contract_multiplier)
+	if outcome.is_empty():
+		return
+	var currency_id := str(outcome.get("currency_id", ""))
 	var definition := _currency_definition(currency_id)
 	if definition.is_empty():
 		push_error("CURRENCY_DROP_REJECTED reason=unknown_currency enemy=%s profile=%s" % [str(enemy.get("type", "")), JSON.stringify(profile)])
 		return
-	var scaled_amount := float(profile.get("amount", 0)) * currency_drop_multiplier * _contract_currency_multiplier(enemy, currency_id)
+	var scaled_amount := float(outcome.get("amount", 0)) * currency_drop_multiplier
+	if not profile.has("drop_weights"):
+		scaled_amount *= contract_multiplier
 	var drop_count := int(floor(scaled_amount))
 	if randf() < scaled_amount - float(drop_count):
 		drop_count += 1
 	for i in range(drop_count):
-		if randf() > float(profile.get("chance", 0.0)):
-			continue
 		pickups.append({
 			"pos": enemy["pos"] + Vector2(randf_range(-12.0, 12.0), randf_range(-12.0, 12.0)),
 			"radius": 6.0,

@@ -104,7 +104,58 @@ static func ledger_is_valid(wallet: Dictionary, currency_ids: Array) -> bool:
 static func expected_drop_value(profile: Dictionary, multiplier: float = 1.0) -> float:
 	if not bool(profile.get("drops_enabled", true)):
 		return 0.0
+	if profile.has("drop_weights"):
+		return expected_currency_drop_value(profile, str(profile.get("primary_currency_id", "")), multiplier)
 	return maxf(0.0, float(profile.get("amount", 0)) * float(profile.get("chance", 0.0)) * maxf(0.0, multiplier))
+
+
+static func expected_currency_drop_value(profile: Dictionary, currency_id: String, preferred_weight_multiplier: float = 1.0) -> float:
+	if not bool(profile.get("drops_enabled", true)):
+		return 0.0
+	if not profile.has("drop_weights"):
+		if str(profile.get("primary_currency_id", "")) != currency_id:
+			return 0.0
+		return expected_drop_value(profile, preferred_weight_multiplier)
+	var weights: Dictionary = profile.get("drop_weights", {}).duplicate(true)
+	var preferred_currency_id := str(profile.get("primary_currency_id", ""))
+	if weights.has(preferred_currency_id):
+		weights[preferred_currency_id] = float(weights.get(preferred_currency_id, 0.0)) * maxf(0.0, preferred_weight_multiplier)
+	var weight_total := 0.0
+	for outcome_id in ["ore", "catalyst", "none"]:
+		weight_total += maxf(0.0, float(weights.get(outcome_id, 0.0)))
+	if weight_total <= 0.0:
+		return 0.0
+	var normalized_weight := maxf(0.0, float(weights.get(currency_id, 0.0))) / weight_total
+	var currency_amounts: Dictionary = profile.get("currency_amounts", {})
+	return normalized_weight * float(currency_amounts.get(currency_id, 0))
+
+
+static func currency_drop_outcome(profile: Dictionary, roll: float, preferred_weight_multiplier: float = 1.0) -> Dictionary:
+	if not bool(profile.get("drops_enabled", true)):
+		return {}
+	if not profile.has("drop_weights"):
+		if clampf(roll, 0.0, 1.0) > float(profile.get("chance", 0.0)):
+			return {}
+		return {"currency_id": str(profile.get("primary_currency_id", "")), "amount": int(profile.get("amount", 0))}
+	var weights: Dictionary = profile.get("drop_weights", {}).duplicate(true)
+	var preferred_currency_id := str(profile.get("primary_currency_id", ""))
+	if weights.has(preferred_currency_id):
+		weights[preferred_currency_id] = float(weights.get(preferred_currency_id, 0.0)) * maxf(0.0, preferred_weight_multiplier)
+	var weight_total := 0.0
+	for outcome_id in ["ore", "catalyst", "none"]:
+		weight_total += maxf(0.0, float(weights.get(outcome_id, 0.0)))
+	if weight_total <= 0.0:
+		return {}
+	var cursor := clampf(roll, 0.0, 0.999999) * weight_total
+	var currency_amounts: Dictionary = profile.get("currency_amounts", {})
+	for outcome_id in ["ore", "catalyst", "none"]:
+		cursor -= maxf(0.0, float(weights.get(outcome_id, 0.0)))
+		if cursor >= 0.0:
+			continue
+		if outcome_id == "none":
+			return {}
+		return {"currency_id": outcome_id, "amount": int(currency_amounts.get(outcome_id, 0))}
+	return {}
 
 
 static func currency_drops_enabled(round_index: int) -> bool:

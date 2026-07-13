@@ -146,8 +146,13 @@ func _validate_economy_rules() -> void:
 	_expect_equal("economy.round_10_drops_disabled", EconomyRulesScript.currency_drops_enabled(10), false)
 	_expect_equal("economy.round_9_drops_enabled", EconomyRulesScript.currency_drops_enabled(9), true)
 	var catalyst_profile: Dictionary = DemoContentScript.enemy_currency_profile("fast_zombie")
-	_expect_near("economy.safe_expected_catalyst", EconomyRulesScript.expected_drop_value(catalyst_profile, 1.0), 1.0)
-	_expect_near("economy.risk_expected_catalyst", EconomyRulesScript.expected_drop_value(catalyst_profile, 1.18), 1.18)
+	var safe_expected_catalyst := EconomyRulesScript.expected_drop_value(catalyst_profile, 1.0)
+	var risk_expected_catalyst := EconomyRulesScript.expected_drop_value(catalyst_profile, 1.18)
+	_expect_near("economy.safe_expected_catalyst", safe_expected_catalyst, 0.45)
+	_expect_equal("economy.risk_expected_catalyst_increases", risk_expected_catalyst > safe_expected_catalyst, true)
+	_expect_equal("economy.ore_outcome", EconomyRulesScript.currency_drop_outcome(catalyst_profile, 0.20), {"currency_id": "ore", "amount": 1})
+	_expect_equal("economy.catalyst_outcome", EconomyRulesScript.currency_drop_outcome(catalyst_profile, 0.50), {"currency_id": "catalyst", "amount": 1})
+	_expect_equal("economy.no_drop_outcome", EconomyRulesScript.currency_drop_outcome(catalyst_profile, 0.90), {})
 	var representative_counts := {"zombie": 3, "spider": 6, "shield_zombie": 6}
 	var expected_enemy_ore := 0.0
 	for enemy_type in representative_counts.keys():
@@ -157,7 +162,7 @@ func _validate_economy_rules() -> void:
 		fixed_round_ore += EconomyRulesScript.round_clear_reward(round_index)
 	var fixed_share := float(fixed_round_ore) / (float(fixed_round_ore) + expected_enemy_ore)
 	_expect_equal("economy.fixed_ore_share_under_40", fixed_share <= 0.40, true)
-	var first_shop_budget := EconomyRulesScript.round_clear_reward(1) + EconomyRulesScript.round_clear_reward(2) + 4
+	var first_shop_budget := EconomyRulesScript.round_clear_reward(1) + EconomyRulesScript.round_clear_reward(2) + int(round(EconomyRulesScript.expected_drop_value(DemoContentScript.enemy_currency_profile("zombie")) * 2.0))
 	_expect_equal("economy.first_shop_common_budget", first_shop_budget >= 15 and first_shop_budget <= 18, true)
 	var first_run_target_catalyst := EconomyRulesScript.expected_drop_value(catalyst_profile) * 2.0
 	var second_run_target_catalyst := EconomyRulesScript.expected_drop_value(catalyst_profile) * 6.0
@@ -191,8 +196,8 @@ func _validate_economy_rules() -> void:
 func _validate_demo_content() -> void:
 	_expect_equal("content.currency_ids", DemoContentScript.currency_ids(), ["ore", "catalyst", "forge_core"])
 	_expect_equal("content.currency_contract", DemoContentScript.currency_contract_errors(), [])
-	_expect_equal("content.zombie_ore_profile", DemoContentScript.enemy_currency_profile("zombie"), {"primary_currency_id": "ore", "amount": 2, "chance": 1.0, "drops_enabled": true})
-	_expect_equal("content.spider_ore_profile", DemoContentScript.enemy_currency_profile("spider"), {"primary_currency_id": "ore", "amount": 2, "chance": 1.0, "drops_enabled": true})
+	_expect_equal("content.zombie_ore_tendency", DemoContentScript.enemy_currency_profile("zombie").get("drop_weights", {}), {"ore": 0.75, "catalyst": 0.10, "none": 0.15})
+	_expect_equal("content.spider_ore_tendency", DemoContentScript.enemy_currency_profile("spider").get("drop_weights", {}), {"ore": 0.75, "catalyst": 0.10, "none": 0.15})
 	var sinkless_registry: Dictionary = DemoContentScript.currency_registry()
 	Dictionary(sinkless_registry["catalyst"])["sink_ids"] = []
 	_expect_equal("content.sinkless_currency", DemoContentScript.currency_contract_errors(sinkless_registry).has("currency_without_sink:catalyst"), true)
