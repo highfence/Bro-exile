@@ -45,7 +45,7 @@ const P8_SHOP_WEAPON_PARTS_CAPTURE_PATH := "/private/tmp/orebound-godot-p8-shop-
 const P8_PICKAXE_SWING_CAPTURE_PATH := "/private/tmp/orebound-godot-p8-pickaxe-swing.png"
 const CHECKPOINT_UI_CAPTURE_PATH := "/private/tmp/orebound-godot-checkpoint-ui.png"
 const CHECKPOINT_HUD_CAPTURE_PATH := "/private/tmp/orebound-godot-checkpoint-hud.png"
-const CHECKPOINT_ELITE_BONUS := 45
+const CHECKPOINT_ELITE_CORE_BONUS := 1
 const BOSS_POOL_RADIUS := 128.0
 const PLAYER_VISUAL_SCALE := 0.27
 const ZOMBIE_VISUAL_SCALE := 0.25
@@ -71,18 +71,20 @@ const BOSS_SPAWN_WARNING_DURATION := 1.18
 const ENEMY_EMERGE_DURATION := 0.32
 
 var mode := MODE_START
+var currency_ids: Array = DemoContentScript.currency_ids()
+var currency_registry: Dictionary = DemoContentScript.currency_registry()
 var elapsed := 0.0
 var wave := 1
 var wave_timer := 35.0
 var spawn_timer := 0.0
-var ore := 0
+var wallets := {}
 var level := 1
 var xp := 0.0
 var xp_to_next := 18.0
 var damage_multiplier := 1.0
 var cooldown_multiplier := 1.0
 var range_multiplier := 1.0
-var ore_multiplier := 1.0
+var currency_drop_multiplier := 1.0
 var xp_multiplier := 1.0
 var hp_regen := 0.0
 var dash_cooldown := 0.0
@@ -92,14 +94,13 @@ var camera_pos := Vector2.ZERO
 var draw_world_offset := Vector2.ZERO
 var next_enemy_id := 1
 var reroll_cost := 2
-var round_ore_earned := 0
+var round_currency_earned := {}
 var rounds_cleared := 0
 var spider_relic_packs_this_wave := 0
 var debug_hurt_events := 0
-var run_ore_collected := 0
-var run_ore_spent := 0
 var run_rerolls := 0
 var run_purchase_count := 0
+var run_round_clear_ore := 0
 var run_purchase_names: Array = []
 var run_rare_legendary_purchase_names: Array = []
 var run_kill_count := 0
@@ -137,6 +138,9 @@ var game_ui: CanvasLayer
 var ui_font: Font
 var active_choice_options: Array = []
 var active_choice_method := ""
+var active_choice_generation := 0
+var handled_choice_keys := {}
+var debug_currency_logging := false
 var smoke_playtest := false
 var smoke_elapsed := 0.0
 var smoke_choices_taken := 0
@@ -187,7 +191,7 @@ var relic_catalog := [
 		"name": "과열된 발걸음",
 		"desc": "빠른 좀비가 더 빠르게 파고듭니다.",
 		"danger": "빠른 좀비 속도 강화",
-		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
+		"reward_hint": "더 큰 위험은 더 값진 성장 기회를 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_spider_egg_fossil.png",
 	},
 	{
@@ -196,7 +200,7 @@ var relic_catalog := [
 		"name": "날카로운 투척",
 		"desc": "투척 좀비의 돌이 더 빠르고 아프게 날아옵니다.",
 		"danger": "투척 좀비 투사체 강화",
-		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
+		"reward_hint": "더 큰 위험은 더 값진 성장 기회를 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_hungry_lantern.png",
 	},
 	{
@@ -205,7 +209,7 @@ var relic_catalog := [
 		"name": "거친 광맥",
 		"desc": "일반 몹의 체력과 피해가 소폭 증가합니다.",
 		"danger": "기본 몹 체급 강화",
-		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
+		"reward_hint": "더 큰 위험은 더 값진 성장 기회를 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_echoing_stone_heart.png",
 	},
 	{
@@ -214,7 +218,7 @@ var relic_catalog := [
 		"name": "선별된 사냥감",
 		"desc": "일부 기존 몹이 엘리트로 승급합니다.",
 		"danger": "엘리트 승급",
-		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
+		"reward_hint": "더 큰 위험은 더 값진 성장 기회를 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_red_vein_sample.png",
 	},
 	{
@@ -223,7 +227,7 @@ var relic_catalog := [
 		"name": "금 간 방패의 맹세",
 		"desc": "방패 좀비의 정면 방어가 더 단단해집니다.",
 		"danger": "방패 정면 방어 강화",
-		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
+		"reward_hint": "더 큰 위험은 더 값진 성장 기회를 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_black_shell.png",
 	},
 	{
@@ -232,7 +236,7 @@ var relic_catalog := [
 		"name": "질척이는 독맥",
 		"desc": "독 장판이 더 오래 남아 이동 경로를 막습니다.",
 		"danger": "독 장판 유지 시간 강화",
-		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
+		"reward_hint": "더 큰 위험은 더 값진 성장 기회를 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_twin_excavation_seal.png",
 	},
 	{
@@ -241,7 +245,7 @@ var relic_catalog := [
 		"name": "짧아진 도화선",
 		"desc": "자폭 광부의 돌진 전조가 더 짧아집니다.",
 		"danger": "자폭 광부 전조 감소",
-		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
+		"reward_hint": "더 큰 위험은 더 값진 성장 기회를 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_unstable_blast_crystal.png",
 	},
 	{
@@ -250,7 +254,7 @@ var relic_catalog := [
 		"name": "깨어난 우두머리",
 		"desc": "보스 패턴 사이 간격이 더 짧아집니다.",
 		"danger": "보스 패턴 간격 강화",
-		"reward_hint": "위험한 광맥일수록 더 많은 광석을 품는다.",
+		"reward_hint": "더 큰 위험은 더 값진 성장 기회를 품는다.",
 		"icon": "res://assets/sprites/items/p3_relics/relic_unstable_blast_crystal.png",
 	},
 ]
@@ -273,9 +277,10 @@ var weapon_catalog := {
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
+	debug_currency_logging = args.has("--debug-u4-currency-contract")
 	var checkpoint_smoke := _checkpoint_smoke_request(args)
 	smoke_weapon_id = _weapon_arg_from_args(args)
-	if bool(checkpoint_smoke.get("present", false)) or args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--debug-p8-weapon-routes") or args.has("--debug-demo-rule-seams") or args.has("--debug-u3-balance-contract") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary") or args.has("--capture-p8-weapon-select-ui") or args.has("--capture-p8-shop-weapon-parts") or args.has("--capture-p8-pickaxe-swing") or args.has("--capture-checkpoint-ui"):
+	if bool(checkpoint_smoke.get("present", false)) or args.has("--smoke-playtest") or args.has("--debug-spider-relic-wave2") or args.has("--debug-boss-pierce-splash") or args.has("--debug-emerging-death-cleanup") or args.has("--debug-p7-reward-routes") or args.has("--debug-p7-shop-rarity") or args.has("--debug-p7-relic-contracts") or args.has("--debug-p7-boss-patterns") or args.has("--debug-p7-elite-marker") or args.has("--debug-p7-pause-cycle") or args.has("--debug-p7-legendary-aim") or args.has("--debug-p8-weapon-routes") or args.has("--debug-demo-rule-seams") or args.has("--debug-u3-balance-contract") or args.has("--debug-u4-currency-contract") or args.has("--capture-choice-ui") or args.has("--capture-shop-ui") or args.has("--capture-relic-ui") or args.has("--capture-run-report-ui") or args.has("--capture-combat-feedback") or args.has("--capture-p6-map-camera") or args.has("--capture-spawn-telegraph") or args.has("--capture-pause-ui") or args.has("--capture-stage1") or args.has("--capture-monster-roster") or args.has("--capture-p7-shop-rarity-ui") or args.has("--capture-p7-contract-ui") or args.has("--capture-p7-boss-patterns") or args.has("--capture-p7-game-over-summary") or args.has("--capture-p8-weapon-select-ui") or args.has("--capture-p8-shop-weapon-parts") or args.has("--capture-p8-pickaxe-swing") or args.has("--capture-checkpoint-ui"):
 		seed(12345)
 	else:
 		randomize()
@@ -354,6 +359,8 @@ func _ready() -> void:
 		_debug_u3_checkpoint_contract_and_quit.call_deferred()
 	elif args.has("--debug-u3-balance-contract"):
 		_debug_u3_balance_contract_and_quit.call_deferred()
+	elif args.has("--debug-u4-currency-contract"):
+		_debug_u4_currency_contract_and_quit.call_deferred()
 
 
 func _weapon_arg_from_args(args: PackedStringArray) -> String:
@@ -372,6 +379,126 @@ func _checkpoint_smoke_request(args: PackedStringArray) -> Dictionary:
 		if arg.begins_with("--smoke-checkpoint-route="):
 			return {"present": true, "route": arg.trim_prefix("--smoke-checkpoint-route=")}
 	return {"present": false, "route": ""}
+
+
+func _debug_u4_currency_contract_and_quit() -> void:
+	_reset_run(false)
+	_hide_overlay()
+	mode = MODE_PLAY
+	_equip_weapon_for_run("pickaxe")
+	var failures := 0
+
+	for enemy_type in ["zombie", "fast_zombie", "elite_zombie", "mid_boss"]:
+		var enemy := _make_enemy(enemy_type)
+		print("DEBUG_U4_SOURCE_PROFILE enemy=%s profile=%s" % [enemy_type, JSON.stringify(enemy.get("currency_drop", {}))])
+		enemy["pos"] = player.get("pos", Vector2.ZERO)
+		_drop_pickups(enemy)
+	_collect_leftover_currency()
+	if _currency_balance("ore") != 2 or _currency_balance("catalyst") != 1 or _currency_balance("forge_core") != 3:
+		failures += 1
+
+	_credit_currency("ore", 200)
+	_credit_currency("catalyst", 8)
+	_open_shop()
+	var purchased_option: Dictionary = {}
+	for option in active_choice_options:
+		if ["part", "item"].has(str(Dictionary(option).get("kind", ""))) and not _choice_option_disabled(option):
+			purchased_option = option
+			break
+	if purchased_option.is_empty():
+		failures += 1
+	else:
+		var ore_spent_before := int(Dictionary(wallets.get("ore", {})).get("spent", 0))
+		var canonical_cost := int(_option_cost(purchased_option).get("amount", 0))
+		var forged_option := purchased_option.duplicate(true)
+		forged_option["cost"] = _typed_cost("ore", 0)
+		_on_ui_option_selected(forged_option)
+		if int(Dictionary(wallets.get("ore", {})).get("spent", 0)) != ore_spent_before + canonical_cost:
+			failures += 1
+		var ore_after_purchase := _currency_balance("ore")
+		_on_ui_option_selected(forged_option)
+		if _currency_balance("ore") != ore_after_purchase:
+			failures += 1
+	if not _option_cost({"cost": 1}).is_empty():
+		failures += 1
+
+	var reroll_option := _active_choice_option_by_id("reroll")
+	var catalyst_before := _currency_balance("catalyst")
+	_on_ui_option_selected(reroll_option)
+	if _currency_balance("catalyst") >= catalyst_before or run_rerolls != 1:
+		failures += 1
+
+	var target_before := _current_upgrade_target()
+	var damage_before := float(target_before.get("damage", 0.0))
+	var temper_option := _active_choice_option_by_id("temper_weapon")
+	var core_before := _currency_balance("forge_core")
+	_on_ui_option_selected(temper_option)
+	var target_after := _current_upgrade_target()
+	if int(target_after.get("upgrade_rank", 0)) != 1 or float(target_after.get("damage", 0.0)) <= damage_before or _currency_balance("forge_core") != core_before - 1:
+		failures += 1
+	weapons.append(Dictionary(weapons[0]).duplicate(true))
+	if not _current_upgrade_target().is_empty() or _can_temper_current_weapon():
+		failures += 1
+	weapons.pop_back()
+
+	wave = MAX_ROUNDS
+	pickups.clear()
+	_drop_pickups(_make_enemy("zombie"))
+	if not pickups.is_empty():
+		failures += 1
+	if not EconomyRulesScript.ledger_is_valid(wallets, currency_ids):
+		failures += 1
+	var wallet_before_unknown := wallets.duplicate(true)
+	pickups.append({"pos": player.get("pos", Vector2.ZERO), "radius": 6.0, "type": "currency", "currency_id": "unknown", "shape": "diamond", "value": 1, "color": Color.WHITE})
+	_update_pickups(0.0)
+	if wallets != wallet_before_unknown:
+		failures += 1
+	var death_balance_before := _currency_balance("ore")
+	pickups.append({"pos": player.get("pos", Vector2.ZERO), "radius": 6.0, "type": "currency", "currency_id": "ore", "shape": "diamond", "value": 1, "color": Color("#e6b85c")})
+	_game_over()
+	if _currency_balance("ore") != death_balance_before:
+		failures += 1
+	pickups.clear()
+	var state_before_reset := wallets.duplicate(true)
+	for weapon_id in starter_weapon_ids:
+		if not _debug_temper_recipe_route(str(weapon_id)):
+			failures += 1
+	_reset_run(false)
+	for currency_id in currency_ids:
+		if _currency_balance(str(currency_id)) != 0:
+			failures += 1
+	print("DEBUG_U4_CURRENCY_CONTRACT failures=%d before_reset=%s after_reset=%s" % [failures, JSON.stringify(state_before_reset), JSON.stringify(wallets)])
+	get_tree().quit(1 if failures > 0 else 0)
+
+
+func _debug_temper_recipe_route(weapon_id: String) -> bool:
+	_reset_run(false)
+	_hide_overlay()
+	if not _equip_weapon_for_run(weapon_id):
+		return false
+	_credit_currency("forge_core", 6)
+	var target_before := _current_upgrade_target().duplicate(true)
+	_open_shop()
+	for expected_rank in range(1, 4):
+		var option := _active_choice_option_by_id("temper_weapon")
+		if option.is_empty() or _choice_option_disabled(option):
+			return false
+		_on_ui_option_selected(option)
+		if int(_current_upgrade_target().get("upgrade_rank", 0)) != expected_rank:
+			return false
+	var target_after := _current_upgrade_target()
+	var capped_option := _active_choice_option_by_id("temper_weapon")
+	if not _choice_option_disabled(capped_option) or _currency_balance("forge_core") != 0:
+		return false
+	var recipe := DemoContentScript.weapon_temper_recipe(weapon_id)
+	var multipliers: Dictionary = recipe.get("multipliers", {})
+	for stat_id in multipliers.keys():
+		var expected := float(target_before.get(stat_id, 0.0)) * pow(float(multipliers[stat_id]), 3)
+		if not is_equal_approx(float(target_after.get(stat_id, 0.0)), expected):
+			return false
+	if weapon_id == "nailgun" and (not is_equal_approx(float(target_after.get("range", 0.0)), float(target_before.get("range", 0.0))) or not is_equal_approx(float(target_after.get("cooldown", 0.0)), float(target_before.get("cooldown", 0.0)))):
+		return false
+	return Array(target_after.get("mods", [])).is_empty()
 
 
 func _debug_spider_relic_wave2_and_quit() -> void:
@@ -442,9 +569,12 @@ func _capture_choice_ui_and_quit() -> void:
 
 func _capture_shop_ui_and_quit() -> void:
 	_reset_run(true)
+	_equip_weapon_for_run("pickaxe")
 	wave = 3
 	rounds_cleared = 2
-	ore = 120
+	_set_currency_ledger_for_debug("ore", 120, 120, 0)
+	_set_currency_ledger_for_debug("catalyst", 7, 9, 2)
+	_set_currency_ledger_for_debug("forge_core", 3, 4, 1)
 	_add_relic(_relic_by_id("chosen_prey"))
 	_add_relic(_relic_by_id("overheated_footsteps"))
 	_add_relic(_relic_by_id("overheated_footsteps"))
@@ -461,8 +591,8 @@ func _capture_relic_ui_and_quit() -> void:
 	_reset_run(true)
 	wave = 2
 	rounds_cleared = 1
-	round_ore_earned = 34
-	ore = 62
+	_set_round_currency_amount("ore", 34)
+	_set_currency_ledger_for_debug("ore", 62, 62, 0)
 	_add_relic(_relic_by_id("rough_vein"))
 	_open_relic_choice()
 	await get_tree().process_frame
@@ -475,15 +605,18 @@ func _capture_relic_ui_and_quit() -> void:
 
 func _capture_run_report_ui_and_quit() -> void:
 	_reset_run(true)
+	_equip_weapon_for_run("lantern")
+	_current_upgrade_target()["upgrade_rank"] = 2
 	_hide_overlay()
 	mode = MODE_VICTORY
 	wave = MAX_ROUNDS
 	rounds_cleared = MAX_ROUNDS
 	level = 5
 	elapsed = 78.4
-	ore = 44
-	run_ore_collected = 166
-	run_ore_spent = 122
+	_set_currency_ledger_for_debug("ore", 44, 166, 122)
+	_set_currency_ledger_for_debug("catalyst", 6, 12, 6)
+	_set_currency_ledger_for_debug("forge_core", 1, 4, 3)
+	run_round_clear_ore = 12
 	run_rerolls = 3
 	run_kill_count = 93
 	run_kills_by_type = {
@@ -525,6 +658,9 @@ func _capture_combat_feedback_and_quit() -> void:
 	pickups.clear()
 	sparks.clear()
 	floating_text.clear()
+	_set_currency_ledger_for_debug("ore", 18, 30, 12)
+	_set_currency_ledger_for_debug("catalyst", 5, 7, 2)
+	_set_currency_ledger_for_debug("forge_core", 2, 3, 1)
 	_add_relic(_relic_by_id("chosen_prey"))
 	_add_relic(_relic_by_id("cracked_shield_oath"))
 
@@ -556,8 +692,9 @@ func _capture_combat_feedback_and_quit() -> void:
 		spider["pos"] = pos
 		enemies.append(spider)
 	pickups.append({"pos": Vector2(486.0, 500.0), "radius": 8.0, "type": "xp", "value": 6.0, "color": Color("#6cc3c0")})
-	pickups.append({"pos": Vector2(520.0, 500.0), "radius": 6.0, "type": "ore", "value": 1, "color": Color("#e6b85c")})
-	pickups.append({"pos": Vector2(548.0, 500.0), "radius": 6.0, "type": "ore", "value": 1, "color": Color("#e6b85c")})
+	pickups.append({"pos": Vector2(520.0, 500.0), "radius": 6.0, "type": "currency", "currency_id": "ore", "shape": "diamond", "value": 1, "color": Color("#e6b85c")})
+	pickups.append({"pos": Vector2(548.0, 500.0), "radius": 6.0, "type": "currency", "currency_id": "catalyst", "shape": "ring", "value": 1, "color": Color("#6cc3c0")})
+	pickups.append({"pos": Vector2(576.0, 500.0), "radius": 7.0, "type": "currency", "currency_id": "forge_core", "shape": "hex", "value": 1, "color": Color("#f0643b")})
 
 	_fire_projectiles(weapon, boss, 620.0, false)
 	for frame in range(34):
@@ -637,7 +774,7 @@ func _capture_pause_ui_and_quit() -> void:
 	mode = MODE_PLAY
 	wave = 4
 	wave_timer = 28.0
-	ore = 86
+	_set_currency_ledger_for_debug("ore", 86, 86, 0)
 	run_kill_count = 42
 	run_purchase_count = 3
 	run_rerolls = 1
@@ -822,7 +959,7 @@ func _capture_p7_shop_rarity_ui_and_quit() -> void:
 	_reset_run(true)
 	wave = 8
 	rounds_cleared = 7
-	ore = 180
+	_set_currency_ledger_for_debug("ore", 180, 180, 0)
 	shop_stock = [
 		_shop_item_by_id("lubricated_bearing").duplicate(true),
 		_shop_item_by_id("piercing_bit").duplicate(true),
@@ -831,7 +968,7 @@ func _capture_p7_shop_rarity_ui_and_quit() -> void:
 	]
 	for i in range(shop_stock.size()):
 		shop_stock[i]["stock_id"] = "capture_%d" % i
-		shop_stock[i]["cost"] = _scaled_shop_cost(int(shop_stock[i]["cost"]), str(shop_stock[i].get("rarity", "common")))
+		shop_stock[i]["cost"] = _typed_cost("ore", _scaled_shop_cost(int(shop_stock[i]["cost"]), str(shop_stock[i].get("rarity", "common"))))
 	active_reward_context = {"type": "shop"}
 	pending_reward_chain.clear()
 	_show_shop_overlay()
@@ -847,8 +984,8 @@ func _capture_p7_contract_ui_and_quit() -> void:
 	_reset_run(true)
 	wave = 5
 	rounds_cleared = 5
-	round_ore_earned = 68
-	ore = 116
+	_set_round_currency_amount("ore", 68)
+	_set_currency_ledger_for_debug("ore", 116, 116, 0)
 	_add_relic(_relic_by_id("overheated_footsteps"))
 	_open_contract_choice()
 	await get_tree().process_frame
@@ -885,14 +1022,16 @@ func _capture_p7_boss_patterns_and_quit() -> void:
 
 func _capture_p7_game_over_summary_and_quit() -> void:
 	_reset_run(true)
+	_equip_weapon_for_run("pickaxe")
 	_hide_overlay()
 	mode = MODE_GAME_OVER
 	wave = 7
 	rounds_cleared = 6
 	elapsed = 154.0
-	ore = 23
-	run_ore_collected = 214
-	run_ore_spent = 191
+	_set_currency_ledger_for_debug("ore", 23, 214, 191)
+	_set_currency_ledger_for_debug("catalyst", 2, 8, 6)
+	_set_currency_ledger_for_debug("forge_core", 1, 2, 1)
+	run_round_clear_ore = 12
 	run_rerolls = 4
 	run_kill_count = 148
 	run_kills_by_type = {"zombie": 44, "fast_zombie": 29, "spider": 38, "thrower": 17, "shield_zombie": 8, "toxic_spider": 12}
@@ -927,8 +1066,8 @@ func _capture_p8_shop_weapon_parts_and_quit() -> void:
 	mode = MODE_CHOICE
 	wave = 8
 	rounds_cleared = 7
-	round_ore_earned = 92
-	ore = 190
+	_set_round_currency_amount("ore", 92)
+	_set_currency_ledger_for_debug("ore", 190, 190, 0)
 	shop_stock = [
 		_shop_item_by_id("lubricated_bearing").duplicate(true),
 		_shop_item_by_id("extended_shaft").duplicate(true),
@@ -937,7 +1076,7 @@ func _capture_p8_shop_weapon_parts_and_quit() -> void:
 	]
 	for i in range(shop_stock.size()):
 		shop_stock[i]["stock_id"] = "p8_capture_%d" % i
-		shop_stock[i]["cost"] = _scaled_shop_cost(int(shop_stock[i]["cost"]), str(shop_stock[i].get("rarity", "common")))
+		shop_stock[i]["cost"] = _typed_cost("ore", _scaled_shop_cost(int(shop_stock[i]["cost"]), str(shop_stock[i].get("rarity", "common"))))
 	active_reward_context = {"type": "shop"}
 	pending_reward_chain.clear()
 	_show_shop_overlay()
@@ -1003,8 +1142,8 @@ func _capture_checkpoint_ui_and_quit() -> void:
 
 	wave = 5
 	rounds_cleared = 5
-	round_ore_earned = 52
-	ore = 96
+	_set_round_currency_amount("ore", 52)
+	_set_currency_ledger_for_debug("ore", 96, 96, 0)
 	player["hp"] = 42.0
 	_set_run_rule_state(RunRulesScript.open_checkpoint(risk_state, wave))
 	_open_checkpoint_choice()
@@ -1062,7 +1201,7 @@ func _smoke_checkpoint_route_and_quit(route_id: String) -> void:
 		_choose_checkpoint_risk_relic(active_choice_options[0])
 	elif route_id == "shop":
 		var exit_option := _active_choice_option_by_id("next_round")
-		if exit_option.is_empty() or int(exit_option.get("cost", -1)) != 0:
+		if exit_option.is_empty() or int(_option_cost(exit_option).get("amount", -1)) != 0:
 			_checkpoint_smoke_fail("free_shop_exit_missing", route_id)
 			return
 		_choose_shop_option(exit_option)
@@ -1142,8 +1281,9 @@ func _debug_p7_shop_rarity_and_quit() -> void:
 			for item in stock:
 				var rarity := str(item.get("rarity", "common"))
 				counts[rarity] = int(counts.get(rarity, 0)) + 1
-				min_cost = min(min_cost, int(item.get("cost", 0)))
-				max_cost = max(max_cost, int(item.get("cost", 0)))
+				var amount := int(_option_cost(item).get("amount", 0))
+				min_cost = min(min_cost, amount)
+				max_cost = max(max_cost, amount)
 	print("DEBUG_P7_SHOP_RARITY counts=%s min_cost=%d max_cost=%d legendary_expected=\"0-1 per normal run, not guaranteed\"" % [str(counts), min_cost, max_cost])
 	get_tree().quit(1 if int(counts.get("common", 0)) <= 0 or int(counts.get("rare", 0)) <= 0 else 0)
 
@@ -1163,12 +1303,13 @@ func _debug_p7_relic_contracts_and_quit() -> void:
 		if options.is_empty():
 			failures += 1
 		_add_relic(options[0])
-	print("DEBUG_P7_RELIC_CONTRACTS failures=%d contracts=\"%s\" rough_hp=%.2f elite_probe=%s ore_mult=%.2f" % [
+	var catalyst_probe := {"type": "fast_zombie", "currency_drop": DemoContentScript.enemy_currency_profile("fast_zombie"), "elite": true}
+	print("DEBUG_P7_RELIC_CONTRACTS failures=%d contracts=\"%s\" rough_hp=%.2f elite_probe=%s currency_mult=%.2f" % [
 		failures,
 		_format_relic_counts_for_report(),
 		_contract_enemy_hp_multiplier("zombie"),
 		str(_should_make_contract_elite("zombie")),
-		_contract_ore_multiplier({"type": "fast_zombie", "ore": 1, "elite": true}),
+		_contract_currency_multiplier(catalyst_probe, "catalyst"),
 	])
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -1538,9 +1679,9 @@ func _debug_u3_checkpoint_contract_and_quit() -> void:
 	var elite_base := RunRulesScript.open_checkpoint(RunRulesScript.fresh_run_state(), 5)
 	var elite_result: Dictionary = RunRulesScript.select_checkpoint_route(elite_base, "elite")
 	_set_run_rule_state(RunRulesScript.mark_elite_spawned(elite_result.get("state", elite_base)))
-	var ore_before := ore
+	var core_before := _currency_balance("forge_core")
 	_record_enemy_defeat({"type": "elite_zombie", "checkpoint_elite": true, "pos": player.get("pos", Vector2.ZERO)})
-	var elite_success := str(Dictionary(run_rule_state.get("elite_segment", {})).get("status", "")) == "success" and ore == ore_before + CHECKPOINT_ELITE_BONUS
+	var elite_success := str(Dictionary(run_rule_state.get("elite_segment", {})).get("status", "")) == "success" and _currency_balance("forge_core") == core_before + CHECKPOINT_ELITE_CORE_BONUS
 	var success_feedback := "\n".join(_checkpoint_feedback_lines()).contains("성공") and _elite_result_history_text().contains("성공")
 	if not elite_success or not success_feedback:
 		failures += 1
@@ -1633,7 +1774,7 @@ func _debug_p8_probe_legendary_interpretation(id: String) -> bool:
 	if weapons.is_empty():
 		return false
 	var weapon: Dictionary = weapons[0]
-	return int(weapon.get("projectiles", 1)) >= 2 and int(weapon.get("level", 1)) >= 2
+	return int(weapon.get("projectiles", 1)) >= 2 and Array(weapon.get("mods", [])).size() >= 1 and int(weapon.get("upgrade_rank", 0)) == 0
 
 
 func _load_visual_textures() -> void:
@@ -1709,14 +1850,14 @@ func _reset_run(start_playing: bool) -> void:
 	wave = 1
 	wave_timer = _round_duration(wave)
 	spawn_timer = 0.0
-	ore = 0
+	wallets = EconomyRulesScript.fresh_wallet(currency_ids)
 	level = 1
 	xp = 0.0
 	xp_to_next = 14.0
 	damage_multiplier = 1.0
 	cooldown_multiplier = 1.0
 	range_multiplier = 1.0
-	ore_multiplier = 1.0
+	currency_drop_multiplier = 1.0
 	xp_multiplier = 1.0
 	hp_regen = 0.0
 	dash_cooldown = 0.0
@@ -1732,13 +1873,12 @@ func _reset_run(start_playing: bool) -> void:
 	pending_reward_chain.clear()
 	active_reward_context.clear()
 	reroll_cost = _shop_reroll_cost()
-	round_ore_earned = 0
+	round_currency_earned = _fresh_currency_amounts()
 	rounds_cleared = 0
 	spider_relic_packs_this_wave = 0
-	run_ore_collected = 0
-	run_ore_spent = 0
 	run_rerolls = 0
 	run_purchase_count = 0
+	run_round_clear_ore = 0
 	run_purchase_names.clear()
 	run_rare_legendary_purchase_names.clear()
 	run_kill_count = 0
@@ -1774,6 +1914,8 @@ func _reset_run(start_playing: bool) -> void:
 	floating_text.clear()
 	boss_spawned = false
 	selected_weapon_id = ""
+	active_choice_generation = 0
+	handled_choice_keys.clear()
 	_set_run_rule_state(RunRulesScript.fresh_run_state())
 	if start_playing:
 		_equip_weapon_for_run("drill_tip")
@@ -1902,7 +2044,7 @@ func _update_smoke_playtest(delta: float) -> void:
 
 
 func _smoke_direction() -> Vector2:
-	if wave >= MAX_ROUNDS:
+	if _round_is_boss(wave):
 		var boss := _boss_enemy()
 		if not boss.is_empty():
 			return (boss["pos"] - player["pos"]).normalized()
@@ -1924,8 +2066,7 @@ func _choose_smoke_option() -> void:
 	for option in active_choice_options:
 		if not selected.is_empty():
 			break
-		var cost := int(option.get("cost", 0))
-		if ore >= cost and not _choice_option_disabled(option):
+		if (not option.has("cost") or EconomyRulesScript.can_pay(wallets, _option_cost(option), currency_ids)) and not _choice_option_disabled(option):
 			selected = option
 			break
 
@@ -1952,13 +2093,13 @@ func _finish_smoke_playtest(result: String) -> void:
 		var image := get_viewport().get_texture().get_image()
 		image.save_png(SMOKE_PLAYTEST_CAPTURE_PATH)
 		capture_path = SMOKE_PLAYTEST_CAPTURE_PATH
-	print("SMOKE_PLAYTEST result=%s mode=%s wave=%d level=%d hp=%.1f ore=%d enemies=%d pickups=%d choices=%d elapsed=%.2f capture=%s report=\"%s\"" % [
+	print("SMOKE_PLAYTEST result=%s mode=%s wave=%d level=%d hp=%.1f wallets=\"%s\" enemies=%d pickups=%d choices=%d elapsed=%.2f capture=%s report=\"%s\"" % [
 		result,
 		mode,
 		wave,
 		level,
 		float(player.get("hp", 0.0)),
-		ore,
+		_wallet_balance_summary(),
 		enemies.size(),
 		pickups.size(),
 		smoke_choices_taken,
@@ -2228,8 +2369,6 @@ func _make_enemy(kind: String) -> Dictionary:
 	var damage: float = 9.0
 	var color := Color("#b95b4b")
 	var armor := 0.0
-	var dropped_ore := 1
-	var ore_chance := 1.0
 	var dropped_xp := 0
 	var desired_range := 0.0
 	var attack_cooldown := 0.0
@@ -2246,15 +2385,12 @@ func _make_enemy(kind: String) -> Dictionary:
 			radius = 9.0
 			speed = 124.0
 			damage = 4.0
-			dropped_ore = 1
-			ore_chance = 0.35
 			color = Color("#6f9f61")
 		"thrower":
 			hp = 36.0
 			radius = 18.0
 			speed = 66.0
 			damage = 6.0
-			dropped_ore = 2
 			color = Color("#7e8a76")
 			desired_range = 360.0
 			attack_cooldown = 2.15
@@ -2264,22 +2400,18 @@ func _make_enemy(kind: String) -> Dictionary:
 			speed = 48.0
 			damage = 9.0
 			armor = 2.0
-			dropped_ore = 3
 			color = Color("#5f7167")
 		"toxic_spider":
 			hp = 13.0
 			radius = 10.0
 			speed = 132.0
 			damage = 3.0
-			dropped_ore = 1
-			ore_chance = 0.7
 			color = Color("#8fc45b")
 		"bomb_miner":
 			hp = 42.0
 			radius = 18.0
 			speed = 54.0
 			damage = 12.0
-			dropped_ore = 3
 			color = Color("#c9823a")
 		"elite_zombie":
 			hp = 82.0
@@ -2287,8 +2419,6 @@ func _make_enemy(kind: String) -> Dictionary:
 			speed = 62.0
 			damage = 13.0
 			armor = 1.0
-			dropped_ore = 4
-			ore_chance = 1.0
 			color = Color("#8b7254")
 		"boss":
 			hp = 380.0
@@ -2296,7 +2426,6 @@ func _make_enemy(kind: String) -> Dictionary:
 			speed = 48.0
 			damage = 16.0
 			armor = 3.0
-			dropped_ore = 0
 			color = Color("#6f4f86")
 		"mid_boss":
 			hp = 680.0
@@ -2304,7 +2433,6 @@ func _make_enemy(kind: String) -> Dictionary:
 			speed = 70.0
 			damage = 16.0
 			armor = 3.0
-			dropped_ore = 0
 			color = Color("#6f4f86")
 		"final_boss":
 			hp = 1550.0
@@ -2312,7 +2440,6 @@ func _make_enemy(kind: String) -> Dictionary:
 			speed = 74.0
 			damage = 18.0
 			armor = 4.0
-			dropped_ore = 0
 			color = Color("#7d456a")
 		_:
 			kind = "zombie"
@@ -2322,14 +2449,13 @@ func _make_enemy(kind: String) -> Dictionary:
 	speed *= _contract_enemy_speed_multiplier(kind)
 	if kind == "thrower":
 		attack_cooldown = max(0.72, attack_cooldown * _contract_thrower_cooldown_multiplier())
-	ore_chance = min(1.0, ore_chance)
 	var elite := _should_make_contract_elite(kind)
 	if elite:
 		hp *= 1.45
 		damage *= 1.18
 		speed *= 1.08
 		armor += 1.0
-		dropped_ore += 2
+	var currency_drop := DemoContentScript.enemy_currency_profile(kind)
 
 	var enemy_id := next_enemy_id
 	next_enemy_id += 1
@@ -2345,8 +2471,7 @@ func _make_enemy(kind: String) -> Dictionary:
 		"damage": damage,
 		"armor": armor,
 		"color": color,
-		"ore": dropped_ore,
-		"ore_chance": ore_chance,
+		"currency_drop": currency_drop,
 		"xp": dropped_xp,
 		"desired_range": desired_range,
 		"attack_timer": randf_range(0.25, max(0.35, attack_cooldown)),
@@ -3366,16 +3491,31 @@ func _drop_pickups(enemy: Dictionary) -> void:
 		return
 	if P2_LEVEL_UP_REWARDS_ENABLED and float(enemy["xp"]) > 0.0:
 		pickups.append({"pos": enemy["pos"], "radius": 8.0, "type": "xp", "value": enemy["xp"], "color": Color("#6cc3c0")})
-	var ore_count := int(ceil(float(enemy["ore"]) * ore_multiplier * _contract_ore_multiplier(enemy)))
-	if ore_count > 0 and randf() > float(enemy.get("ore_chance", 1.0)):
-		ore_count = 0
-	for i in range(ore_count):
+	if not EconomyRulesScript.currency_drops_enabled(wave):
+		return
+	var profile: Dictionary = enemy.get("currency_drop", {})
+	if not bool(profile.get("drops_enabled", true)):
+		return
+	var currency_id := str(profile.get("primary_currency_id", ""))
+	var definition := _currency_definition(currency_id)
+	if definition.is_empty():
+		push_error("CURRENCY_DROP_REJECTED reason=unknown_currency enemy=%s profile=%s" % [str(enemy.get("type", "")), JSON.stringify(profile)])
+		return
+	var scaled_amount := float(profile.get("amount", 0)) * currency_drop_multiplier * _contract_currency_multiplier(enemy, currency_id)
+	var drop_count := int(floor(scaled_amount))
+	if randf() < scaled_amount - float(drop_count):
+		drop_count += 1
+	for i in range(drop_count):
+		if randf() > float(profile.get("chance", 0.0)):
+			continue
 		pickups.append({
 			"pos": enemy["pos"] + Vector2(randf_range(-12.0, 12.0), randf_range(-12.0, 12.0)),
 			"radius": 6.0,
-			"type": "ore",
+			"type": "currency",
+			"currency_id": currency_id,
 			"value": 1,
-			"color": Color("#e6b85c"),
+			"color": Color(str(definition.get("color", "#f5efe3"))),
+			"shape": str(definition.get("shape", "diamond")),
 		})
 
 
@@ -3389,11 +3529,16 @@ func _update_pickups(delta: float) -> void:
 			item["pos"] += to_player.normalized() * (180.0 + pull * 520.0) * delta
 
 		if distance < player["radius"] + item["radius"]:
-			if item["type"] == "ore":
+			if item["type"] == "currency":
 				var value := int(item.get("value", 0))
-				_credit_collected_ore(value)
-			else:
+				var currency_id := str(item.get("currency_id", ""))
+				if _credit_currency(currency_id, value):
+					var definition := _currency_definition(currency_id)
+					_add_floating_text("+%d %s" % [value, str(definition.get("name", currency_id))], item["pos"], Color(str(definition.get("color", "#f5efe3"))))
+			elif item["type"] == "xp":
 				_add_xp(item["value"] * xp_multiplier)
+			else:
+				push_error("PICKUP_REJECTED reason=unknown_type pickup=%s" % JSON.stringify(item))
 			pickups.remove_at(i)
 
 
@@ -3461,6 +3606,7 @@ func _add_weapon(id: String) -> bool:
 		"icon": template.get("icon", ""),
 		"fire_type": template["fire_type"],
 		"level": 1,
+		"upgrade_rank": 0,
 		"cooldown": template["cooldown"],
 		"timer": randf() * 0.25,
 		"damage": template["damage"],
@@ -3595,8 +3741,8 @@ func _finish_round() -> void:
 		return
 	_set_paused(false)
 	rounds_cleared += 1
-	_collect_leftover_ore()
-	_award_round_clear_ore()
+	_collect_leftover_currency()
+	_award_round_clear_currency()
 	_clear_combat_state()
 	spawn_timer = 0.0
 	screen_shake = 0.0
@@ -3645,18 +3791,19 @@ func _open_next_reward_or_round() -> void:
 			_open_next_reward_or_round()
 
 
-func _collect_leftover_ore() -> void:
+func _collect_leftover_currency() -> void:
 	for item in pickups:
-		if item["type"] == "ore":
+		if item["type"] == "currency":
 			var value := int(item.get("value", 0))
-			_credit_collected_ore(value)
+			_credit_currency(str(item.get("currency_id", "")), value)
 	pickups.clear()
 
 
-func _award_round_clear_ore() -> void:
+func _award_round_clear_currency() -> void:
 	var base_reward := EconomyRulesScript.round_clear_reward(wave)
-	var reward := int(round(float(base_reward) * _relic_clear_ore_multiplier()))
-	_credit_collected_ore(reward)
+	var reward := int(round(float(base_reward) * _relic_clear_currency_multiplier()))
+	if reward > 0 and _credit_currency("ore", reward):
+		run_round_clear_ore += reward
 
 
 func _clear_combat_state() -> void:
@@ -3704,7 +3851,7 @@ func _next_round_warning_text(round_index: int) -> String:
 
 
 func _reward_eyebrow_text() -> String:
-	return "라운드 %d 완료  +%d 광석  ·  %s" % [wave, round_ore_earned, _next_round_warning_text(min(wave + 1, MAX_ROUNDS))]
+	return "라운드 %d 완료  ·  %s  ·  %s" % [wave, _round_currency_summary(), _next_round_warning_text(min(wave + 1, MAX_ROUNDS))]
 
 
 func _next_reward_or_round_desc() -> String:
@@ -3725,7 +3872,7 @@ func _next_reward_or_round_desc() -> String:
 func _open_relic_choice() -> void:
 	mode = MODE_CHOICE
 	var options := _roll_relic_options()
-	_show_choice_overlay("라운드 %d 완료  +%d 광석" % [wave, round_ore_earned], "계약 선택", options, "_choose_relic_option")
+	_show_choice_overlay("라운드 %d 완료  ·  %s" % [wave, _round_currency_summary()], "계약 선택", options, "_choose_relic_option")
 
 
 func _choose_relic_option(relic: Dictionary) -> void:
@@ -3881,11 +4028,36 @@ func _open_shop() -> void:
 
 func _show_shop_overlay() -> void:
 	var options := _decorate_shop_options_for_selected_weapon(shop_stock)
-	options.append({"id": "reroll", "kind": "command", "name": "재고 새로고침", "desc": "상점 선택지를 다시 뽑습니다.", "cost": reroll_cost})
+	options.append(_weapon_temper_option())
+	options.append({"id": "reroll", "kind": "command", "name": "재고 새로고침", "desc": "상점 선택지를 다시 뽑습니다.", "cost": _typed_cost("catalyst", reroll_cost)})
 	var next_text := "다음 보상" if not pending_reward_chain.is_empty() else "다음 라운드"
-	options.append({"id": "next_round", "kind": "command", "name": next_text, "desc": _next_reward_or_round_desc(), "cost": 0})
-	var title := "최종 준비 상점 - 광석 %d" % ore if str(active_reward_context.get("type", "")) == "final_shop" else "상점 - 광석 %d" % ore
+	options.append({"id": "next_round", "kind": "command", "name": next_text, "desc": _next_reward_or_round_desc(), "cost": _typed_cost("ore", 0)})
+	var title := "최종 준비 상점 · %s" % _wallet_balance_summary() if str(active_reward_context.get("type", "")) == "final_shop" else "상점 · %s" % _wallet_balance_summary()
 	_show_choice_overlay(_reward_eyebrow_text(), title, options, "_choose_shop_option")
+
+
+func _weapon_temper_option() -> Dictionary:
+	var target := _current_upgrade_target()
+	if target.is_empty():
+		return {
+			"id": "temper_weapon", "kind": "temper", "name": "장비 단련",
+			"desc": "선택한 스타터 무기를 찾을 수 없어 단련할 수 없습니다.",
+			"cost": _typed_cost("forge_core", 1), "disabled": true, "disabled_reason": "단련 대상 없음",
+		}
+	var weapon_id := str(target.get("id", ""))
+	var recipe := DemoContentScript.weapon_temper_recipe(weapon_id)
+	var rank := int(target.get("upgrade_rank", 0))
+	var max_rank := int(recipe.get("max_rank", 3))
+	var cost := _typed_cost("forge_core", 1 + rank)
+	return {
+		"id": "temper_weapon", "kind": "temper", "name": str(recipe.get("name", "장비 단련")),
+		"desc": "%s 현재 %s → %s" % [str(recipe.get("description", "무기를 단련합니다.")), _roman_rank(rank), _roman_rank(min(rank + 1, max_rank))],
+		"cost": cost,
+		"disabled": rank >= max_rank,
+		"disabled_reason": "단련 한도 III" if rank >= max_rank else "",
+		"weapon_id": weapon_id,
+		"rank": rank,
+	}
 
 
 func _decorate_shop_options_for_selected_weapon(options: Array) -> Array:
@@ -3982,7 +4154,7 @@ func _roll_shop_stock(avoid_ids: Array = []) -> Array:
 	for i in range(rolled.size()):
 		var option: Dictionary = rolled[i]
 		option["stock_id"] = "%s_%d_%d_%d" % [option["id"], wave, rounds_cleared, i]
-		option["cost"] = _scaled_shop_cost(int(option["cost"]), str(option.get("rarity", "common")))
+		option["cost"] = _typed_cost("ore", _scaled_shop_cost(int(option["cost"]), str(option.get("rarity", "common"))))
 	_record_shop_seen(rolled)
 	_record_shop_visit_seen(rolled)
 	return rolled
@@ -4088,20 +4260,26 @@ func _scaled_shop_cost(base_cost: int, rarity: String = "common") -> int:
 
 
 func _choose_shop_option(item: Dictionary) -> void:
-	if _choice_option_disabled(item):
+	if not _choice_option_is_current(item) or _choice_option_disabled(item):
 		return
 
 	if item["id"] == "next_round":
 		_open_next_reward_or_round()
 		return
 
-	var cost := int(item.get("cost", 0))
-	if ore < cost:
+	var cost := _option_cost(item)
+	var spend_currency_id := str(cost.get("currency_id", ""))
+	var spend_before := _currency_balance(spend_currency_id)
+	var payment: Dictionary = EconomyRulesScript.spend(wallets, cost, currency_ids)
+	if not bool(payment.get("ok", false)):
+		if debug_currency_logging:
+			print("CURRENCY_SPEND_REJECTED cost=%s before=%d error=%s" % [JSON.stringify(cost), spend_before, str(payment.get("error", "unknown"))])
 		return
-	ore -= cost
 
 	if item["id"] == "reroll":
-		run_ore_spent += cost
+		wallets = payment.get("wallet", wallets)
+		if debug_currency_logging:
+			print("CURRENCY_SPEND_COMMIT option=reroll cost=%s before=%d after=%d" % [JSON.stringify(cost), spend_before, _currency_balance(spend_currency_id)])
 		run_rerolls += 1
 		reroll_cost += 2
 		var reroll_avoid_ids: Array = shop_visit_seen_item_ids.duplicate()
@@ -4112,16 +4290,34 @@ func _choose_shop_option(item: Dictionary) -> void:
 		_show_shop_overlay()
 		return
 
-	var purchased := _apply_shop_purchase(item)
-	if not purchased:
-		ore += cost
+	if not _can_apply_shop_purchase(item):
 		_show_shop_overlay()
 		return
-	run_ore_spent += cost
+	var purchased := _apply_shop_purchase(item)
+	if not purchased:
+		_show_shop_overlay()
+		return
+	wallets = payment.get("wallet", wallets)
+	if debug_currency_logging:
+		print("CURRENCY_SPEND_COMMIT option=%s cost=%s before=%d after=%d" % [str(item.get("id", "")), JSON.stringify(cost), spend_before, _currency_balance(spend_currency_id)])
 	_record_shop_purchase(item)
-	_remove_shop_stock(item)
+	if str(item.get("kind", "")) != "temper":
+		_remove_shop_stock(item)
 	_show_shop_overlay()
 	_render_weapons()
+
+
+func _can_apply_shop_purchase(item: Dictionary) -> bool:
+	match str(item.get("kind", "")):
+		"weapon":
+			return _can_add_weapon(str(item.get("weapon", "")))
+		"part":
+			return not _current_upgrade_target().is_empty()
+		"heal", "item":
+			return true
+		"temper":
+			return _can_temper_current_weapon()
+	return false
 
 
 func _apply_shop_purchase(item: Dictionary) -> bool:
@@ -4137,12 +4333,50 @@ func _apply_shop_purchase(item: Dictionary) -> bool:
 		"item":
 			items.append(item["name"])
 			_apply_item_stats(item.get("stats", {}))
+		"temper":
+			return _apply_weapon_temper()
 		_:
 			return false
 	if bool(item.get("unique", false)):
 		var id := str(item.get("id", ""))
 		if not purchased_shop_item_ids.has(id):
 			purchased_shop_item_ids.append(id)
+	return true
+
+
+func _current_upgrade_target() -> Dictionary:
+	if selected_weapon_id.is_empty():
+		return {}
+	var matches: Array = []
+	for weapon in weapons:
+		if str(Dictionary(weapon).get("id", "")) == selected_weapon_id:
+			matches.append(weapon)
+	if matches.size() != 1:
+		return {}
+	return matches[0]
+
+
+func _can_temper_current_weapon() -> bool:
+	var target := _current_upgrade_target()
+	if target.is_empty():
+		return false
+	var recipe := DemoContentScript.weapon_temper_recipe(str(target.get("id", "")))
+	return not recipe.is_empty() and int(target.get("upgrade_rank", 0)) < int(recipe.get("max_rank", 3))
+
+
+func _apply_weapon_temper() -> bool:
+	if not _can_temper_current_weapon():
+		return false
+	var target := _current_upgrade_target()
+	var recipe := DemoContentScript.weapon_temper_recipe(str(target.get("id", "")))
+	var multipliers: Dictionary = recipe.get("multipliers", {})
+	for stat_id in multipliers.keys():
+		if not target.has(stat_id):
+			return false
+	for stat_id in multipliers.keys():
+		target[stat_id] = float(target.get(stat_id, 0.0)) * float(multipliers[stat_id])
+	target["upgrade_rank"] = int(target.get("upgrade_rank", 0)) + 1
+	_add_floating_text("%s %s" % [str(recipe.get("name", "장비 단련")), _roman_rank(int(target["upgrade_rank"]))], player.get("pos", Vector2.ZERO), Color("#f0643b"))
 	return true
 
 
@@ -4153,7 +4387,6 @@ func _apply_weapon_part_stats(stats: Dictionary, part_name: String) -> void:
 	var mods: Array = weapon.get("mods", [])
 	mods.append(part_name)
 	weapon["mods"] = mods
-	weapon["level"] = 1 + mods.size()
 	if stats.has("damage_mult"):
 		weapon["damage"] *= float(stats["damage_mult"])
 	if stats.has("cooldown_mult"):
@@ -4194,8 +4427,8 @@ func _apply_item_stats(stats: Dictionary) -> void:
 		player["speed"] *= float(stats["speed_mult"])
 	if stats.has("armor_add"):
 		player["armor"] += float(stats["armor_add"])
-	if stats.has("ore_mult"):
-		ore_multiplier *= float(stats["ore_mult"])
+	if stats.has("currency_mult"):
+		currency_drop_multiplier *= float(stats["currency_mult"])
 	if stats.has("xp_mult"):
 		xp_multiplier *= float(stats["xp_mult"])
 	if stats.has("regen_add"):
@@ -4230,7 +4463,7 @@ func _start_next_round() -> void:
 	_set_run_rule_state(RunRulesScript.advance_checkpoint_state(run_rule_state, wave))
 	wave_timer = _round_duration(wave)
 	spawn_timer = 0.0
-	round_ore_earned = 0
+	round_currency_earned = _fresh_currency_amounts()
 	spider_relic_packs_this_wave = 0
 	boss_spawned = false
 	_set_paused(false)
@@ -4243,10 +4476,12 @@ func _start_next_round() -> void:
 func _choice_option_disabled(option: Dictionary) -> bool:
 	if bool(option.get("disabled", false)):
 		return true
-	if int(option.get("cost", 0)) > ore:
+	if option.has("cost") and not EconomyRulesScript.can_pay(wallets, _option_cost(option), currency_ids):
 		return true
 	if str(option.get("kind", "")) == "weapon":
 		return not _can_add_weapon(str(option["weapon"]))
+	if str(option.get("kind", "")) == "temper":
+		return not _can_temper_current_weapon()
 	return false
 
 
@@ -4315,9 +4550,9 @@ func _record_enemy_defeat(enemy: Dictionary) -> void:
 	run_kill_count += 1
 	run_kills_by_type[type] = int(run_kills_by_type.get(type, 0)) + 1
 	if bool(enemy.get("checkpoint_elite", false)):
-		_credit_collected_ore(CHECKPOINT_ELITE_BONUS)
-		_set_run_rule_state(RunRulesScript.complete_elite_objective(run_rule_state, CHECKPOINT_ELITE_BONUS))
-		_add_floating_text("엘리트 목표 성공 +%d 광석" % CHECKPOINT_ELITE_BONUS, Vector2(enemy.get("pos", player.get("pos", Vector2.ZERO))), Color("#f2cf66"))
+		_credit_currency("forge_core", CHECKPOINT_ELITE_CORE_BONUS)
+		_set_run_rule_state(RunRulesScript.complete_elite_objective(run_rule_state, CHECKPOINT_ELITE_CORE_BONUS))
+		_add_floating_text("엘리트 목표 성공 +%d 강화핵" % CHECKPOINT_ELITE_CORE_BONUS, Vector2(enemy.get("pos", player.get("pos", Vector2.ZERO))), Color("#f0643b"))
 	if type == "final_boss" or (type == "boss" and wave >= MAX_ROUNDS):
 		run_boss_defeated = true
 
@@ -4334,7 +4569,18 @@ func _run_report_lines() -> PackedStringArray:
 	var lines := PackedStringArray()
 	lines.append("결과 %s / 도달 라운드 %d/%d / 생존 %s" % [_run_result_label(), wave, MAX_ROUNDS, _format_time(elapsed)])
 	lines.append("선택 무기: %s" % _selected_weapon_report_text())
-	lines.append("광석 획득 %d / 사용 %d / 보유 %d / 리롤 %d" % [run_ore_collected, run_ore_spent, ore, run_rerolls])
+	for currency_id in currency_ids:
+		var definition := _currency_definition(str(currency_id))
+		var entry: Dictionary = wallets.get(str(currency_id), {})
+		var source_note := " / 라운드 고정 %d" % run_round_clear_ore if str(currency_id) == "ore" else ""
+		lines.append("%s 획득 %d / 사용 %d / 보유 %d%s" % [
+			str(definition.get("name", currency_id)),
+			int(entry.get("acquired", 0)),
+			int(entry.get("spent", 0)),
+			int(entry.get("balance", 0)),
+			source_note,
+		])
+	lines.append("상점 리롤 %d회" % run_rerolls)
 	lines.append("구매 %d회 / 희귀·전설: %s" % [run_purchase_count, _format_name_counts(run_rare_legendary_purchase_names, "없음")])
 	lines.append("계약: %s" % _format_relic_counts_for_report())
 	lines.append("체크포인트: %s" % _checkpoint_route_history_text())
@@ -4343,9 +4589,11 @@ func _run_report_lines() -> PackedStringArray:
 		lines.append("엘리트 결과: %s" % elite_history)
 	for feedback in _checkpoint_feedback_lines():
 		lines.append(feedback)
-	lines.append("전투 처치 %d (%s) / 보스 피해 %d / 보스 %s" % [
+	lines.append("전투 처치 %d (%s)" % [
 		run_kill_count,
 		_format_kill_counts_for_report(),
+	])
+	lines.append("보스 피해 %d / 보스 %s" % [
 		int(round(run_boss_damage)),
 		"처치" if run_boss_defeated else "미처치",
 	])
@@ -4384,7 +4632,7 @@ func _elite_result_history_text() -> String:
 	for result in results:
 		var checkpoint_round := int(result.get("checkpoint_round", 0))
 		if str(result.get("status", "")) == "success":
-			parts.append("R%d 성공 +%d 광석" % [checkpoint_round, int(result.get("bonus", 0))])
+			parts.append("R%d 성공 +%d 강화핵" % [checkpoint_round, int(result.get("bonus", 0))])
 		else:
 			parts.append("R%d 놓침" % checkpoint_round)
 	return " / ".join(parts)
@@ -4408,7 +4656,7 @@ func _checkpoint_feedback_lines() -> PackedStringArray:
 		"active":
 			lines.append("엘리트 목표: R%d-R%d 강적 추적 중" % [int(elite.get("start_round", 0)), int(elite.get("end_round", 0))])
 		"success":
-			lines.append("엘리트 목표: 성공 · 처치 보너스 +%d 광석" % int(elite.get("bonus", 0)))
+			lines.append("엘리트 목표: 성공 · 처치 보너스 +%d 강화핵" % int(elite.get("bonus", 0)))
 		"missed":
 			lines.append("엘리트 목표: 구간 종료 · 보너스 놓침")
 	return lines
@@ -4426,10 +4674,74 @@ func _set_run_rule_state(next_state: Dictionary) -> void:
 	checkpoint_feedback_dirty = true
 
 
-func _credit_collected_ore(amount: int) -> void:
-	ore += amount
-	round_ore_earned += amount
-	run_ore_collected += amount
+func _fresh_currency_amounts() -> Dictionary:
+	var amounts := {}
+	for currency_id in currency_ids:
+		amounts[str(currency_id)] = 0
+	return amounts
+
+
+func _currency_balance(currency_id: String) -> int:
+	return int(Dictionary(wallets.get(currency_id, {})).get("balance", 0))
+
+
+func _currency_definition(currency_id: String) -> Dictionary:
+	return currency_registry.get(currency_id, {})
+
+
+func _credit_currency(currency_id: String, amount: int) -> bool:
+	var before := _currency_balance(currency_id)
+	var result: Dictionary = EconomyRulesScript.credit(wallets, currency_id, amount, currency_ids)
+	if not bool(result.get("ok", false)):
+		print("CURRENCY_CREDIT_REJECTED currency=%s amount=%d error=%s" % [currency_id, amount, str(result.get("error", "unknown"))])
+		return false
+	wallets = result.get("wallet", wallets)
+	round_currency_earned[currency_id] = int(round_currency_earned.get(currency_id, 0)) + amount
+	if debug_currency_logging:
+		print("CURRENCY_CREDIT currency=%s amount=%d before=%d after=%d" % [currency_id, amount, before, _currency_balance(currency_id)])
+	return true
+
+
+func _typed_cost(currency_id: String, amount: int) -> Dictionary:
+	return {"currency_id": currency_id, "amount": amount}
+
+
+func _option_cost(option: Dictionary) -> Dictionary:
+	var raw_cost: Variant = option.get("cost", {})
+	if raw_cost is Dictionary:
+		return Dictionary(raw_cost).duplicate(true)
+	if raw_cost is int or raw_cost is float:
+		return _typed_cost("ore", 0) if float(raw_cost) == 0.0 else {}
+	return _typed_cost("ore", 0)
+
+
+func _round_currency_summary() -> String:
+	var parts := PackedStringArray()
+	for currency_id in currency_ids:
+		var amount := int(round_currency_earned.get(str(currency_id), 0))
+		if amount <= 0:
+			continue
+		var definition := _currency_definition(str(currency_id))
+		parts.append("+%d %s" % [amount, str(definition.get("name", currency_id))])
+	return "획득 없음" if parts.is_empty() else " · ".join(parts)
+
+
+func _wallet_balance_summary() -> String:
+	var parts := PackedStringArray()
+	for currency_id in currency_ids:
+		var definition := _currency_definition(str(currency_id))
+		parts.append("%s %d" % [str(definition.get("name", currency_id)), _currency_balance(str(currency_id))])
+	return " · ".join(parts)
+
+
+func _set_currency_ledger_for_debug(currency_id: String, balance: int, acquired: int, spent: int) -> void:
+	if not wallets.has(currency_id):
+		return
+	wallets[currency_id] = {"balance": balance, "acquired": acquired, "spent": spent}
+
+
+func _set_round_currency_amount(currency_id: String, amount: int) -> void:
+	round_currency_earned[currency_id] = amount
 
 
 func _selected_weapon_report_text() -> String:
@@ -4437,7 +4749,8 @@ func _selected_weapon_report_text() -> String:
 	if id.is_empty() or not weapon_catalog.has(id):
 		return "없음"
 	var weapon: Dictionary = weapon_catalog[id]
-	return "%s · %s" % [str(weapon.get("name", id)), str(weapon.get("family", ""))]
+	var target := _current_upgrade_target()
+	return "%s · %s · 단련 %s" % [str(weapon.get("name", id)), str(weapon.get("family", "")), _roman_rank(int(target.get("upgrade_rank", 0)))]
 
 
 func _run_report_text() -> String:
@@ -4545,11 +4858,11 @@ func _should_make_contract_elite(kind: String) -> bool:
 	return chance > 0.0 and randf() < chance
 
 
-func _contract_ore_multiplier(enemy: Dictionary) -> float:
-	return RunRulesScript.contract_ore_multiplier(enemy, relic_counts)
+func _contract_currency_multiplier(enemy: Dictionary, currency_id: String) -> float:
+	return RunRulesScript.contract_currency_multiplier(enemy, currency_id, relic_counts)
 
 
-func _relic_clear_ore_multiplier() -> float:
+func _relic_clear_currency_multiplier() -> float:
 	return 1.0
 
 
@@ -5141,13 +5454,26 @@ func _draw_pickups() -> void:
 	for item in pickups:
 		var pos: Vector2 = item["pos"]
 		var radius: float = item["radius"]
-		var points := PackedVector2Array([
-			pos + Vector2(0, -radius),
-			pos + Vector2(radius, 0),
-			pos + Vector2(0, radius),
-			pos + Vector2(-radius, 0),
-		])
-		draw_colored_polygon(points, item["color"])
+		var color: Color = item.get("color", Color("#f5efe3"))
+		match str(item.get("shape", "diamond")):
+			"ring":
+				draw_circle(pos, radius, color)
+				draw_circle(pos, radius * 0.46, Color("#17120a"))
+				draw_arc(pos, radius + 2.0, 0.0, TAU, 20, Color("#d8f3ff"), 1.5)
+			"hex":
+				var hex_points := PackedVector2Array()
+				for index in range(6):
+					hex_points.append(pos + Vector2.RIGHT.rotated(PI / 3.0 * float(index)) * radius)
+				draw_colored_polygon(hex_points, color)
+				draw_circle(pos, radius * 0.28, Color("#f5efe3"))
+			_:
+				var diamond_points := PackedVector2Array([
+					pos + Vector2(0, -radius),
+					pos + Vector2(radius, 0),
+					pos + Vector2(0, radius),
+					pos + Vector2(-radius, 0),
+				])
+				draw_colored_polygon(diamond_points, color)
 
 
 func _draw_hazard_zones() -> void:
@@ -5245,16 +5571,24 @@ func _show_start_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_start(
 		"봉인된 채굴지",
-		"M1-D8 무기 검증",
-		"10라운드 광맥에 들어가기 전에 곡괭이, 네일건, 랜턴 중 하나를 고르세요. 선택 전에는 타이머와 스폰이 멈춰 있습니다.",
+		"다중 화폐 원정",
+		"10라운드 광맥에 들어가기 전에 곡괭이, 네일건, 랜턴 중 하나를 고르세요. 적과 위험에 따라 다른 성장 재료를 발견할 수 있습니다.",
 		"탐사 시작"
 	)
 
 
 func _show_choice_overlay(eyebrow_text: String, title_text: String, options: Array, method_name: String) -> void:
-	active_choice_options = options
+	active_choice_generation += 1
+	active_choice_options = []
+	for index in range(options.size()):
+		var option: Dictionary = Dictionary(options[index]).duplicate(true)
+		if option.has("cost"):
+			option["cost"] = _option_cost(option)
+		option["choice_generation"] = active_choice_generation
+		option["stable_id"] = str(option.get("stock_id", option.get("id", "option_%d" % index)))
+		active_choice_options.append(option)
 	active_choice_method = method_name
-	game_ui.show_choice(eyebrow_text, title_text, _decorate_choice_options(options), _active_relic_summary(), _current_state_summary())
+	game_ui.show_choice(eyebrow_text, title_text, _decorate_choice_options(active_choice_options), _active_relic_summary(), _current_state_summary())
 
 
 func _show_game_over_overlay() -> void:
@@ -5262,7 +5596,7 @@ func _show_game_over_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_end(
 		"탐사 종료",
-		"M1-D8 사망 요약",
+		"다중 화폐 런 요약",
 		_run_report_text(),
 		"다시 도전",
 		_active_relic_summary()
@@ -5274,7 +5608,7 @@ func _show_victory_overlay() -> void:
 	active_choice_method = ""
 	game_ui.show_end(
 		"탐사 완료",
-		"M1-D8 런 요약",
+		"다중 화폐 런 요약",
 		_run_report_text(),
 		"다시 시작",
 		_active_relic_summary()
@@ -5309,7 +5643,7 @@ func _choose_starter_weapon(option: Dictionary) -> void:
 	wave = 1
 	wave_timer = _round_duration(wave)
 	spawn_timer = 0.0
-	round_ore_earned = 0
+	round_currency_earned = _fresh_currency_amounts()
 	boss_spawned = false
 
 
@@ -5330,7 +5664,8 @@ func _update_hud() -> void:
 		"level": level,
 		"wave": wave,
 		"max_wave": MAX_ROUNDS,
-		"ore": ore,
+		"wallets": wallets,
+		"currency_registry": currency_registry,
 		"time": _format_time(max(0.0, wave_timer)),
 		"relics": _active_relic_summary(),
 		"risk_lines": _checkpoint_hud_feedback_lines(),
@@ -5345,19 +5680,20 @@ func _current_state_summary() -> Dictionary:
 		for mod_name in mods:
 			mod_names.append(str(mod_name))
 		var mod_text := "부품 없음" if mod_names.is_empty() else ", ".join(mod_names)
-		weapon_lines.append("%s · 피해 %d · %s" % [
+		weapon_lines.append("%s · 피해 %d · 단련 %s · %s" % [
 			str(weapon.get("name", "무기")),
 			int(round(float(weapon.get("damage", 0.0)) * damage_multiplier)),
+			_roman_rank(int(weapon.get("upgrade_rank", 0))),
 			mod_text,
 		])
 	if weapon_lines.is_empty():
 		weapon_lines.append("무기 없음")
 
 	var lines := PackedStringArray()
-	lines.append("체력 %d/%d · 광석 %d · 공세 %d/%d · 남은 시간 %s" % [
+	lines.append("체력 %d/%d · %s · 공세 %d/%d · 남은 시간 %s" % [
 		int(round(float(player.get("hp", 0.0)))),
 		int(round(float(player.get("max_hp", 100.0)))),
-		ore,
+		_wallet_balance_summary(),
 		wave,
 		MAX_ROUNDS,
 		_format_time(max(0.0, wave_timer)),
@@ -5393,23 +5729,33 @@ func _decorate_choice_options(options: Array) -> Array:
 
 
 func _choice_meta_text(option: Dictionary, disabled: bool) -> String:
+	if disabled and not str(option.get("disabled_reason", "")).is_empty():
+		return str(option.get("disabled_reason", ""))
 	if disabled and str(option.get("kind", "")) == "weapon":
 		return "무기 슬롯 또는 강화 한도 초과"
 	if str(option.get("kind", "")) == "starter_weapon":
 		return str(option.get("tag", "스타터 무기"))
 	if str(option.get("kind", "")) == "relic":
 		var next_level: int = min(3, _relic_count(str(option.get("id", ""))) + 1)
-		return "계약 %s · %s · %s" % [_roman_level(next_level), str(option.get("danger", "위험 누적")), str(option.get("reward_hint", "위험한 광맥일수록 더 많은 광석을 품는다."))]
+		return "계약 %s · %s · %s" % [_roman_level(next_level), str(option.get("danger", "위험 누적")), str(option.get("reward_hint", "더 큰 위험은 더 값진 성장 기회를 품는다."))]
 	if str(option.get("kind", "")) == "checkpoint_route":
 		return "%s · %s · %s" % [str(option.get("scope", "다음 구간")), str(option.get("danger", "위험 미확인")), str(option.get("outcome", "결과 미확인"))]
 	if option.has("cost"):
-		var cost := int(option["cost"])
-		var price_text := "무료" if cost <= 0 else "광석 %d" % cost
+		var cost := _option_cost(option)
+		var validation := EconomyRulesScript.validate_typed_cost(cost, currency_ids)
+		if not bool(validation.get("ok", false)):
+			return "가격 오류"
+		var amount := int(cost.get("amount", 0))
+		var currency_id := str(cost.get("currency_id", ""))
+		var definition := _currency_definition(currency_id)
+		var price_text := "무료" if amount <= 0 else "%s %d" % [str(definition.get("name", currency_id)), amount]
+		if disabled and amount > _currency_balance(currency_id):
+			price_text += " · 부족"
 		if option.has("rarity"):
 			price_text = "%s · %s" % [_rarity_label(str(option.get("rarity", "common"))), price_text]
 		if option.has("counter"):
 			return "%s · %s" % [str(option["counter"]), price_text]
-		if cost <= 0:
+		if amount <= 0:
 			return "무료"
 		return price_text
 	if option.has("tag"):
@@ -5437,7 +5783,38 @@ func _roman_level(level_value: int) -> String:
 			return "III"
 
 
+func _roman_rank(rank: int) -> String:
+	if rank <= 0:
+		return "0"
+	return _roman_level(rank)
+
+
 func _on_ui_option_selected(option: Dictionary) -> void:
 	if active_choice_method.is_empty():
 		return
-	Callable(self, active_choice_method).call(option)
+	var active_option := _active_choice_option_by_stable_id(option)
+	if active_option.is_empty():
+		print("CHOICE_REJECTED reason=stale_or_unoffered option=%s generation=%d" % [JSON.stringify(option), active_choice_generation])
+		return
+	var key := "%d:%s" % [int(active_option.get("choice_generation", -1)), str(active_option.get("stable_id", ""))]
+	if bool(handled_choice_keys.get(key, false)):
+		print("CHOICE_REJECTED reason=already_used key=%s" % key)
+		return
+	handled_choice_keys[key] = true
+	Callable(self, active_choice_method).call(active_option.duplicate(true))
+
+
+func _choice_option_is_current(option: Dictionary) -> bool:
+	return not _active_choice_option_by_stable_id(option).is_empty()
+
+
+func _active_choice_option_by_stable_id(option: Dictionary) -> Dictionary:
+	if int(option.get("choice_generation", -1)) != active_choice_generation:
+		return {}
+	var stable_id := str(option.get("stable_id", ""))
+	if stable_id.is_empty():
+		return {}
+	for active_option in active_choice_options:
+		if int(Dictionary(active_option).get("choice_generation", -1)) == active_choice_generation and str(Dictionary(active_option).get("stable_id", "")) == stable_id:
+			return Dictionary(active_option)
+	return {}

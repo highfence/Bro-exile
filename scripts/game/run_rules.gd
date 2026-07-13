@@ -214,7 +214,10 @@ static func contract_elite_chance(kind: String, round_index: int, relic_counts: 
 	return min(0.24, 0.055 * float(count) + 0.025 * float(round_index - 4))
 
 
-static func contract_ore_multiplier(enemy: Dictionary, relic_counts: Dictionary) -> float:
+static func contract_currency_multiplier(enemy: Dictionary, currency_id: String, relic_counts: Dictionary) -> float:
+	var profile: Dictionary = enemy.get("currency_drop", {})
+	if str(profile.get("primary_currency_id", "")) != currency_id:
+		return 1.0
 	var multiplier := 1.0
 	var type := str(enemy.get("type", ""))
 	if type == "fast_zombie":

@@ -3,9 +3,113 @@ extends RefCounted
 const RunRulesScript = preload("res://scripts/game/run_rules.gd")
 
 const STARTER_WEAPON_IDS := ["pickaxe", "nailgun", "lantern"]
+const CURRENCY_IDS := ["ore", "catalyst", "forge_core"]
+const NORMAL_ENEMY_TYPES := ["zombie", "fast_zombie", "spider", "thrower", "shield_zombie", "toxic_spider", "bomb_miner", "elite_zombie"]
 const BASE_CONTRACT_IDS := ["overheated_footsteps", "sharpened_throwing", "rough_vein", "chosen_prey"]
 const MID_CONTRACT_IDS := ["cracked_shield_oath", "viscous_poison_vein", "shortened_fuse"]
 const LATE_CONTRACT_IDS := ["awakened_overseer"]
+
+const CURRENCY_REGISTRY := {
+	"ore": {
+		"id": "ore", "name": "광석", "short_name": "광", "color": "#e6b85c", "shape": "diamond",
+		"source_ids": ["common_enemy", "round_clear"], "sink_ids": ["shop_part", "shop_item"],
+	},
+	"catalyst": {
+		"id": "catalyst", "name": "촉매", "short_name": "촉", "color": "#6cc3c0", "shape": "ring",
+		"source_ids": ["threat_enemy"], "sink_ids": ["shop_reroll"],
+	},
+	"forge_core": {
+		"id": "forge_core", "name": "강화핵", "short_name": "핵", "color": "#f0643b", "shape": "hex",
+		"source_ids": ["elite_zombie", "checkpoint_elite", "mid_boss"], "sink_ids": ["weapon_temper"],
+	},
+}
+
+const ENEMY_CURRENCY_PROFILES := {
+	"zombie": {"primary_currency_id": "ore", "amount": 2, "chance": 1.0, "drops_enabled": true},
+	"fast_zombie": {"primary_currency_id": "catalyst", "amount": 1, "chance": 1.0, "drops_enabled": true},
+	"spider": {"primary_currency_id": "ore", "amount": 2, "chance": 1.0, "drops_enabled": true},
+	"thrower": {"primary_currency_id": "catalyst", "amount": 2, "chance": 1.0, "drops_enabled": true},
+	"shield_zombie": {"primary_currency_id": "ore", "amount": 3, "chance": 1.0, "drops_enabled": true},
+	"toxic_spider": {"primary_currency_id": "catalyst", "amount": 1, "chance": 0.70, "drops_enabled": true},
+	"bomb_miner": {"primary_currency_id": "catalyst", "amount": 3, "chance": 1.0, "drops_enabled": true},
+	"elite_zombie": {"primary_currency_id": "forge_core", "amount": 1, "chance": 1.0, "drops_enabled": true},
+	"boss": {"primary_currency_id": "", "amount": 0, "chance": 0.0, "drops_enabled": false},
+	"mid_boss": {"primary_currency_id": "forge_core", "amount": 2, "chance": 1.0, "drops_enabled": true},
+	"final_boss": {"primary_currency_id": "", "amount": 0, "chance": 0.0, "drops_enabled": false},
+}
+
+const WEAPON_TEMPER_RECIPES := {
+	"pickaxe": {
+		"name": "곡괭이 담금질", "description": "타격점과 휘두름 폭을 함께 단련합니다.",
+		"multipliers": {"damage": 1.14, "range": 1.04}, "max_rank": 3,
+	},
+	"nailgun": {
+		"name": "네일건 압력 단련", "description": "못의 위력과 탄속을 높입니다.",
+		"multipliers": {"damage": 1.16, "speed": 1.04}, "max_rank": 3,
+	},
+	"lantern": {
+		"name": "랜턴 심지 단련", "description": "빛의 위력과 번지는 폭을 높입니다.",
+		"multipliers": {"damage": 1.12, "range": 1.05}, "max_rank": 3,
+	},
+}
+
+
+static func currency_ids() -> Array:
+	return CURRENCY_IDS.duplicate()
+
+
+static func currency_registry() -> Dictionary:
+	return CURRENCY_REGISTRY.duplicate(true)
+
+
+static func currency_definition(currency_id: String) -> Dictionary:
+	return Dictionary(CURRENCY_REGISTRY.get(currency_id, {})).duplicate(true)
+
+
+static func normal_enemy_types() -> Array:
+	return NORMAL_ENEMY_TYPES.duplicate()
+
+
+static func enemy_currency_profile(enemy_type: String) -> Dictionary:
+	return Dictionary(ENEMY_CURRENCY_PROFILES.get(enemy_type, {})).duplicate(true)
+
+
+static func weapon_temper_recipe(weapon_id: String) -> Dictionary:
+	return Dictionary(WEAPON_TEMPER_RECIPES.get(weapon_id, {})).duplicate(true)
+
+
+static func currency_contract_errors(registry_override: Dictionary = {}) -> Array[String]:
+	var registry: Dictionary = CURRENCY_REGISTRY.duplicate(true) if registry_override.is_empty() else registry_override.duplicate(true)
+	var errors: Array[String] = []
+	for raw_id in CURRENCY_IDS:
+		var currency_id := str(raw_id)
+		if not registry.has(currency_id):
+			errors.append("missing_currency:%s" % currency_id)
+			continue
+		var definition: Dictionary = registry[currency_id]
+		if str(definition.get("id", "")) != currency_id:
+			errors.append("currency_id_mismatch:%s" % currency_id)
+		if Array(definition.get("source_ids", [])).is_empty():
+			errors.append("currency_without_source:%s" % currency_id)
+		if Array(definition.get("sink_ids", [])).is_empty():
+			errors.append("currency_without_sink:%s" % currency_id)
+		if str(definition.get("shape", "")).is_empty():
+			errors.append("currency_without_shape:%s" % currency_id)
+	for raw_type in NORMAL_ENEMY_TYPES:
+		var enemy_type := str(raw_type)
+		if not ENEMY_CURRENCY_PROFILES.has(enemy_type):
+			errors.append("enemy_without_profile:%s" % enemy_type)
+			continue
+		var profile: Dictionary = ENEMY_CURRENCY_PROFILES[enemy_type]
+		var primary_currency_id := str(profile.get("primary_currency_id", ""))
+		if not CURRENCY_IDS.has(primary_currency_id):
+			errors.append("enemy_invalid_primary:%s" % enemy_type)
+		if int(profile.get("amount", 0)) <= 0 or float(profile.get("chance", 0.0)) <= 0.0:
+			errors.append("enemy_invalid_drop:%s" % enemy_type)
+	for weapon_id in STARTER_WEAPON_IDS:
+		if not WEAPON_TEMPER_RECIPES.has(weapon_id):
+			errors.append("weapon_without_temper:%s" % weapon_id)
+	return errors
 
 
 static func starter_weapon_ids() -> Array:
@@ -42,13 +146,13 @@ static func checkpoint_route_options(completed_round: int) -> Array:
 		},
 		{
 			"id": "shop", "kind": "checkpoint_route", "name": "보급 상점",
-			"desc": "회복 없이 현재 광석으로 장비를 정비합니다. 나가기는 무료입니다.",
+			"desc": "회복 없이 현재 자원으로 장비를 정비합니다. 나가기는 무료입니다.",
 			"scope": scope, "danger": "현재 체력 유지", "outcome": "구매 기회", "cost": 0,
 		},
 		{
 			"id": "elite", "kind": "checkpoint_route", "name": "엘리트 추적",
-			"desc": "다음 구간의 강적을 처치하면 즉시 추가 광석을 획득합니다.",
-			"scope": scope, "danger": "강적 예약", "outcome": "처치 보너스", "cost": 0,
+			"desc": "다음 구간의 강적을 처치하면 희귀 강화 재료를 획득합니다.",
+			"scope": scope, "danger": "강적 예약", "outcome": "강화 재료", "cost": 0,
 		},
 	]
 

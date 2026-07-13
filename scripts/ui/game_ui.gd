@@ -17,7 +17,7 @@ var hp_value: Label
 var xp_bar: ProgressBar
 var xp_value: Label
 var wave_label: Label
-var ore_label: Label
+var wallet_labels := {}
 var time_label: Label
 var top_panel: PanelContainer
 var weapon_panel: PanelContainer
@@ -70,7 +70,13 @@ func update_hud(data: Dictionary) -> void:
 		wave_label.text = "공세 %d/%d" % [wave, max_wave]
 	else:
 		wave_label.text = "공세 %d" % wave
-	ore_label.text = "광석 %d" % int(data.get("ore", 0))
+	var wallets: Dictionary = data.get("wallets", {})
+	var registry: Dictionary = data.get("currency_registry", {})
+	for currency_id in wallet_labels.keys():
+		var entry: Dictionary = wallets.get(str(currency_id), {})
+		var definition: Dictionary = registry.get(str(currency_id), {})
+		var short_name := str(definition.get("short_name", currency_id))
+		wallet_labels[currency_id].text = "%s %d" % [short_name, int(entry.get("balance", 0))]
 	time_label.text = str(data.get("time", "00:00"))
 	var relics: Array = data.get("relics", [])
 	render_relics(relics)
@@ -115,9 +121,8 @@ func render_weapons(weapons: Array, damage_multiplier: float) -> void:
 		var title := _make_label(str(weapon["name"]), 12, OreUITheme.INK)
 		title.clip_text = true
 		var mods: Array = weapon.get("mods", [])
-		var detail_text := "%d단계  피해 %d" % [int(weapon["level"]), int(round(float(weapon["damage"]) * damage_multiplier))]
-		if not mods.is_empty():
-			detail_text = "부품 %d  피해 %d" % [mods.size(), int(round(float(weapon["damage"]) * damage_multiplier))]
+		var temper_rank := int(weapon.get("upgrade_rank", 0))
+		var detail_text := "부품 %d · 단련 %s · 피해 %d" % [mods.size(), _roman_rank(temper_rank), int(round(float(weapon["damage"]) * damage_multiplier))]
 		var detail := _make_label(detail_text, 11, OreUITheme.MUTED)
 		detail.clip_text = true
 		box.add_child(title)
@@ -162,19 +167,23 @@ func show_choice(eyebrow: String, title: String, options: Array, relics: Array =
 	var columns: int = 2 if options.size() > 6 else 3
 	var card_height: int = 142 if tall else 126
 	var checkpoint_options := _options_are_checkpoints(options)
+	var shop_options := _options_are_shop(options)
 	if checkpoint_options:
 		columns = 2
 		card_height = 164
+	elif shop_options:
+		columns = 3
+		card_height = 142
 	if _options_are_contracts(options):
 		card_height = 158
 	if _options_are_starter_weapons(options):
 		card_height = 190
-	_prepare_overlay(Vector2(1040 if checkpoint_options else 900, 0), OreUITheme.PANEL_STRONG)
+	_prepare_overlay(Vector2(1040 if checkpoint_options or shop_options else 900, 0), OreUITheme.PANEL_STRONG)
 	overlay_box.add_child(_make_label(eyebrow, 14, OreUITheme.ORE))
 	overlay_box.add_child(_make_label(title, 34, OreUITheme.INK))
 	if not relics.is_empty():
 		overlay_box.add_child(_make_relic_strip(relics, "현재 계약"))
-	if not state_summary.is_empty():
+	if not state_summary.is_empty() and not shop_options:
 		overlay_box.add_child(_make_state_summary_panel(state_summary))
 
 	var grid := GridContainer.new()
@@ -207,6 +216,14 @@ func _options_are_starter_weapons(options: Array) -> bool:
 func _options_are_checkpoints(options: Array) -> bool:
 	for option in options:
 		if str(Dictionary(option).get("kind", "")) == "checkpoint_route":
+			return true
+	return false
+
+
+func _options_are_shop(options: Array) -> bool:
+	for option in options:
+		var kind := str(Dictionary(option).get("kind", ""))
+		if ["part", "item", "heal", "temper"].has(kind) or str(Dictionary(option).get("id", "")) == "reroll":
 			return true
 	return false
 
@@ -311,10 +328,17 @@ func _build_hud() -> void:
 	top.add_child(stats)
 
 	wave_label = _stat_pill("공세 1", OreUITheme.INK)
-	ore_label = _stat_pill("광석 0", OreUITheme.ORE)
+	wallet_labels = {
+		"ore": _stat_pill("광 0", OreUITheme.ORE),
+		"catalyst": _stat_pill("촉 0", OreUITheme.AQUA),
+		"forge_core": _stat_pill("핵 0", OreUITheme.EMBER),
+	}
+	for currency_id in wallet_labels.keys():
+		wallet_labels[currency_id].custom_minimum_size = Vector2(64, 42)
 	time_label = _stat_pill("00:00", OreUITheme.MUTED)
 	stats.add_child(wave_label)
-	stats.add_child(ore_label)
+	for currency_id in ["ore", "catalyst", "forge_core"]:
+		stats.add_child(wallet_labels[currency_id])
 	stats.add_child(time_label)
 
 	weapon_panel = PanelContainer.new()
@@ -783,3 +807,15 @@ func _relic_signature(relics: Array) -> String:
 	for relic in relics:
 		parts.append("%s:%d" % [str(relic.get("id", "")), int(relic.get("count", 1))])
 	return "|".join(parts)
+
+
+func _roman_rank(rank: int) -> String:
+	match rank:
+		1:
+			return "I"
+		2:
+			return "II"
+		3:
+			return "III"
+		_:
+			return "0"
