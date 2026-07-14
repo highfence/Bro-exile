@@ -1,7 +1,8 @@
 ---
-status: pending
+status: ready
 priority: p1
 issue_id: "021"
+github_issue: "https://github.com/highfence/Bro-exile/issues/2"
 tags: [prototype, m1, d9, characters, archetypes, synergy, trigger-economy, design, ui]
 dependencies: ["019", "020"]
 milestone: M1
@@ -20,7 +21,7 @@ artifacts:
   - "docs/brainstorms/2026-06-07-m1-d9-character-archetype-matrix-brainstorm.md"
   - "docs/operations/agent-pipeline-current-state.md"
   - "docs/quality/2026-06-30-pixel-perfect-quality-gates.md"
-last_handoff: "2026-07-12 - Producer Queue Rebaseline Handoff"
+last_handoff: "2026-07-14 - Producer Activation Handoff"
 routing_reason: ""
 ---
 
@@ -400,3 +401,28 @@ handoff:
 
 **Next Handoff:**
 - 020이 `complete/approved`가 되면 이 todo를 `ready`로 전환하고 기존 D9 결정을 기반으로 Planner에 넘긴다.
+
+### 2026-07-14 - Producer Activation Handoff
+
+<!-- pipeline-state
+{"artifacts": ["docs/brainstorms/2026-06-07-m1-d9-character-archetype-matrix-brainstorm.md", "docs/operations/agent-pipeline-current-state.md", "docs/quality/2026-06-30-pixel-perfect-quality-gates.md"], "owner_lane": "planning", "routing_reason": "", "status": "ready", "user_gate": "not-requested", "validator_verdict": "not-run"}
+-->
+
+**By:** Producer
+
+**상태:**
+- ready
+
+**Actions:**
+- 선행 020 다중 화폐 slice가 Product Owner 승인으로 닫혀 021을 다음 active slice로 전환했다.
+- 기존 `압축형/연쇄형/전환형`, 모든 무기 조합 허용, 캐릭터 선택 UI 포함 결정을 그대로 보존했다.
+- 현재 턴에서는 D9 plan 작성이나 구현을 시작하지 않고 다음 재개 지점만 활성화했다.
+
+**Verification:**
+- 020이 `complete/approved`이며 공개 데모 큐에서 021만 `ready`인지 pipeline validator로 확인한다.
+
+**Questions:**
+- 없음. 기존 D9 제품 결정을 다시 묻지 않는다.
+
+**Next Handoff:**
+- Planner가 기존 brainstorm과 acceptance criteria를 구현 가능한 D9 plan으로 정리한다.

@@ -1,0 +1,168 @@
+spec: currency-drop-distribution
+run_id: currency-drop-distribution-20260713T165233Z
+started_at: "2026-07-13T16:52:33Z"
+
+baseline:
+  timestamp: "2026-07-13T16:52:33Z"
+  gates:
+    ore_share: 0.695058
+    ore_share_upper: 0.695058
+    catalyst_share: 0.304942
+    catalyst_share_upper: 0.304942
+    ore_family_bias_gap: 1.0
+    catalyst_family_bias_gap: 0.912069
+    first_shop_budget: 16.0
+    first_shop_budget_upper: 16.0
+    fixed_ore_share: 0.208092
+    currency_contract_valid: 0
+  diagnostics:
+    expected_ore: 57.666667
+    expected_catalyst: 25.3
+    no_drop_share: 0.042149
+    ore_family_ore_chance: 1.0
+    ore_family_catalyst_chance: 0.0
+    catalyst_family_ore_chance: 0.0
+    catalyst_family_catalyst_chance: 0.912069
+    expected_rerolls: 5.06
+
+experiments:
+  - iteration: 1
+    batch: 1
+    hypothesis: "확정 mapping을 광석 성향 75/10/15, 촉매 성향 35/45/20의 단일 weighted outcome으로 교체한다."
+    category: architecture
+    outcome: kept
+    changes:
+      - file: scripts/game/demo_content.gd
+        summary: "일반 적 family별 weighted currency profile을 추가했다."
+      - file: scripts/game/economy_rules.gd
+        summary: "가중 outcome 선택과 기대값 계산을 pure rule로 추가했다."
+      - file: scripts/main.gd
+        summary: "처치당 하나의 화폐 또는 무드롭 outcome을 runtime에 연결했다."
+      - file: scripts/tools/demo_validation_harness.gd
+        summary: "가중 선택과 위험 보상 회귀 검증을 추가했다."
+    gates:
+      ore_share: 0.788157
+      ore_share_upper: 0.788157
+      catalyst_share: 0.211843
+      catalyst_share_upper: 0.211843
+      ore_family_bias_gap: 0.65
+      catalyst_family_bias_gap: 0.1
+      first_shop_budget: 15.0
+      first_shop_budget_upper: 15.0
+      fixed_ore_share: 0.226344
+      currency_contract_valid: 1
+    gates_passed: true
+    diagnostics:
+      distribution_error: 0.076313
+      expected_ore: 53.016667
+      expected_catalyst: 14.25
+      no_drop_share: 0.173967
+      ore_family_ore_chance: 0.75
+      ore_family_catalyst_chance: 0.10
+      catalyst_family_ore_chance: 0.35
+      catalyst_family_catalyst_chance: 0.45
+      expected_rerolls: 2.85
+    primary_delta: "-0.033570"
+    learnings: "합의한 초기 성향표만으로 모든 gate를 통과했고 촉매 기대량은 런당 25.3에서 14.25로 줄었다. 목표 중앙값에는 아직 광석이 약 3.8%p 높다."
+    commit: d438435
+  - iteration: 2
+    batch: 2
+    hypothesis: "촉매 성향 적의 대체 광석 확률을 30%로 낮추고 촉매 확률을 50%로 높인다."
+    category: parameter-tuning
+    outcome: kept
+    changes:
+      - file: scripts/game/demo_content.gd
+        summary: "촉매 성향 family의 weight를 30/50/20으로 조정했다."
+      - file: scripts/tools/demo_validation_harness.gd
+        summary: "촉매 성향 기대값 fixture를 새 확률에 맞췄다."
+    gates:
+      ore_share: 0.769401
+      ore_share_upper: 0.769401
+      catalyst_share: 0.230599
+      catalyst_share_upper: 0.230599
+      ore_family_bias_gap: 0.65
+      catalyst_family_bias_gap: 0.20
+      first_shop_budget: 15.0
+      first_shop_budget_upper: 15.0
+      fixed_ore_share: 0.230548
+      currency_contract_valid: 1
+    gates_passed: true
+    diagnostics:
+      distribution_error: 0.038803
+      expected_ore: 52.05
+      expected_catalyst: 15.6
+      no_drop_share: 0.173967
+      ore_family_ore_chance: 0.75
+      ore_family_catalyst_chance: 0.10
+      catalyst_family_ore_chance: 0.30
+      catalyst_family_catalyst_chance: 0.50
+      expected_rerolls: 3.12
+    primary_delta: "-0.037510"
+    learnings: "광석 성향은 유지하고 촉매 성향만 30/50/20으로 옮기면 전체 분포 76.9/23.1과 약 3.1회 리롤을 함께 달성한다."
+    commit: cefb807
+
+best:
+  iteration: 2
+  metrics:
+    distribution_error: 0.038803
+    ore_share: 0.769401
+    ore_share_upper: 0.769401
+    catalyst_share: 0.230599
+    catalyst_share_upper: 0.230599
+    ore_family_bias_gap: 0.65
+    catalyst_family_bias_gap: 0.20
+    first_shop_budget: 15.0
+    first_shop_budget_upper: 15.0
+    fixed_ore_share: 0.230548
+    currency_contract_valid: 1
+    expected_ore: 52.05
+    expected_catalyst: 15.6
+    no_drop_share: 0.173967
+    ore_family_ore_chance: 0.75
+    ore_family_catalyst_chance: 0.10
+    catalyst_family_ore_chance: 0.30
+    catalyst_family_catalyst_chance: 0.50
+    expected_rerolls: 3.12
+  total_judge_cost_usd: 0.0
+
+hypothesis_backlog:
+  - description: "촉매 성향을 40/40/20으로 완화해 전체 광석 비중을 목표 중앙값에 가깝게 맞춘다."
+    category: parameter-tuning
+    priority: high
+    dep_status: approved
+    required_deps: []
+  - description: "광석 성향을 70/15/15로 낮춰 촉매 발견 빈도를 조금 회복한다."
+    category: parameter-tuning
+    priority: medium
+    dep_status: approved
+    required_deps: []
+  - description: "위협도가 높은 thrower와 bomb_miner의 촉매 지급량을 2로 상한 처리한다."
+    category: reward-sizing
+    priority: medium
+    dep_status: approved
+    required_deps: []
+  - description: "일반 적 지급량을 모두 1로 통일하고 확률만으로 성향을 표현한다."
+    category: reward-sizing
+    priority: low
+    dep_status: approved
+    required_deps: []
+  - description: "적 종류별 확률에 작은 편차를 줘 같은 family 안에서도 발견 패턴을 만든다."
+    category: content-shaping
+    priority: medium
+    dep_status: approved
+    required_deps: []
+  - description: "후반 위협 적의 no-drop 비중을 25%로 높여 촉매 폭증을 억제한다."
+    category: parameter-tuning
+    priority: low
+    dep_status: approved
+    required_deps: []
+  - description: "위험 계약이 선호 화폐의 weight를 증폭하도록 바꿔 능동적 위험 선택 보상을 강화한다."
+    category: risk-reward
+    priority: medium
+    dep_status: approved
+    required_deps: []
+  - description: "초반 zombie만 광석 성향을 80%로 높여 첫 상점 예산을 안정화한다."
+    category: pacing
+    priority: low
+    dep_status: approved
+    required_deps: []

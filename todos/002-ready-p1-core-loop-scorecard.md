@@ -1,7 +1,9 @@
 ---
-status: ready
+status: pending
 priority: p1
 issue_id: "002"
+github_issue: "https://github.com/highfence/Bro-exile/issues/6"
+owner_lane: planning
 tags: [prototype, m1, d1, design, core-loop, quest]
 dependencies: []
 milestone: M1
@@ -81,3 +83,24 @@ A로 시작한다. 점수표는 짧게 유지하고, 점수보다 다음 액션�
 
 **Learnings:**
 - 지금은 큰 시스템 설계보다 반복 플레이 판단 양식이 더 중요하다.
+
+### 2026-07-14 - GitHub Issue Status Review
+
+**By:** Producer
+
+**상태:**
+- needs-rebaseline
+
+**Actions:**
+- 핵심 루프 점수표, 작성된 1회 결과, 결과에서 파생된 구현 이슈 증거를 다시 확인했다.
+- 현재 문서는 5라운드 P1을 기준으로 해 10라운드 공개 데모의 위험·경제·무기·화폐 루프를 평가하기에 부족하므로 `ready`를 `pending`으로 되돌렸다.
+- 우선순위는 변경하지 않았다.
+
+**Verification:**
+- 저장소에는 점수표 제안과 `keep / adjust / cut` 양식은 있으나 전투·보상·위험·성장·가독성을 1-5점으로 채운 실제 결과 문서는 확인되지 않았다.
+
+**Questions:**
+- 없음. 이 backlog를 다시 활성화할 때 T001과 중복 범위를 함께 검토한다.
+
+**Next Handoff:**
+- Planner가 현재 공개 데모용 scorecard로 갱신하고 T001과 합칠지 분리할지 Product Owner에게 제안한다.

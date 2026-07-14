@@ -1,0 +1,102 @@
+name: currency-drop-distribution
+description: >-
+  광석은 일반 성장의 주 수입으로 늘리고 촉매는 리롤 선택을 유지할 만큼만 줄이면서,
+  일반 적의 확정 화폐 mapping을 enemy family별 확률 편향으로 바꾼다.
+
+metric:
+  primary:
+    type: hard
+    name: distribution_error
+    direction: minimize
+    target: 0.05
+  degenerate_gates:
+    - name: ore_share
+      check: ">= 0.70"
+      description: 일반 화폐에서 광석이 주 수입이어야 한다.
+    - name: ore_share_upper
+      check: "<= 0.80"
+      description: 촉매가 사실상 사라지는 해를 막는다.
+    - name: catalyst_share
+      check: ">= 0.20"
+      description: 한 런에서 리롤 선택이 닫힐 만큼 촉매가 남아야 한다.
+    - name: catalyst_share_upper
+      check: "<= 0.30"
+      description: 촉매 과잉을 막는다.
+    - name: ore_family_bias_gap
+      check: ">= 0.20"
+      description: 광석 성향 적은 광석 쪽으로 읽히는 편향을 가진다.
+    - name: catalyst_family_bias_gap
+      check: ">= 0.10"
+      description: 촉매 성향 적은 촉매 쪽으로 읽히는 편향을 가진다.
+    - name: first_shop_budget
+      check: ">= 15"
+      description: 첫 상점의 일반 구매 한 번을 유지한다.
+    - name: first_shop_budget_upper
+      check: "<= 18"
+      description: 첫 상점에서 다중 구매가 기본값이 되는 것을 막는다.
+    - name: fixed_ore_share
+      check: "<= 0.40"
+      description: 라운드 보상이 적 drop 발견을 덮지 않는다.
+    - name: currency_contract_valid
+      check: "== 1"
+      description: source, sink, typed ledger 계약을 보존한다.
+  diagnostics:
+    - name: expected_ore
+    - name: expected_catalyst
+    - name: no_drop_share
+    - name: ore_family_ore_chance
+    - name: ore_family_catalyst_chance
+    - name: catalyst_family_ore_chance
+    - name: catalyst_family_catalyst_chance
+    - name: expected_rerolls
+
+measurement:
+  command: "python3 scripts/tools/measure_currency_distribution.py"
+  timeout_seconds: 120
+  output_format: json
+  working_directory: "."
+  stability:
+    mode: stable
+    noise_threshold: 0.001
+
+scope:
+  mutable:
+    - scripts/game/demo_content.gd
+    - scripts/game/economy_rules.gd
+    - scripts/game/run_rules.gd
+    - scripts/main.gd
+    - scripts/tools/demo_validation_harness.gd
+  immutable:
+    - scripts/tools/measure_currency_distribution.py
+    - scenes/tools/demo_validation_harness.tscn
+    - scripts/ui/game_ui.gd
+
+execution:
+  mode: serial
+  backend: worktree
+  max_concurrent: 1
+
+parallel:
+  port_strategy: none
+  shared_files: []
+  exclusive_resources: []
+
+dependencies:
+  approved: []
+
+constraints:
+  - forge_core의 elite, checkpoint elite, mid boss source와 단련 sink는 변경하지 않는다.
+  - ore는 part/item, catalyst는 reroll이라는 sink 역할을 변경하지 않는다.
+  - 플레이어 UI에는 정확한 적별 화폐 확률을 노출하지 않는다.
+  - 적 성향은 통계적으로 읽혀야 하지만 개별 적 처치의 결과는 확정적이지 않아야 한다.
+  - 10라운드 spend currency drop disable과 typed wallet invariant를 보존한다.
+  - 신규 에셋과 외부 dependency를 추가하지 않는다.
+  - docs/README.md와 D9 brainstorm을 수정하지 않는다.
+
+stopping:
+  max_iterations: 4
+  max_hours: 1
+  plateau_iterations: 2
+  target_reached: true
+
+max_runner_up_merges_per_batch: 0

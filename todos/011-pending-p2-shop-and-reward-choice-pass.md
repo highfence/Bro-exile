@@ -2,6 +2,7 @@
 status: pending
 priority: p2
 issue_id: "011"
+github_issue: "https://github.com/highfence/Bro-exile/issues/9"
 tags: [prototype, m1, d8, shop, rewards, buildcraft, quest]
 dependencies: ["019", "023"]
 milestone: M1

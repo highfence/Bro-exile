@@ -2,6 +2,7 @@
 status: pending
 priority: p2
 issue_id: "018"
+github_issue: "https://github.com/highfence/Bro-exile/issues/10"
 tags: [m1, d8, shop, items, relics, design]
 dependencies: ["019", "023"]
 milestone: M1

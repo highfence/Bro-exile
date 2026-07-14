@@ -2,6 +2,7 @@
 status: pending
 priority: p1
 issue_id: "022"
+github_issue: "https://github.com/highfence/Bro-exile/issues/3"
 tags: [prototype, m1, d10, simulation, playtest, balance, validation, godot]
 dependencies: ["019", "021"]
 milestone: M1

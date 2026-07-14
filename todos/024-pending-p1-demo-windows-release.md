@@ -2,6 +2,7 @@
 status: pending
 priority: p1
 issue_id: "024"
+github_issue: "https://github.com/highfence/Bro-exile/issues/4"
 tags: [public-demo, windows, itch-io, release, vertical-slice]
 dependencies: ["022"]
 milestone: Public Demo

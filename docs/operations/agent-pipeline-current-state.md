@@ -8,7 +8,7 @@ status: active-reference
 # 에이전트 파이프라인 현재 상태
 
 <!-- pipeline-queue
-{"active_slice": "020", "artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md", "todos/011-pending-p2-shop-and-reward-choice-pass.md", "todos/018-pending-p2-upgrade-item-relic-review.md"], "last_handoff": "2026-07-13 - Producer Activation Handoff", "order": ["023", "020", "021", "022", "024"], "owner_lane": "planning"}
+{"active_slice": "021", "artifacts": ["docs/brainstorms/2026-06-07-m1-d9-character-archetype-matrix-brainstorm.md", "docs/operations/agent-pipeline-current-state.md", "docs/quality/2026-06-30-pixel-perfect-quality-gates.md"], "last_handoff": "2026-07-14 - Producer Activation Handoff", "order": ["023", "020", "021", "022", "024"], "owner_lane": "planning"}
 -->
 
 이 문서는 canonical todo를 새 세션에서 빠르게 읽기 위한 projection이다. 값이 충돌하면 개별 `pipeline_slice` todo frontmatter와 최신 Work Log 증거가 권위이며, projection을 고친 뒤에만 새 역할을 dispatch한다.
@@ -18,6 +18,7 @@ status: active-reference
 | 문서 | 용도 |
 | --- | --- |
 | `AGENTS.md` | 프로젝트 규칙, Godot 실행 경로, 에셋/픽셀 검증 규칙 |
+| GitHub Issues | 작업 목록, 논의, 담당자, 의존성, 연결 PR과 종료 상태 |
 | 개별 `pipeline_slice` todo | lifecycle, owner, verdict, user gate, artifacts의 canonical record |
 | `todos/README.md` | Producer가 읽는 queue projection |
 | 이 문서 | 현재 active dispatch projection |
@@ -26,22 +27,23 @@ status: active-reference
 
 ## Current Queue Snapshot
 
-| 순서 | todo | lifecycle | owner lane | Validator | user gate |
-| --- | --- | --- | --- | --- | --- |
-| 1 | `todos/023-ready-p1-demo-checkpoint-risk-loop.md` | complete | producer | passed | approved |
-| 2 | `todos/020-pending-p2-m1-d11-multi-currency-economy.md` | ready | planning | not-run | not-requested |
-| 3 | `todos/021-pending-p1-m1-d9-character-archetype-matrix.md` | pending | planning | not-run | not-requested |
-| 4 | `todos/022-pending-p1-m1-d10-skill-simulation-validation.md` | pending | planning | not-run | not-requested |
-| 5 | `todos/024-pending-p1-demo-windows-release.md` | pending | planning | not-run | not-requested |
+| 순서 | todo | GitHub | lifecycle | owner lane | Validator | user gate |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | `todos/023-ready-p1-demo-checkpoint-risk-loop.md` | 과거 완료 기록 | complete | producer | passed | approved |
+| 2 | `todos/020-pending-p2-m1-d11-multi-currency-economy.md` | [#1](https://github.com/highfence/Bro-exile/issues/1) | complete | producer | passed | approved |
+| 3 | `todos/021-pending-p1-m1-d9-character-archetype-matrix.md` | [#2](https://github.com/highfence/Bro-exile/issues/2) | ready | planning | not-run | not-requested |
+| 4 | `todos/022-pending-p1-m1-d10-skill-simulation-validation.md` | [#3](https://github.com/highfence/Bro-exile/issues/3) | pending | planning | not-run | not-requested |
+| 5 | `todos/024-pending-p1-demo-windows-release.md` | [#4](https://github.com/highfence/Bro-exile/issues/4) | pending | planning | not-run | not-requested |
 
 ## Active Dispatch
 
-- Active slice: `020` 다중 화폐 playable slice.
-- Owner lane: Planning.
-- Canonical todo: `todos/020-pending-p2-m1-d11-multi-currency-economy.md`.
-- Plan: `docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md` U4.
+- Active slice: `021` 캐릭터 3종과 빌드 아키타입 매트릭스.
+- GitHub Issue: [#2](https://github.com/highfence/Bro-exile/issues/2).
+- Owner lane: Planner.
+- Canonical todo: `todos/021-pending-p1-m1-d9-character-archetype-matrix.md`.
+- Brainstorm: `docs/brainstorms/2026-06-07-m1-d9-character-archetype-matrix-brainstorm.md`.
 - 다음 허용 transition: Planner handoff.
-- 현재 저장 지점에서는 새 Planner dispatch와 경제 구현을 시작하지 않는다.
+- 기존 D9 제품 결정은 다시 묻지 않고 구현 plan으로 변환한다.
 
 ## State Contract
 
@@ -97,4 +99,4 @@ D9는 취소되지 않았고 공개 데모의 세 번째 slice로 이동했다. 
 
 ## Role Prompt Seed
 
-023 checkpoint 위험 선택 slice는 Product Owner 승인으로 닫혔다. 다음 재개 시 Planner는 020의 3화폐 source/sink, enemy/source discovery, 위험 보상 연결을 구현 가능한 acceptance criteria로 구체화한다.
+021은 020 Product Owner 승인으로 활성화됐다. Planner는 기존 `압축형/연쇄형/전환형`, 모든 D8 무기 조합, `캐릭터 선택 -> 무기 선택 -> R1`, 신규 아이템·유물·실사용 에셋 제외 결정을 구현 plan으로 정리한다.

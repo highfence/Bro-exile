@@ -2,7 +2,7 @@
 date: 2026-06-07
 topic: m1-d9-character-archetype-matrix
 kind: brainstorm
-status: partially-approved
+status: approved-for-planning
 related_todos:
   - todos/021-pending-p1-m1-d9-character-archetype-matrix.md
 ---
@@ -42,7 +42,8 @@ Slay the Spire식 캐릭터 구조를 참고하되, Bro-exile은 액션 자동�
 ### Out of Scope
 
 - 캐릭터 최종 이름/직업/일러스트 확정.
-- 캐릭터 구현, 선택 UI 구현, 에셋 생성.
+- 이 문서 안에서의 Godot 구현과 에셋 생성.
+- 최종 캐릭터 이름/직업/외형 확정 전 실사용 캐릭터 에셋 생성.
 - 아이템/유물/화폐 전체 목록 재작성.
 - 수치 밸런스 최종 확정.
 - 영구 성장 시스템 설계.
@@ -104,9 +105,9 @@ Slay the Spire식 캐릭터 구조를 참고하되, Bro-exile은 액션 자동�
 
 - debug: 캐릭터/아키타입/아이템 metadata를 구현할 때 각 항목은 `character_bias`, `archetype_tags`, `trigger`, `payload`, `frequency`, `cost` 중 필요한 필드를 출력할 수 있어야 한다.
 - debug: 최소 3개 캐릭터 코드명과 캐릭터별 2개 이상 아키타입 tag가 데이터 검사 명령에서 누락 없이 출력되어야 한다.
-- smoke: 각 캐릭터 코드명으로 1라운드 시작이 가능하고, 기존 D8 무기 선택 흐름을 깨지 않아야 한다.
+- smoke: 각 캐릭터 코드명은 모든 D8 무기 선택지와 함께 1라운드 시작이 가능하고, 기존 D8 무기 선택 흐름을 깨지 않아야 한다.
 - smoke: 각 캐릭터는 최소 2개 다른 아키타입 tag의 상점/보상 후보를 받을 수 있어야 한다.
-- capture: 캐릭터 선택 또는 빌드 summary UI가 생기면, 코드명/선호 문법/대표 tag가 한 화면에서 겹치지 않고 읽혀야 한다.
+- capture: D9 첫 구현에 캐릭터 선택 UI를 포함하며, 코드명/선호 문법/대표 tag가 한 화면에서 겹치지 않고 읽혀야 한다. `--capture-ui` 또는 동등한 실제 렌더 캡처 경로를 handoff에 남긴다.
 - playtest: 같은 무기라도 캐릭터 코드명에 따라 상점에서 고르고 싶은 카드가 달라졌는지 기록한다.
 - playtest: 한 캐릭터가 하나의 정답 아키타입만 강요하거나, 반대로 캐릭터 차이가 스킨처럼 느껴지면 D9는 조정 대상이다.
 
@@ -120,27 +121,43 @@ Slay the Spire식 캐릭터 구조를 참고하되, Bro-exile은 액션 자동�
 
 왜 지금 필요한가: D9 plan과 D10 simulation profile은 캐릭터를 식별할 최소 단위가 필요하다. 최종 직업명은 늦춰도 되지만, 데이터/검증 축의 3분할은 지금 정해야 한다.
 
-### BLOCKED: DESIGN QUESTION 2
+### DECIDED: DESIGN QUESTION 2
 
 D9 첫 구현은 캐릭터 선택 UI까지 포함해야 하는가, 아니면 데이터/디버그/상점 편향만 먼저 넣고 UI는 다음 단계로 미룰 것인가?
 
-왜 지금 필요한가: UI까지 포함하면 Asset/Validator 범위가 커지고 capture 기준이 필요하다. 데이터 중심이면 D9를 빠르게 D10 시뮬레이션 준비로 넘길 수 있다.
+결정: 캐릭터 선택 UI까지 포함한다. 데이터/디버그/상점 편향도 같은 D9 plan 범위에 포함하되, UI는 실제 렌더 캡처로 검증한다.
 
-### BLOCKED: DESIGN QUESTION 3
+왜 지금 필요한가: UI까지 포함하면 Validator 범위가 커지고 capture 기준이 필요하다. D9 plan은 `docs/quality/2026-06-30-pixel-perfect-quality-gates.md`의 UI gate를 함께 반영해야 한다.
+
+### DECIDED: DESIGN QUESTION 3
 
 각 캐릭터는 모든 D8 무기와 조합 가능해야 하는가, 아니면 특정 무기 1-2개와 강한 선호를 가져도 되는가?
 
-왜 지금 필요한가: 모든 조합 허용은 브릿지 설계와 시뮬레이션 매트릭스를 키운다. 무기 선호를 강하게 두면 캐릭터 정체성은 선명하지만 선택 폭이 좁아질 수 있다.
+결정: 모든 D8 무기와 조합 가능하게 둔다. 특정 무기 hard lock 또는 1-2개 강한 무기 선호를 요구하지 않는다.
+
+왜 지금 필요한가: 모든 조합 허용은 브릿지 설계와 시뮬레이션 매트릭스를 키운다. 대신 캐릭터 정체성은 무기 제한이 아니라 아키타입, 상점, 보상 편향으로 드러나야 한다.
+
+### DECIDED: 2026-07-02 D9 첫 구현 세부 scope
+
+- 런 시작 흐름은 `캐릭터 선택 -> 무기 선택 -> R1 시작`이다.
+- D9 UI는 최종 이름/직업 없이 `압축형`, `연쇄형`, `전환형` 코드명을 그대로 표시한다.
+- 세 캐릭터는 D9 첫 구현에서 같은 광부 외형을 공유하고, 실사용 캐릭터 에셋은 만들지 않는다.
+- 캐릭터 선택 카드는 코드명, 한 줄 빌드 문법, 대표 아키타입 tag 2-3개, 약점/대가 1줄만 표시한다.
+- 캐릭터별 고유 스탯 보정은 넣지 않는다.
+- 신규 아이템/유물은 추가하지 않고, 기존 상점/보상 풀에 metadata와 soft bias만 붙인다.
+- 캐릭터 편향은 상점과 보상 둘 다 대상으로 하되, 상점 구현을 먼저 검증하고 보상은 metadata/debug 기준까지 잡는다.
+- 대표 아키타입 tag는 이 문서의 3개씩 그대로 사용한다.
+- debug 출력은 `캐릭터 코드명 -> 대표 tag -> 적용 가능한 D8 무기 3종 -> 상점/보상 bias 샘플`을 한 번에 보여준다.
 
 ## Recommended Next Step
 
-Producer가 남은 2번 질문을 사용자에게 확인한 뒤, D9를 구현 계획으로 승격한다. 1번은 승인됐고, 3번은 구현 전 기본값을 정해도 된다. 3번의 권장 기본값은 “모든 무기와 조합 가능하되 캐릭터별 1개 무기는 자연 선호를 갖는다”이다.
+Producer가 남은 질문을 사용자와 확정했으므로, D9를 구현 계획으로 승격한다. 첫 구현은 캐릭터 선택 UI를 포함하고, 모든 캐릭터는 모든 D8 무기와 조합 가능해야 한다.
 
 Planner 권장 경로:
 
 1. 이 문서를 D9 brainstorm 기준으로 승인한다.
 2. `todos/021...`의 acceptance criteria를 Validator 기준으로 보강한다.
-3. 별도 plan 문서 `docs/plans/2026-06-07-feat-m1-d9-character-archetype-matrix-plan.md`를 작성한다.
-4. Developer는 구현 범위를 `data/debug first` 또는 `selection UI included` 중 Producer 결정에 맞춰 받는다.
+3. 별도 plan 문서 `docs/plans/2026-07-02-feat-m1-d9-character-archetype-matrix-plan.md`를 작성한다.
+4. Developer는 Planner plan이 `ready`가 된 뒤 `selection UI included` 범위로 구현한다.
 5. Asset은 이름/직업 확정 전에는 캐릭터 실사용 에셋을 만들지 않고, 필요하면 mood/reference만 제안한다.
 6. Validator는 design-only 기준과 debug/smoke/capture/playtest 기준을 분리해 검증한다.

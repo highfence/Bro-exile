@@ -1,7 +1,9 @@
 ---
-status: ready
+status: pending
 priority: p1
 issue_id: "001"
+github_issue: "https://github.com/highfence/Bro-exile/issues/5"
+owner_lane: planning
 tags: [prototype, m1, d1, playtest, validation, quest]
 dependencies: []
 milestone: M1
@@ -82,3 +84,24 @@ smoke playtest 결과를 JSON 또는 텍스트 로그로 저장한다.
 
 **Learnings:**
 - 현재 문제는 기능 부족보다 판단 기준 부족에 가깝다.
+
+### 2026-07-14 - GitHub Issue Status Review
+
+**By:** Producer
+
+**상태:**
+- needs-rebaseline
+
+**Actions:**
+- 저장소에서 실제 `keep / adjust / cut` 완료 기록과 다음 구현 이슈 연결 증거를 다시 확인했다.
+- 현재 양식은 5라운드 P1을 전제로 하지만 게임의 active 검증 단위는 10라운드 공개 데모 slice로 이동했으므로 `ready`를 `pending`으로 되돌렸다.
+- 우선순위는 변경하지 않았다.
+
+**Verification:**
+- `docs/plans/2026-06-01-prototype-side-quest-plan.md`와 `todos/README.md`에는 양식이 있으나, 이 todo의 acceptance criteria를 모두 충족한 실제 1회 기록은 확인되지 않았다.
+
+**Questions:**
+- 없음. 이 backlog를 다시 활성화할 때 현재 10라운드/공개 데모 기준으로 렌즈를 갱신한다.
+
+**Next Handoff:**
+- Planner가 현재 run report와 Product Owner feedback 형식에 맞춰 acceptance criteria를 재정의한 뒤 Validator에 넘긴다.
