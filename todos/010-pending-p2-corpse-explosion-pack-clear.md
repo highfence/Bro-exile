@@ -2,6 +2,7 @@
 status: pending
 priority: p2
 issue_id: "010"
+github_issue: "https://github.com/highfence/Bro-exile/issues/8"
 tags: [prototype, m1, combat, pack-clear, item, quest]
 dependencies: ["004", "005"]
 milestone: M1

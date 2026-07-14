@@ -2,12 +2,22 @@
 status: pending
 priority: p1
 issue_id: "022"
+github_issue: "https://github.com/highfence/Bro-exile/issues/3"
 tags: [prototype, m1, d10, simulation, playtest, balance, validation, godot]
 dependencies: ["019", "021"]
 milestone: M1
 delivery: D10
 chain: validation
 quest_title: "M1-D10 숙련도별 자동 시뮬레이션 검증"
+pipeline_slice: true
+queue_order: 4
+owner_lane: planning
+validator_verdict: not-run
+user_gate: not-requested
+artifacts:
+  - "docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md"
+last_handoff: "2026-07-12 - Producer Queue Rebaseline Handoff"
+routing_reason: ""
 ---
 
 # 022. M1-D10 숙련도별 자동 시뮬레이션 검증
@@ -31,7 +41,7 @@ quest_title: "M1-D10 숙련도별 자동 시뮬레이션 검증"
 - 시뮬레이션은 조작 능력뿐 아니라 보상/위험 선택 수준도 달라야 한다.
 - 디자인 변경 시마다 결과를 비교하고 보고할 수 있어야 한다.
 - 자동 시뮬레이션은 절대적인 정답이 아니라 회귀/밸런스 경향을 보는 도구다.
-- D8 무기 정체성과 D9 캐릭터/아키타입 매트릭스 이후에 이 검증 도구가 있으면, D11 경제/아이템 변경의 영향을 더 안전하게 볼 수 있다.
+- 체크포인트, 화폐, D9 캐릭터 slice가 승인된 뒤 이 검증 도구를 만들면 공개 데모 축의 회귀와 난이도 경향을 함께 볼 수 있다.
 
 ## Simulation Profiles
 
@@ -104,3 +114,27 @@ Option 2를 목표로 하되, 내부 구현은 기존 smoke playtest 로직을 �
 **Learnings:**
 - 앞으로 빌드/경제 시스템이 복잡해질수록 수동 플레이테스트만으로 난이도를 판단하기 어렵다.
 - 숙련도별 자동 시뮬레이션은 게임을 대신 플레이하는 정답 AI가 아니라, 디자인 변경의 경향을 읽는 기준선이다.
+
+### 2026-07-12 - Producer Queue Rebaseline Handoff
+
+<!-- pipeline-state
+{"artifacts": ["docs/plans/2026-07-12-001-feat-public-demo-vertical-slice-pipeline-plan.md"], "owner_lane": "planning", "routing_reason": "", "status": "pending", "user_gate": "not-requested", "validator_verdict": "not-run"}
+-->
+
+**By:** Producer
+
+**상태:**
+- pending
+
+**Actions:**
+- D10을 공개 데모 큐의 네 번째 slice로 유지하되 D9 승인 뒤에만 활성화하도록 고정했다.
+- 시뮬레이션은 사람 플레이를 대체하지 않고 체크포인트, 화폐, 캐릭터 변경의 회귀 계기판으로 사용한다.
+
+**Verification:**
+- 큐/상태 계약만 검증한다. simulation 검증은 이 slice 활성화 뒤 수행한다.
+
+**Questions:**
+- 활성화 시 deterministic RNG와 fixed-step 세부 방식을 plan에서 확정한다.
+
+**Next Handoff:**
+- 021이 `complete/approved`가 되면 이 todo를 `ready`로 전환하고 Planner에 넘긴다.

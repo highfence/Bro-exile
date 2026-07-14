@@ -16,6 +16,9 @@
 | --- | --- | --- |
 | 현재 기준 | [프로토타입 퀘스트 대시보드](../todos/README.md) | 현재 프로토타이핑 목표와 사이드 퀘스트 현황을 한눈에 보는 대시보드 |
 | 현재 기준 | [반자동 에이전트 운영 팀](operations/2026-06-05-agent-team-operating-model.md) | 기획/개발/에셋 역할 에이전트와 메인 Producer의 todo-queue 운영 방식 |
+| 현재 기준 | [에이전트 파이프라인 빠른 시작](operations/agent-pipeline-quickstart.md) | 새 세션에서 Producer/역할 에이전트 운영을 재개하는 짧은 진입점 |
+| 현재 기준 | [에이전트 파이프라인 현재 상태](operations/agent-pipeline-current-state.md) | 현재 active dispatch, owner lane, D9 재시동 질문을 고정한 상태판 |
+| 현재 기준 | [Pixel-Perfect 품질 게이트](quality/2026-06-30-pixel-perfect-quality-gates.md) | 에셋, UI, 애니메이션, 캡처를 작은 preview와 실제 렌더 증거로 검증하는 기준 |
 | 현재 기준 | [P1 5라운드 플레이어블 루프](brainstorms/2026-06-01-p1-five-round-playable-loop-brainstorm.md) | 보상/계약보다 먼저 검증할 P1 플레이어블 마일스톤 |
 | 현재 기준 | [P3 유물 계약 루프](brainstorms/2026-06-02-p3-relic-contract-loop-brainstorm.md) | 라운드 클리어 후 누적 위험/보상 유물을 선택하는 P3 마일스톤 |
 | 현재 기준 | [프로토타입 사이드 퀘스트 계획](plans/2026-06-01-prototype-side-quest-plan.md) | 검증 가능한 퀘스트 체인과 1차 프로토타입 완료 기준 |
@@ -46,6 +49,14 @@
 | 상태 | 날짜 | 문서 | 핵심 내용 |
 | --- | --- | --- | --- |
 | 현재 기준 | 2026-06-05 | [반자동 에이전트 운영 팀](operations/2026-06-05-agent-team-operating-model.md) | 메인 Producer와 기획/개발/에셋 역할 에이전트가 todo-queue를 통해 협업하는 방식 |
+| 현재 기준 | 2026-06-30 | [에이전트 파이프라인 빠른 시작](operations/agent-pipeline-quickstart.md) | 새 세션에서 todo queue와 역할 에이전트를 재개하는 절차 |
+| 현재 기준 | 2026-07-01 | [에이전트 파이프라인 현재 상태](operations/agent-pipeline-current-state.md) | 현재 큐, owner lane, D9 active dispatch와 역할별 다음 행동 |
+
+## 품질 기준 문서
+
+| 상태 | 날짜 | 문서 | 핵심 내용 |
+| --- | --- | --- | --- |
+| 현재 기준 | 2026-06-30 | [Pixel-Perfect 품질 게이트](quality/2026-06-30-pixel-perfect-quality-gates.md) | 64px preview, alpha bbox, fixed cell, Godot capture, pixel UI fallback 검증 기준 |
 
 ## 해결 기록
 

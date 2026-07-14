@@ -1,7 +1,9 @@
 ---
-status: ready
+status: complete
 priority: p2
 issue_id: "006"
+github_issue: "https://github.com/highfence/Bro-exile/issues/7"
+owner_lane: producer
 tags: [prototype, m1, art, readability, godot, quest]
 dependencies: ["003"]
 milestone: M1
@@ -64,10 +66,10 @@ B를 목표로 하되, 플레이어 적용에서 막히면 A까지만 완료한�
 
 ## Acceptance Criteria
 
-- [ ] 플레이어 에셋이 실제 전투 화면에 표시된다.
-- [ ] 기본 적 1종 또는 픽업 1종이 임시 에셋으로 표시된다.
-- [ ] 64px 수준에서 플레이어의 안전모/램프가 먼저 읽힌다.
-- [ ] 캡처를 보고 도형 버전보다 정체성이 좋아졌는지 기록한다.
+- [x] 플레이어 에셋이 실제 전투 화면에 표시된다.
+- [x] 기본 적 1종 또는 픽업 1종이 임시 에셋으로 표시된다.
+- [x] 64px 수준에서 플레이어의 안전모/램프가 먼저 읽힌다.
+- [x] 캡처를 보고 도형 버전보다 정체성이 좋아졌는지 기록한다.
 
 ## Work Log
 
@@ -81,3 +83,25 @@ B를 목표로 하되, 플레이어 적용에서 막히면 A까지만 완료한�
 
 **Learnings:**
 - 최종 아트보다 “전투 화면에서 정체성이 읽히는가”가 먼저다.
+
+### 2026-07-14 - GitHub Issue Completion Review
+
+**By:** Producer
+
+**상태:**
+- passed
+
+**Actions:**
+- 현재 runtime이 헬멧 마스코트 player parts와 miner zombie sprite를 직접 로드하고 실제 전투에서 렌더링하는 것을 확인했다.
+- 기존 player/zombie harness의 64px preview, metadata, 실제 stage capture 결과를 이 todo의 완료 증거로 연결했다.
+
+**Verification:**
+- `scripts/main.gd`는 `player_helmet_mascot_semilayered_gloves_v1`과 `miner_zombie_v1/zombie_idle.png`를 로드해 player와 기본 zombie를 그린다.
+- `docs/reports/assets/2026-06-04-asset-automation-dry-run-report.md`의 player/zombie harness는 8 frames, adjacent duplicate 0, loop alpha mismatch 0을 기록했다.
+- 같은 report의 `/private/tmp/orebound-godot-stage1.png` 1280×720 capture에서 player와 zombie가 실제 게임 배경 위에 표시되고, player 64px preview에서 헬멧/램프 실루엣을 확인했다.
+
+**Questions:**
+- 없음. 후속 enemy 후보와 최종 아트 방향은 별도 asset issue로 관리한다.
+
+**Next Handoff:**
+- Producer가 GitHub #7을 completed로 닫고, 신규 asset promotion은 기존 pixel-perfect gate를 계속 적용한다.

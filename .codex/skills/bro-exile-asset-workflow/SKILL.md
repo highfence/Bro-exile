@@ -22,7 +22,8 @@ Bro-exile의 에셋 제작 맥락을 잃지 않고 이어받기 위해 사용한
 1. `scripts/tools/asset_workflow_context.py --format markdown`를 실행해 현재 asset workflow 진입점을 확인한다.
 2. `docs/art/agent-asset-workflow.md`를 읽어 전체 제작 흐름과 handoff 계약을 확인한다.
 3. `docs/art/asset-generation-principles.md`를 읽어 스타일, 파츠, 검증 원칙을 확인한다.
-4. 작업 유형에 맞춰 다음 문서만 추가로 연다.
+4. `docs/quality/2026-06-30-pixel-perfect-quality-gates.md`를 읽어 preview, alpha bbox, capture gate를 확인한다.
+5. 작업 유형에 맞춰 다음 문서만 추가로 연다.
    - 플레이어 파츠/애니메이션: `docs/art/player-asset-harness.md`
    - 적 single-image 후보: `docs/art/prompt-packs/enemy-single-image.md`
    - 자동 후보/품질 게이트: `docs/plans/2026-06-04-feat-automated-asset-quality-harness-plan.md`
@@ -114,6 +115,7 @@ python3 scripts/tools/asset_candidate_harness.py scan --script scripts/main.gd
 - 애니메이션은 loop frame과 first frame이 맞고 adjacent duplicate pair가 없어야 한다.
 - Godot renderer에서 실제 harness output이 생성되어야 한다. headless exit code 0만으로 성공 처리하지 않는다.
 - 실제 stage capture에서 플레이어, 적, 배경, 투사체가 서로 읽혀야 한다.
+- Pixel-perfect gate 결과를 todo Work Log 또는 report에 남겨야 한다.
 
 ## 금지
 
