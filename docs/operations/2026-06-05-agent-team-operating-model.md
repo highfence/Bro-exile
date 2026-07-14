@@ -20,10 +20,12 @@ Bro-exile의 장기 작업은 기획, 개발, 에셋이 서로 다른 속도로 
 역할:
 
 - `todos/README.md`와 개별 todo를 읽고 현재 우선순위를 정리한다.
+- 연결된 GitHub Issue의 상태, 논의, 담당자, 의존성과 PR을 확인한다.
 - 기획, 개발, 에셋, 검증 에이전트에 작업을 배정한다.
 - 각 역할 에이전트의 결과를 하나로 합쳐 사용자에게 보고한다.
 - 사용자가 결정해야 하는 질문만 추려서 묻는다.
 - todo 상태, Work Log, handoff 문서가 최신인지 확인한다.
+- GitHub Issue와 todo의 상태 변경을 같은 작업 턴에 동기화한다.
 
 메인 에이전트가 직접 해도 되는 일:
 
@@ -113,7 +115,7 @@ Validator가 직접 하지 않는 일:
 
 ## todo-queue 라우팅 규칙
 
-기본 큐는 `todos/README.md`다. 개별 작업의 source of truth는 `todos/NNN-...md`다.
+GitHub Issue는 작업 목록, 논의, 담당자, 의존성, PR을 관리한다. 기본 로컬 큐는 `todos/README.md`이고, 개별 작업의 상세 실행 상태와 handoff source of truth는 `todos/NNN-...md`다. 모든 `pending/ready` todo는 `github_issue` 전체 URL을 가져야 한다.
 
 라우팅 기준:
 
@@ -171,13 +173,14 @@ last_handoff:
 ## 운영 흐름
 
 1. 사용자가 메인 에이전트에게 아이디어, 작업, 또는 "D8 상태" 같은 질문을 던진다.
-2. 메인 에이전트가 `todos/README.md`와 관련 todo/plan/report를 읽는다.
-3. 메인 에이전트가 필요한 역할을 판정한다.
-4. 역할 에이전트에게 명확한 범위, 읽을 문서, 쓰기 범위, 멈춰야 할 질문 조건을 전달한다.
-5. 역할 에이전트는 자기 스레드와 필요 시 worktree에서 작업한다.
-6. Developer 또는 Asset 작업이 끝나면 Validator가 완료 판정 전 독립 검증을 수행한다.
-7. 결과는 todo `Work Log`, docs, reports, artifacts에 남긴다.
-8. 메인 에이전트가 결과를 합쳐 사용자에게 현재 상태, 질문, 다음 결정을 보고한다.
+2. 새 작업이면 GitHub Issue를 만들고, 기존 작업이면 연결된 Issue를 확인한다.
+3. 메인 에이전트가 `todos/README.md`와 관련 todo/plan/report를 읽는다.
+4. 메인 에이전트가 필요한 역할을 판정한다.
+5. 역할 에이전트에게 명확한 범위, 읽을 문서, 쓰기 범위, 멈춰야 할 질문 조건을 전달한다.
+6. 역할 에이전트는 자기 스레드와 필요 시 worktree에서 작업한다.
+7. Developer 또는 Asset 작업이 끝나면 Validator가 완료 판정 전 독립 검증을 수행한다.
+8. 결과는 todo `Work Log`, docs, reports, artifacts에 남기고 GitHub Issue에 상태와 PR을 반영한다.
+9. 메인 에이전트가 결과를 합쳐 사용자에게 현재 상태, 질문, 다음 결정을 보고한다.
 
 ## D8 첫 적용
 
@@ -210,3 +213,14 @@ D8 라우팅:
 - 에셋 후보가 실사용 에셋에 자동으로 섞이지 않는다.
 
 그 전에는 자동 배정보다 반자동 Producer 운영을 우선한다.
+
+## Spec-Locked Async Studio 승격
+
+반자동 loop를 대체하지 않고, Product Owner가 opt-in한 한 playable slice에만 적용한다.
+
+- 제품 범위는 `docs/spec-locks/...`, lifecycle은 candidate todo의 committed state, 실행은 Orca가 맡는다.
+- Planner audit, Developer 또는 Asset writer, fresh Validator, Producer bundle을 `max-concurrent=1`로 직렬 실행한다.
+- code/asset 반려는 최대 두 번 같은 candidate에서 고치고 design gap은 질문 하나로 멈춘다.
+- deadline은 다음 PD 세션이며 만료 뒤 새 dispatch를 만들지 않는다.
+- Product Owner 판정 전에는 `complete/approved` 또는 다음 slice 활성화를 수행하지 않는다.
+- 첫 live pilot 전과 실패 시에는 이 문서의 기존 반자동 운영이 fallback이다.

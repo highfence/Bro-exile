@@ -47,6 +47,17 @@ handoff 위치:
 - 관련 todo의 `Work Log`
 ```
 
+## Async Studio 공통 추가 계약
+
+- 모든 역할은 spec lock의 `must`, `may`, `must_not`, `allowed_paths`, stop condition을 먼저 읽는다.
+- Planner는 completeness audit만 하고 새 제품 방향을 결정하지 않는다.
+- Developer와 Asset은 `writer_lanes` 순서대로 한 명씩 실행한다.
+- Validator는 writer terminal을 재사용하지 않는다.
+- 각 역할은 Work Log handoff와 artifacts를 같은 local checkpoint commit에 넣은 뒤에만 completion을 보낸다.
+- design blocker는 여러 질문으로 확장하지 않고 Producer에게 근거와 질문 하나를 넘긴다.
+- terminal 종료, chat summary, uncommitted file, stale task/dispatch completion은 handoff가 아니다.
+- remote push, main merge, force ref update, runtime asset promotion과 public release를 수행하지 않는다.
+
 ## Planner
 
 관련 todo와 docs를 읽고 검증 질문, acceptance criteria, 의존성, 디자인 질문을 정리한다. 구현하지 않는다. 모호한 판단은 `BLOCKED: DESIGN QUESTION`으로 남긴다.
