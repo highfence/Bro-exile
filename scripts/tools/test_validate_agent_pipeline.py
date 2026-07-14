@@ -13,6 +13,12 @@ import unittest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VALIDATOR = REPO_ROOT / "scripts" / "tools" / "validate_agent_pipeline.py"
+TOOLS_DIR = REPO_ROOT / "scripts" / "tools"
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+from agent_pipeline_state import ValidationError, validate_pipeline
+
 QUEUE = ["023", "020", "021", "022", "024"]
 
 
@@ -38,11 +44,13 @@ def _todo_state(
     user_gate: str = "not-requested",
     artifacts: list[str] | None = None,
     routing_reason: str = "",
+    studio: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    return {
+    state = {
         "status": status,
         "priority": "p1",
         "issue_id": issue_id,
+        "github_issue": f"https://github.com/highfence/Bro-exile/issues/{int(issue_id)}",
         "pipeline_slice": True,
         "queue_order": QUEUE.index(issue_id) + 1,
         "owner_lane": owner_lane,
@@ -52,21 +60,23 @@ def _todo_state(
         "last_handoff": "2026-07-12 - Fixture Handoff",
         "routing_reason": routing_reason,
     }
+    if studio:
+        state.update(studio)
+    return state
 
 
 def _write_todo(root: Path, state: dict[str, object]) -> None:
     issue_id = str(state["issue_id"])
-    state_evidence = {
-        key: state[key]
-        for key in (
+    marker_keys = (
             "status",
             "owner_lane",
             "validator_verdict",
             "user_gate",
             "artifacts",
             "routing_reason",
-        )
-    }
+    )
+    marker_keys += tuple(key for key in state if key.startswith("studio_"))
+    state_evidence = {key: state[key] for key in marker_keys}
     body = (
         f"{_frontmatter(state)}\n\n"
         f"# {issue_id}. Fixture\n\n"
@@ -100,6 +110,24 @@ def _write_projection(
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(
         f"# Current\n\n<!-- pipeline-queue\n{payload}\n-->\n", encoding="utf-8"
+    )
+
+
+def _write_studio_inbox(root: Path, active_state: dict[str, object]) -> None:
+    payload = {
+        "active_slice": active_state["issue_id"],
+        "studio_phase": active_state.get("studio_phase", ""),
+        "studio_blocker": active_state.get("studio_blocker", ""),
+        "studio_demo_bundle": active_state.get("studio_demo_bundle", ""),
+        "studio_stable_ref": active_state.get("studio_stable_ref", ""),
+        "studio_candidate_ref": active_state.get("studio_candidate_ref", ""),
+        "studio_review_due_at": active_state.get("studio_review_due_at", ""),
+        "studio_repair_count": active_state.get("studio_repair_count", 0),
+    }
+    path = root / "docs/operations/agent-studio-inbox.md"
+    path.write_text(
+        f"# Inbox\n\n<!-- studio-inbox\n{json.dumps(payload, sort_keys=True)}\n-->\n",
+        encoding="utf-8",
     )
 
 
@@ -162,10 +190,118 @@ class AgentPipelineValidatorTests(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("active_slice=023", result.stdout)
+            self.assertIn(
+                "github_issue=https://github.com/highfence/Bro-exile/issues/23",
+                result.stdout,
+            )
             self.assertIn("owner_lane=dev", result.stdout)
             self.assertIn("last_handoff=2026-07-12 - Fixture Handoff", result.stdout)
             self.assertIn("artifacts=docs/plans/checkpoint.md", result.stdout)
             self.assertIn("next_allowed_transition=validator-handoff", result.stdout)
+
+    def test_shared_state_module_reports_same_active_slice_and_transition(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            states = _base_states()
+            _write_plan(root, "docs/plans/checkpoint.md")
+            states["023"]["artifacts"] = ["docs/plans/checkpoint.md"]
+            _make_fixture(root, states, active_slice="023")
+
+            snapshot = validate_pipeline(root)
+
+            self.assertEqual(snapshot.active.issue_id, "023")
+            self.assertEqual(snapshot.next_transition, "validator-handoff")
+
+    def test_studio_state_requires_lock_refs_and_deadline(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            states = _base_states()
+            states["023"].update(studio_enabled=True)
+            _make_fixture(root, states, active_slice="023")
+
+            with self.assertRaisesRegex(ValidationError, "missing async studio fields"):
+                validate_pipeline(root)
+
+    def test_studio_frontmatter_and_latest_marker_must_match(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            states = _base_states()
+            states["023"].update(
+                studio_enabled=True,
+                studio_phase="spec-locked",
+                studio_spec_lock="docs/spec-locks/020.md",
+                studio_stable_ref="refs/bro-exile-studio/approved",
+                studio_stable_commit="1" * 40,
+                studio_candidate_ref="refs/heads/studio/020-candidate",
+                studio_candidate_commit="2" * 40,
+                studio_review_due_at="2099-07-16T21:00:00+09:00",
+                studio_repair_count=0,
+                studio_blocker="",
+                studio_demo_bundle="",
+            )
+            _make_fixture(root, states, active_slice="023")
+            todo = root / "todos" / "023-fixture.md"
+            todo.write_text(
+                todo.read_text(encoding="utf-8").replace(
+                    '"studio_repair_count": 0', '"studio_repair_count": 1', 1
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValidationError, "frontmatter/work-log mismatch"):
+                validate_pipeline(root)
+
+    def test_stable_and_candidate_refs_must_be_distinct(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            states = _base_states()
+            states["023"].update(
+                studio_enabled=True,
+                studio_phase="running",
+                studio_spec_lock="docs/spec-locks/020.md",
+                studio_stable_ref="refs/bro-exile-studio/approved",
+                studio_stable_commit="1" * 40,
+                studio_candidate_ref="refs/bro-exile-studio/approved",
+                studio_candidate_commit="1" * 40,
+                studio_review_due_at="2099-07-16T21:00:00+09:00",
+                studio_repair_count=0,
+                studio_blocker="",
+                studio_demo_bundle="",
+            )
+            _make_fixture(root, states, active_slice="023")
+
+            with self.assertRaisesRegex(ValidationError, "must be distinct"):
+                validate_pipeline(root)
+
+    def test_studio_inbox_must_match_canonical_state(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            states = _base_states()
+            states["023"].update(
+                studio_enabled=True,
+                studio_phase="spec-locked",
+                studio_spec_lock="docs/spec-locks/023.md",
+                studio_stable_ref="refs/bro-exile-studio/approved",
+                studio_stable_commit="1" * 40,
+                studio_candidate_ref="",
+                studio_candidate_commit="",
+                studio_review_due_at="2099-07-16T21:00:00+09:00",
+                studio_repair_count=0,
+                studio_blocker="",
+                studio_demo_bundle="",
+            )
+            _make_fixture(root, states, active_slice="023")
+            _write_studio_inbox(root, states["023"])
+            inbox = root / "docs/operations/agent-studio-inbox.md"
+            inbox.write_text(
+                inbox.read_text(encoding="utf-8").replace(
+                    '"studio_repair_count": 0', '"studio_repair_count": 1'
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValidationError, "studio inbox projection drift"):
+                validate_pipeline(root)
 
     def test_double_active_slice_fails(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -178,6 +314,18 @@ class AgentPipelineValidatorTests(unittest.TestCase):
 
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("exactly one ready slice", result.stderr)
+
+    def test_missing_github_issue_blocks_dispatch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            states = _base_states()
+            del states["020"]["github_issue"]
+            _make_fixture(root, states, active_slice="023")
+
+            result = self.run_validator(root)
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("requires github_issue URL", result.stderr)
 
     def test_missing_plan_projection_fails_before_dispatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

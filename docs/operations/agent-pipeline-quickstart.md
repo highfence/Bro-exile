@@ -12,25 +12,27 @@ status: active-reference
 ## 시작 순서
 
 1. `AGENTS.md`의 프로젝트 규칙을 확인한다.
-2. `todos/README.md`에서 현재 큐와 다음 추천 순서를 확인한다.
-3. `docs/operations/agent-pipeline-current-state.md`에서 현재 active dispatch와 owner lane을 확인한다.
-4. `python3 scripts/tools/validate_agent_pipeline.py`를 실행한다. 실패하면 새 dispatch 전에 projection/state drift를 고친다.
-5. `docs/operations/2026-06-05-agent-team-operating-model.md`에서 Producer, Planner, Developer, Asset, Validator 역할을 확인한다.
-6. 에셋, 픽셀, UI, 캡처 관련 작업이면 `docs/quality/2026-06-30-pixel-perfect-quality-gates.md`도 읽는다.
-7. 현재 작업이 애매하면 Producer가 먼저 owner lane을 정한다.
+2. `docs/operations/github-issue-workflow.md`에서 GitHub Issue와 todo의 기록 책임을 확인한다.
+3. `todos/README.md`에서 현재 큐와 다음 추천 순서를 확인하고 연결된 GitHub Issue를 연다.
+4. `docs/operations/agent-pipeline-current-state.md`에서 현재 active dispatch와 owner lane을 확인한다.
+5. `python3 scripts/tools/validate_agent_pipeline.py`를 실행한다. 실패하면 새 dispatch 전에 GitHub link 또는 projection/state drift를 고친다.
+6. `docs/operations/2026-06-05-agent-team-operating-model.md`에서 Producer, Planner, Developer, Asset, Validator 역할을 확인한다.
+7. 에셋, 픽셀, UI, 캡처 관련 작업이면 `docs/quality/2026-06-30-pixel-perfect-quality-gates.md`도 읽는다.
+8. 현재 작업이 애매하면 Producer가 먼저 owner lane을 정한다.
 
 ## Producer 기본 루프
 
 Producer는 한 번에 하나의 구현 목표만 고른다.
 
 1. consistency validator가 출력한 active slice와 허용 transition을 확인한다.
-2. 관련 todo와 plan/report를 읽는다.
+2. active GitHub Issue와 관련 todo, plan/report를 읽는다.
 3. owner lane을 정한다.
 4. 역할 에이전트에게 읽을 문서, 쓸 수 있는 파일, 멈춰야 할 조건, handoff 위치를 지정한다.
 5. Developer 또는 Asset 결과는 완료 처리 전에 Validator에게 넘긴다.
 6. Validator `passed` 뒤 실제 플레이 단위를 Product Owner에게 승인받는다.
 7. 승인 뒤 현재 todo를 닫고 다음 하나만 활성화한다.
-8. 최종 상태와 사용자 결정 질문만 요약한다.
+8. GitHub Issue를 닫거나 다음 상태로 갱신하고 todo와 같은 상태인지 확인한다.
+9. 최종 상태와 사용자 결정 질문만 요약한다.
 
 ## 공개 데모 상태 계약
 
@@ -58,6 +60,14 @@ Producer는 한 번에 하나의 구현 목표만 고른다.
 - `.codex/skills/bro-exile-agent-pipeline/references/role-prompts.md`: 역할별 프롬프트 템플릿.
 - `.codex/skills/bro-exile-asset-workflow/SKILL.md`: 에셋 후보/하네스/승격.
 - `.codex/skills/bro-exile-pixel-perfect/SKILL.md`: 픽셀 단위 시각 검증.
+
+## 비동기 Studio 선택 진입점
+
+- 기본은 이 문서의 반자동 Producer loop다.
+- Product Owner가 하나의 spec lock을 검토하고 명시적으로 시작할 때만 `docs/operations/async-studio-runbook.md`로 전환한다.
+- `python3 scripts/tools/run_agent_studio.py --json preview --spec <path>`는 읽기 전용이다.
+- live run 뒤에는 `docs/operations/agent-studio-inbox.md`에서 candidate 실행, validation, play lens, `keep / adjust / cut` 순서로 판단한다.
+- Orca runtime이 없거나 spec, stable ref, projection, deadline이 맞지 않으면 반자동 loop를 유지하고 start하지 않는다.
 
 ## 완료 조건
 

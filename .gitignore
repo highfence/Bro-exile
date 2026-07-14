@@ -7,6 +7,7 @@ assets/reference/
 export_presets.cfg
 .worktrees
 .superpowers/
+.studio/
 
 # Machine-local Compound Engineering settings.
 .compound-engineering/config.local.yaml

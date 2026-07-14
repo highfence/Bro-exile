@@ -41,3 +41,14 @@ Bro-exile의 반자동 에이전트 팀 운영을 재개할 때 사용한다. Pr
 ## Pixel-Perfect 연결
 
 에셋, UI, animation, capture 관련 작업은 `.codex/skills/bro-exile-pixel-perfect/SKILL.md`를 함께 적용한다.
+
+## Spec-Locked Async Studio
+
+Product Owner가 부재한 동안 다음 playable slice를 진행할 때는 다음 자료를 추가로 읽는다.
+
+1. `references/spec-lock-template.md`
+2. `references/async-studio-coordinator.md`
+3. `references/demo-bundle-template.md`
+4. `docs/operations/async-studio-runbook.md`
+
+`run_agent_studio.py preview`는 읽기 전용이다. `bootstrap`, `start`, `resume`, `decision`은 반드시 Product Owner의 명시적 `--yes`가 있어야 한다. studio start 뒤에는 candidate worktree만 writable authority이며, root의 동명 todo나 projection을 실행 권위로 사용하지 않는다.

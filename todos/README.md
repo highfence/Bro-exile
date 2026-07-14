@@ -138,6 +138,13 @@ M1은 “아이디어가 있는 게임”이 아니라 “플레이어가 죽고
 - `owner_lane`, `active_thread`, `worktree`, `blocked_questions`, `artifacts`, `last_handoff` 필드는 새 활성 작업부터 점진적으로 추가한다.
 - 공개 데모 dispatch 전에는 `python3 scripts/tools/validate_agent_pipeline.py`가 `PIPELINE VALID`를 출력해야 한다.
 
+### Async Studio opt-in
+
+- 현재 queue는 자동으로 studio run을 시작하지 않는다.
+- Product Owner가 `docs/spec-locks/...`를 검토하고 `run_agent_studio.py start --yes`를 실행한 slice만 비동기 studio 대상이다.
+- live 상태는 canonical todo와 `docs/operations/agent-studio-inbox.md`가 함께 일치해야 한다.
+- studio가 inactive, blocked, expired이거나 Orca runtime이 없으면 이 README의 반자동 Producer queue를 계속 사용한다.
+
 ## 플레이테스트 메모
 
 ```text

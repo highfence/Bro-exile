@@ -51,6 +51,15 @@ Tool mapping:
 - Skill discovery를 사용할 수 없는 에이전트는 `docs/art/agent-asset-workflow.md`를 읽고 `python3 scripts/tools/asset_workflow_context.py --format markdown`를 실행한다.
 - 자동 생성 에셋은 실사용 경로에 바로 덮어쓰지 않는다. 후보 생성, normalization, 64px preview, Godot harness, stage capture, 사용자 승인 후 promotion 순서를 따른다.
 
+## GitHub Task Management
+
+- 진행 예정 작업은 GitHub Issue를 먼저 만들고 `docs/operations/github-issue-workflow.md`에 따라 관리한다.
+- `pending` 또는 `ready` todo는 frontmatter에 `github_issue: "https://github.com/highfence/Bro-exile/issues/<number>"`를 반드시 가진다.
+- GitHub Issue는 작업 목록, 논의, 담당자, 의존성, 연결 PR을 관리하고, `todos/`는 상세 acceptance criteria와 append-only Work Log를 보존한다.
+- 상태, 우선순위, owner lane을 바꿀 때 GitHub Issue와 todo를 같은 작업 턴에 동기화한다. 제품 우선순위나 방향 변경은 사용자 승인 없이 확정하지 않는다.
+- 구현 PR에는 `Closes #<issue-number>`를 넣고, 역할 handoff와 Validator 결과는 이슈와 todo 양쪽에서 추적 가능하게 남긴다.
+- 새 역할 dispatch 전 `python3 scripts/tools/validate_agent_pipeline.py`로 GitHub 링크와 pipeline projection을 검증한다.
+
 ## Agent Pipeline Context
 
 - 장기 작업 운영은 `docs/operations/2026-06-05-agent-team-operating-model.md`와 `docs/operations/agent-pipeline-quickstart.md`를 따른다.
@@ -64,3 +73,11 @@ Tool mapping:
 - Pixel-perfect 검증이 필요한 작업은 `.codex/skills/bro-exile-pixel-perfect/SKILL.md`를 함께 적용한다.
 - Headless load 성공만으로 visual QA를 통과 처리하지 않는다. 64px preview, metadata, 실제 Godot capture 경로를 handoff에 남긴다.
 - UI 텍스트가 관련된 변경은 `--capture-ui` 또는 동등한 캡처 결과에서 실제 픽셀이 보이는지 확인한다.
+
+## Async Studio Context
+
+- Product Owner 부재 중 비동기 playable slice를 실행할 때는 `docs/operations/async-studio-runbook.md`와 `.codex/skills/bro-exile-agent-pipeline/references/async-studio-coordinator.md`를 먼저 읽는다.
+- spec lock 검토와 명시적 `start --yes` 전에는 worktree, Git ref 또는 Orca task를 만들지 않는다.
+- live run은 한 writer lane만 허용하고 Validator는 fresh terminal을 사용한다.
+- role 완료는 candidate의 committed Work Log handoff와 artifacts로만 인정한다.
+- `keep / adjust / cut`은 local-only다. 별도 승인 없이 push, main merge, runtime asset promotion 또는 public release를 하지 않는다.
