@@ -1,6 +1,11 @@
 ---
 name: bro-exile-agent-pipeline
-description: Bro-exile에서 Producer가 todo queue를 읽고 Planner, Developer, Asset, Validator 역할 에이전트로 구현 목표를 라우팅할 때 사용한다.
+description: >-
+  Bro-exile의 새 세션에서 개발 파이프라인을 재개하고 todo queue와 active slice를 검증해
+  Producer가 Planner, Developer, Asset, Validator로 라우팅하거나 spec lock 기반 Async Studio를
+  preview, start, resume하여 다음 playable demo를 준비할 때 사용한다. "파이프라인 재개",
+  "새 방식", "Async Studio", "spec lock", "퇴근 후 데모", "다음 playable slice",
+  "진행 중인 Studio 상태" 요청에 적용한다.
 ---
 
 # Bro-exile Agent Pipeline
